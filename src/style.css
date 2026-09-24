@@ -400,6 +400,28 @@ body {
   opacity: 0.85;
 }
 
+/* Khối thông báo LỖI CMNR màu đỏ góc phải (212px x 60px) */
+.toolbar-right-error {
+  width: 100%;
+  height: 60px;
+  background-color: #fd6161;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: default;
+}
+
+.toolbar-error-text {
+  font-size: 26px;
+  font-weight: 900;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 /* Các trạng thái chuyển động trượt ngang (Slide transitions) */
 .slide-in {
   transform: translateX(0);

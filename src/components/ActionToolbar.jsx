@@ -10,7 +10,8 @@ export default function ActionToolbar({
   onUndoClick,
   onQrClick,
   onInfoClick,
-  canUndo = false
+  canUndo = false,
+  isError = false
 }) {
   // Trạng thái trượt xác nhận inline: null | 'reset' | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
@@ -18,6 +19,13 @@ export default function ActionToolbar({
   const [displayMode, setDisplayMode] = useState('reset');
 
   const toolbarRef = useRef(null);
+
+  // Khi có lỗi LỖI CMNR, đóng ngay chế độ confirm nếu đang mở
+  useEffect(() => {
+    if (isError) {
+      setConfirmMode(null);
+    }
+  }, [isError]);
 
   // Kích hoạt chế độ trượt xác nhận
   const handleTriggerMode = (mode) => {
@@ -109,14 +117,18 @@ export default function ActionToolbar({
       {/* 2. KHU VỰC PHẢI: Chiều rộng cố định 212px (bằng 3 nút 68px + 2 khoảng cách 4px) */}
       <div className="toolbar-right-slot">
         {/* Bộ 3 nút chức năng mặc định: Reset, Undo, QR MoMo */}
-        <div className={`toolbar-right-group toolbar-right-default ${confirmMode ? 'slide-left-out' : 'slide-in'}`}>
+        <div
+          className={`toolbar-right-group toolbar-right-default ${
+            confirmMode || isError ? 'slide-left-out' : 'slide-in'
+          }`}
+        >
           {/* Nút Reset (Cột 2) */}
           <button
             type="button"
             className="toolbar-btn toolbar-btn-reset"
             onClick={() => handleTriggerMode('reset')}
             title="Reset toàn bộ điểm về 0"
-            tabIndex={confirmMode ? -1 : 0}
+            tabIndex={confirmMode || isError ? -1 : 0}
           >
             <ResetIcon width={28} height={28} />
           </button>
@@ -128,7 +140,7 @@ export default function ActionToolbar({
             onClick={() => canUndo && handleTriggerMode('undo')}
             disabled={!canUndo}
             title="Hoàn tác ván trước"
-            tabIndex={confirmMode ? -1 : 0}
+            tabIndex={confirmMode || isError ? -1 : 0}
           >
             <UndoIcon width={28} height={28} />
           </button>
@@ -137,16 +149,20 @@ export default function ActionToolbar({
           <button
             type="button"
             className="toolbar-btn toolbar-btn-qr toolbar-btn-info"
-            onClick={confirmMode ? undefined : (onQrClick || onInfoClick)}
+            onClick={confirmMode || isError ? undefined : (onQrClick || onInfoClick)}
             title="Quỹ Chiếu Quỷ (Mã QR MoMo)"
-            tabIndex={confirmMode ? -1 : 0}
+            tabIndex={confirmMode || isError ? -1 : 0}
           >
             <QrCodeIcon width={28} height={28} />
           </button>
         </div>
 
         {/* Bộ 2 nút xác nhận hiện ra: Nút Xác nhận (Xanh ✓) và Nút Hủy (Đỏ ✕) */}
-        <div className={`toolbar-right-group toolbar-right-confirm ${confirmMode ? 'slide-in' : 'slide-right-out'}`}>
+        <div
+          className={`toolbar-right-group toolbar-right-confirm ${
+            confirmMode && !isError ? 'slide-in' : 'slide-right-out'
+          }`}
+        >
           {/* Nút Xác nhận Đồng ý (Xanh lá) */}
           <button
             type="button"
@@ -168,6 +184,15 @@ export default function ActionToolbar({
           >
             <CrossIcon width={32} height={32} color="#000000" />
           </button>
+        </div>
+
+        {/* Khối Thông báo lỗi "LỖI CMNR" khi tổng điểm chưa bằng 0 (Nền đỏ, tự mất sau 1s) */}
+        <div
+          className={`toolbar-right-group toolbar-right-error ${
+            isError ? 'slide-in' : 'slide-right-out'
+          }`}
+        >
+          <span className="toolbar-error-text">LỖI CMNR</span>
         </div>
       </div>
     </div>

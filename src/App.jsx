@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ScoreInputTable from './components/ScoreInputTable';
 import ActionToolbar from './components/ActionToolbar';
 import HistoryTable from './components/HistoryTable';
 import Keyboard from './components/Keyboard';
-import { QrTransferModal, ErrorConfirmModal } from './components/Modals';
+import { QrTransferModal } from './components/Modals';
 import { useRealtimeGame } from './hooks/useRealtimeGame';
 import './style.css';
 
@@ -26,9 +26,20 @@ export default function App() {
   const [activeKeypad, setActiveKeypad] = useState(null); // { player, index, mode: '+' | '-' }
   const [currentKeypadValue, setCurrentKeypadValue] = useState('');
 
-  // Trạng thái các Modal
+  // Trạng thái hiển thị thông báo lỗi inline "LỖI CMNR" (tự tắt sau 1s)
+  const [isErrorBanner, setIsErrorBanner] = useState(false);
+  const errorTimerRef = useRef(null);
+
+  const triggerErrorBanner = () => {
+    setIsErrorBanner(true);
+    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = setTimeout(() => {
+      setIsErrorBanner(false);
+    }, 1000);
+  };
+
+  // Trạng thái Modal QR MoMo
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
-  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
 
   // Tính tổng điểm tích luỹ qua tất cả các ván đấu đã hoàn thành
   const cumulativeScores = players.reduce((acc, player) => {
@@ -129,9 +140,9 @@ export default function App() {
     // 2. Kiểm tra xem có người nào có điểm khác 0 không
     const hasScore = Object.values(roundDeltas).some(val => val !== 0);
 
-    // Khi chưa nhập chính xác (tổng khác 0 hoặc chưa có ai nhập điểm): hiển thị popup LỖI CMNR
+    // Khi chưa nhập chính xác (tổng khác 0 hoặc chưa có ai nhập điểm): hiển thị thông báo "LỖI CMNR" trong 1s
     if (sumTotal !== 0 || !hasScore) {
-      setIsErrorModalOpen(true);
+      triggerErrorBanner();
       return;
     }
 
@@ -176,7 +187,7 @@ export default function App() {
         onOpenKeyboard={handleOpenKeyboard}
       />
 
-      {/* 2. Hàng 4 nút chức năng kèm trượt xác nhận Reset và Undo (không mở popup) */}
+      {/* 2. Hàng 4 nút chức năng kèm trượt xác nhận Reset, Undo và báo LỖI CMNR inline */}
       <ActionToolbar
         sumTotal={currentSumTotal}
         onConfirmRound={handleConfirmRound}
@@ -184,6 +195,7 @@ export default function App() {
         onUndoConfirm={handleUndoConfirm}
         onQrClick={() => setIsQrModalOpen(true)}
         canUndo={history.length > 0}
+        isError={isErrorBanner}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Khu vực dưới cùng) */}
@@ -206,12 +218,6 @@ export default function App() {
       <QrTransferModal
         isOpen={isQrModalOpen}
         onClose={() => setIsQrModalOpen(false)}
-      />
-
-      {/* 6. Cửa sổ Popup Cảnh Báo Lỗi Nhập Điểm Chưa Chính Xác (LỖI CMNR) */}
-      <ErrorConfirmModal
-        isOpen={isErrorModalOpen}
-        onClose={() => setIsErrorModalOpen(false)}
       />
     </div>
   );
