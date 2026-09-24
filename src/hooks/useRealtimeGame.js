@@ -23,11 +23,20 @@ export function fireConfetti() {
 }
 
 export function useRealtimeGame() {
-  // Lấy roomId từ query param (ví dụ: ?room=ban1, mặc định 'default')
+  // Lấy roomId từ URL path (ví dụ: /1, /2, /nhom1) hoặc query param (?room=1, mặc định 'default')
   const [roomId] = useState(() => {
     if (typeof window !== 'undefined') {
+      // 1. Ưu tiên lấy từ URL pathname (loại bỏ dấu / ở đầu và cuối: /1 -> "1", /nhom1/ -> "nhom1")
+      const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
+      if (cleanPath && cleanPath !== '') {
+        return decodeURIComponent(cleanPath);
+      }
+      // 2. Hỗ trợ query param dạng ?room=1
       const params = new URLSearchParams(window.location.search);
-      return params.get('room') || 'default';
+      const roomParam = params.get('room');
+      if (roomParam && roomParam.trim() !== '') {
+        return roomParam.trim();
+      }
     }
     return 'default';
   });
