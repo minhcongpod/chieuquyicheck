@@ -1441,7 +1441,6 @@ td {
 /* Trạng thái xóa ở Khối 1: Nền đỏ rượu đậm, viền đỏ, chứa icon thùng rác */
 .stats-fixed-row-cell.is-deleting {
   background-color: #4a181b !important;
-  border-right: 1px solid rgba(253, 97, 97, 0.35);
 }
 
 /* Nút bấm vào thứ tự lần chốt sổ (#1, #2...) */

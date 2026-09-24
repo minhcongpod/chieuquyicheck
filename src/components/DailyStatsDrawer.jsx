@@ -371,16 +371,8 @@ export default function DailyStatsDrawer({
 
               {/* Danh sách các dòng điểm số tương ứng theo thứ tự sortedPlayers */}
               <div className="stats-scrollable-body">
-                {sortedLedger.length === 0 ? (
-                  <div className="stats-empty-state-box">
-                    <p className="stats-empty-title">Chưa có lần chốt sổ nào</p>
-                    <p className="stats-empty-sub">
-                      Hãy hoàn thành các ván đấu và bấm nút <strong>CHỐT SỔ</strong> ở Bảng lịch sử điểm để lưu số liệu!
-                    </p>
-                  </div>
-                ) : (
-                  sortedLedger.map((entry) => {
-                    const isDeleting = pendingDeleteId === entry.id;
+                {sortedLedger.map((entry) => {
+                  const isDeleting = pendingDeleteId === entry.id;
 
                     return (
                       <div 
@@ -411,8 +403,7 @@ export default function DailyStatsDrawer({
                         })}
                       </div>
                     );
-                  })
-                )}
+                })}
               </div>
             </div>
           </div>
