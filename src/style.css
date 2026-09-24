@@ -1,0 +1,977 @@
+/* ==========================================================================
+   BẢNG TÍNH ĐIỂM CHIẾU QUỲ - STYLE CHÍNH (390x844 FIGMA EXACT)
+   Bạn có thể chỉnh sửa màu sắc, kích thước, font chữ tại đây một cách dễ dàng.
+   ========================================================================== */
+
+/* 1. KHAI BÁO BIẾN MÀU SẮC & THÔNG SỐ (Dễ dàng thay đổi) */
+:root {
+  /* Kích thước màn hình */
+  --screen-width: 390px;
+  --screen-height: 680px;
+  --screen-bg: #111511;
+
+  /* Màu sắc 5 người chơi (Chuẩn theo Figma 100%) */
+  --color-player-1: #f4e950;
+  /* Vàng */
+  --color-player-2: #66ff33;
+  /* Xanh lá */
+  --color-player-3: #16e4ff;
+  /* Xanh dương / Cyan */
+  --color-player-4: #c073ff;
+  /* Tím */
+  --color-player-5: #fd6161;
+  /* Đỏ */
+
+  /* Màu chữ và viền */
+  --color-text-dark: #000000;
+  --color-text-light: #ffffff;
+  --color-border-white: #ffffff;
+  --color-btn-gray: #999999;
+
+  /* Font chữ chính */
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Reset cơ bản */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden !important;
+  position: fixed;
+  inset: 0;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: auto;
+  touch-action: none;
+  background-color: #0c100c;
+  color: var(--color-text-light);
+  font-family: var(--font-family);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden !important;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
+/* ==========================================================================
+   2. KHUNG MÀN HÌNH CHÍNH (390x844px)
+   ========================================================================== */
+.app-screen {
+  width: var(--screen-width);
+  height: var(--screen-height);
+  max-width: 100vw;
+  max-height: 100dvh;
+  background: linear-gradient(180deg, #00000000 24%, #142D13 30%, #0E1F0E 70%, #00000000 100%);
+  position: relative;
+  overflow: hidden !important;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+/* ==========================================================================
+   3. PHẦN 1: BẢNG NHẬP LIỆU NGƯỜI CHƠI (TOP SECTION)
+   ========================================================================== */
+.section-input-table {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Danh sách 5 hàng người chơi */
+.players-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* Từng hàng người chơi */
+.player-row {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1px;
+  position: relative;
+  will-change: transform;
+}
+
+.player-row.player-row-animating {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+
+/* Gán màu cho từng người chơi theo Figma (di chuyển cùng người chơi khi đổi vị trí điểm) */
+.player-row-p1,
+.player-row-0 {
+  background-color: var(--color-player-1);
+}
+
+.player-row-p2,
+.player-row-1 {
+  background-color: var(--color-player-2);
+}
+
+.player-row-p3,
+.player-row-2 {
+  background-color: var(--color-player-3);
+}
+
+.player-row-p4,
+.player-row-3 {
+  background-color: var(--color-player-4);
+}
+
+.player-row-p5,
+.player-row-4 {
+  background-color: var(--color-player-5);
+}
+
+/* Ô tên người chơi (Kích thước: 127px) */
+.player-name-box {
+  width: 127px;
+  height: 60px;
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  cursor: pointer;
+}
+
+.player-name-text {
+  font-size: 26px;
+  font-weight: 800;
+  /* Extra Bold */
+  color: var(--color-text-dark);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.player-name-input {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-dark);
+  caret-color: var(--color-text-dark);
+  text-transform: uppercase;
+}
+
+/* Ô điểm tổng tích luỹ (Cột 2: Thẳng hàng với nút Reset) */
+.player-score-box {
+  width: 68px;
+  height: 60px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+.player-score-text {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-dark);
+  text-align: center;
+}
+
+/* Nút Trừ (-) và Nút Cộng (+) (Cột 3 & 4: Thẳng hàng với nút Undo và Info) */
+.player-btn-minus,
+.player-btn-plus {
+  width: 68px;
+  height: 60px;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-dark);
+  cursor: pointer;
+  transition: background-color 0.1s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.player-btn-minus.small-text,
+.player-btn-plus.small-text {
+  font-size: 20px;
+}
+
+.player-btn-minus:active,
+.player-btn-plus:active {
+  background-color: rgba(0, 0, 0, 0.15);
+  transform: scale(0.95);
+}
+
+/* ==========================================================================
+   4. PHẦN 2: THANH 4 NÚT CHỨC NĂNG (CHỐT VÁN + TỔNG ĐIỂM, RESET, UNDO, QR)
+   VÀ HIỆU ỨNG TRƯỢT XÁC NHẬN INLINE (RESET / UNDO)
+   ========================================================================== */
+.action-toolbar {
+  width: 100%;
+  height: 60px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+  user-select: none;
+}
+
+/* KHU VỰC TRÁI (flex: 1, độ rộng bằng nút tích xanh / tên người chơi) */
+.toolbar-left-slot {
+  flex: 1;
+  min-width: 0;
+  height: 60px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Nút chốt ván màu xanh lá góc trái (Cột 1, hiển thị mặc định) */
+.toolbar-btn-confirm {
+  width: 100%;
+  height: 60px;
+  background-color: #66ff33;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #000000;
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.confirm-sum-text {
+  font-size: 26px;
+  font-weight: 800;
+  color: #000000;
+  line-height: 1;
+}
+
+.confirm-sum-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toolbar-btn-confirm:active {
+  opacity: 0.85;
+}
+
+/* Nút hành động đang kích hoạt (Reset hoặc Undo, cùng chiều ngang với nút tích xanh) */
+.toolbar-btn-active-action {
+  width: 100%;
+  height: 60px;
+  background-color: var(--color-btn-gray);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  left: 0;
+  color: #000000;
+  will-change: transform, opacity;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+.toolbar-btn-active-action:active {
+  opacity: 0.85;
+}
+
+/* KHU VỰC PHẢI (212px = 3 nút 68px + 2 khoảng cách 4px) */
+.toolbar-right-slot {
+  width: 212px;
+  height: 60px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.toolbar-right-group {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  will-change: transform, opacity;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+}
+
+/* 3 Nút mặc định màu xám: Reset, Undo, QR */
+.toolbar-btn-reset,
+.toolbar-btn-undo,
+.toolbar-btn-info,
+.toolbar-btn-qr {
+  width: 68px;
+  height: 60px;
+  flex-shrink: 0;
+  background-color: var(--color-btn-gray);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.toolbar-btn-reset:active,
+.toolbar-btn-undo:active,
+.toolbar-btn-info:active,
+.toolbar-btn-qr:active {
+  transform: scale(0.95);
+  opacity: 0.8;
+}
+
+.toolbar-btn-undo:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* 2 Nút xác nhận: Đồng ý (Xanh ✓) và Hủy bỏ (Đỏ ✕) */
+.toolbar-btn-confirm-yes,
+.toolbar-btn-confirm-no {
+  flex: 1;
+  min-width: 0;
+  height: 60px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.toolbar-btn-confirm-yes {
+  background-color: #66ff33;
+}
+
+.toolbar-btn-confirm-no {
+  background-color: #fd6161;
+}
+
+.toolbar-btn-confirm-yes:active,
+.toolbar-btn-confirm-no:active {
+  transform: scale(0.96);
+  opacity: 0.85;
+}
+
+/* Các trạng thái chuyển động trượt ngang (Slide transitions) */
+.slide-in {
+  transform: translateX(0);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.slide-left-out {
+  transform: translateX(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.slide-right-out {
+  transform: translateX(100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Kích thước icon trong thanh toolbar */
+.toolbar-btn svg,
+.confirm-sum-check {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.toolbar-btn-confirm-yes svg,
+.toolbar-btn-confirm-no svg {
+  width: 32px;
+  height: 32px;
+}
+
+/* ==========================================================================
+   5. PHẦN 3: BẢNG LỊCH SỬ ĐIỂM (BOTTOM SECTION)
+   ========================================================================== */
+.history-section {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+}
+
+/* Drawer toàn màn hình phóng to bảng lịch sử (Hiệu ứng trượt lên / trượt xuống mượt mà) */
+.history-expanded-drawer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 120;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  padding: 12px 16px 16px 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow: hidden;
+  transform: translateY(100%);
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+              visibility 0.4s;
+  will-change: transform;
+}
+
+.history-expanded-drawer.is-open {
+  transform: translateY(0);
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.history-expanded-drawer.is-dragging {
+  transition: none !important;
+}
+
+/* Thanh tay cầm kéo vuốt xuống ở đầu Drawer phóng to */
+.drawer-drag-handle-bar {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 0 10px 0;
+  cursor: grab;
+  touch-action: none;
+  flex-shrink: 0;
+}
+
+.drawer-drag-handle-bar:active {
+  cursor: grabbing;
+}
+
+.drawer-drag-pill {
+  width: 44px;
+  height: 5px;
+  background-color: rgba(255, 255, 255, 0.4);
+  border-radius: 3px;
+  transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+.drawer-drag-handle-bar:hover .drawer-drag-pill,
+.drawer-drag-handle-bar:active .drawer-drag-pill {
+  background-color: rgba(255, 255, 255, 0.8);
+  transform: scaleY(1.2);
+}
+
+/* Header bảng lịch sử (Icon phóng to/thu nhỏ + 5 tên người chơi) */
+.history-header {
+  width: 100%;
+  height: 40px;
+  border-bottom: 1px solid #ffffff30;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.history-trophy-col {
+  width: 36px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Nút bấm chuyển đổi Phóng to / Thu nhỏ bảng lịch sử */
+.history-toggle-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  color: #ffffff;
+  border-radius: 0px;
+  transition: all 0.15s ease;
+  outline: none;
+}
+
+.history-toggle-btn:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+  color: #66ff33;
+}
+
+.history-toggle-btn:active {
+  transform: scale(0.9);
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.history-names-group {
+  flex: 1;
+  height: 40px;
+  display: flex;
+  flex-direction: row;
+}
+
+.history-name-col {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Căn trái theo yêu cầu */
+  font-size: 13px;
+  font-weight: 800;
+  padding: 0 4px;
+  overflow: hidden;
+}
+
+.history-name-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  display: block;
+  width: 100%;
+  text-transform: uppercase;
+}
+
+/* Màu chữ của tên người chơi trong header lịch sử */
+.text-p1 {
+  color: var(--color-player-1);
+}
+
+.text-p2 {
+  color: var(--color-player-2);
+}
+
+.text-p3 {
+  color: var(--color-player-3);
+}
+
+.text-p4 {
+  color: var(--color-player-4);
+}
+
+.text-p5 {
+  color: var(--color-player-5);
+}
+
+/* Danh sách cuộn các ván đấu */
+.history-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  overflow-y: auto;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.history-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+.history-list::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 0px;
+}
+
+/* Từng hàng ván đấu (Height: 40px) */
+.history-row {
+  width: 100%;
+  height: 40px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Cột số thứ tự ván */
+.history-round-num {
+  width: 36px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+/* Các cột điểm từng người chơi (Chia đều cho 5 người) */
+.history-score-cell {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-text-light);
+  background-color: transparent;
+}
+
+/* Trường hợp 1 (Chặt heo) & Trường hợp 2 (Đánh Sâm): Người chiến thắng nhận điểm bước ngoặt - Nền xanh lá */
+.history-score-win {
+  background-color: rgba(102, 255, 51, 0.2);
+}
+
+/* Trường hợp 1 (Bị chặt) & Trường hợp 2 (Thua Sâm): Người bị phạt - Nền đỏ sẫm */
+.history-score-lose {
+  background-color: rgba(253, 97, 97, 0.2);
+}
+
+/* ==========================================================================
+   6. BÀN PHÍM SỐ TUỲ CHỈNH (KEYBOARD - ẢNH SỐ 2)
+   Kích thước: 390x370px, nền #050122, nằm dưới cùng
+   ========================================================================== */
+.keyboard-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: var(--screen-width);
+  height: 260px;
+  background: linear-gradient(180deg, #142D13 0%, #091209 95%, rgba(0, 0, 0, 0.00) 100%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Các hàng phím 1-4 (Chiều cao mỗi hàng 70px) */
+.keyboard-row {
+  width: 390px;
+  height: 55px;
+  display: flex;
+  flex-direction: row;
+}
+
+/* Phím bấm số (130x70px) */
+.keyboard-key {
+  width: 130px;
+  height: 55px;
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--color-text-light);
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.keyboard-key:active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.keyboard-key-cancel:active {
+  background-color: rgba(253, 97, 97, 0.2);
+}
+
+/* Hàng thứ 5 dưới cùng: Tên người chơi căn giữa (390x70px) */
+.keyboard-row-bottom {
+  width: 390px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.keyboard-player-name-text {
+  font-size: 16px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* ==========================================================================
+   7. POPUP / MODAL XÁC NHẬN (RESET, UNDO, QR CHUYỂN KHOẢN)
+   ========================================================================== */
+.modal-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(5px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.modal-card {
+  width: 100%;
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-text-light);
+  text-align: center;
+}
+
+.modal-message {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.modal-btn {
+  flex: 1;
+  height: 44px;
+  font-size: 14px;
+  font-weight: 800;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+
+.modal-btn:active {
+  transform: scale(0.98);
+}
+
+.modal-btn-cancel {
+  background-color: var(--color-btn-gray);
+  color: var(--color-text-dark);
+}
+
+.modal-btn-confirm {
+  background-color: #fd6161;
+  color: #ffffff;
+}
+
+.modal-btn-confirm.undo {
+  background-color: #66ff33;
+  color: #000000;
+}
+
+/* ==========================================================================
+   8. POPUP QR CHUYỂN KHOẢN QUỸ CHIẾU QUỶ
+   ========================================================================== */
+.modal-qr-card {
+  gap: 14px;
+  padding: 20px 18px;
+}
+
+.modal-qr-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.modal-title.qr-title {
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+  text-align: center;
+  width: 100%;
+}
+
+/* Khung hiển thị ảnh QR */
+.qr-image-container {
+  width: 220px;
+  height: 220px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.qr-image-display {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+/* Hộp đường link MoMo kèm icon sao chép */
+.qr-link-box {
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.qr-link-box:hover,
+.qr-link-box:active {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+.qr-link-url {
+  font-size: 12px;
+  font-weight: 600;
+  color: #66ff33;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: text;
+  text-align: left;
+  font-family: monospace;
+  flex: 1;
+  min-width: 0;
+}
+
+.qr-copy-btn {
+  background: transparent;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 4px;
+  color: #ffffff;
+  flex-shrink: 0;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+}
+
+.qr-copy-btn:hover {
+  opacity: 0.8;
+}
+
+.qr-copy-btn:active {
+  transform: scale(0.88);
+}
+
+/* Nhóm 2 nút: Mở link và Lưu QR */
+.modal-qr-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+}
+
+.modal-btn-open-link {
+  background-color: #fd6161; /* MoMo brand color */
+  color: #000000;
+}
+
+.modal-btn-open-link:active {
+  background-color: rgb(135, 0, 0);
+}
+
+.modal-btn-save-qr {
+  background-color: #66ff33;
+  color: #000000;
+}
+
+.modal-btn-save-qr:active {
+  background-color: #52cc29;
+}
+
+.modal-btn-close-qr {
+  width: 100%;
+  height: 60px;
+  background-color: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.modal-btn-close-qr:active {
+  background-color: rgba(255, 255, 255, 0.25);
+}

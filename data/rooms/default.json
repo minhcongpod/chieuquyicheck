@@ -1,0 +1,33 @@
+{
+  "roomId": "default",
+  "players": [
+    {
+      "id": "p1",
+      "name": "An",
+      "color": "#f4e950"
+    },
+    {
+      "id": "p2",
+      "name": "Cong",
+      "color": "#66ff33"
+    },
+    {
+      "id": "p3",
+      "name": "Toan",
+      "color": "#16e4ff"
+    },
+    {
+      "id": "p4",
+      "name": "A",
+      "color": "#c073ff"
+    },
+    {
+      "id": "p5",
+      "name": "Hoai",
+      "color": "#fd6161"
+    }
+  ],
+  "history": [],
+  "roundDeltas": {},
+  "updatedAt": 1790223854624
+}
