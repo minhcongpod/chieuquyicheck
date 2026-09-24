@@ -240,6 +240,15 @@ export function useRealtimeGame() {
     fireConfetti();
   }, [roomId, sendMessage]);
 
+  const deleteLedgerEntry = useCallback((entryId) => {
+    setDailyLedger(prev => {
+      const next = prev.filter(e => e.id !== entryId);
+      sendMessage('SET_DAILY_LEDGER', { dailyLedger: next });
+      localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(next));
+      return next;
+    });
+  }, [roomId, sendMessage]);
+
   return {
     roomId,
     players,
@@ -254,6 +263,7 @@ export function useRealtimeGame() {
     undoRound,
     resetGame,
     addLedgerEntry,
-    setDailyLedgerData
+    setDailyLedgerData,
+    deleteLedgerEntry
   };
 }

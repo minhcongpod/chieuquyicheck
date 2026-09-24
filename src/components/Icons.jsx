@@ -116,6 +116,25 @@ export function LedgerCalendarIcon({ className = "w-[26px] h-[26px]", width = 26
   );
 }
 
+// Icon Thùng Rác (Theo ảnh media_1790239596433.png) để xoá lần chốt sổ
+export function TrashIcon({ className = "w-[18px] h-[18px]", width = 18, height = 18, color = "#fd6161" }) {
+  return (
+    <svg
+      className={className}
+      width={width}
+      height={height}
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M5 2.5L6.5 0.5H9.5L11 2.5H14.5V5H1.5V2.5H5ZM2.5 6.5H13.5V16H2.5V6.5Z"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 // Exact SVG from Figma node 20:713
 export function CheckmarkIcon({ className = "w-[28px] h-[28px]", width = 28, height = 28, color = "black" }) {
   return (

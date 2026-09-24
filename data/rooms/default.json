@@ -3,109 +3,32 @@
   "players": [
     {
       "id": "p1",
-      "name": "Công",
+      "name": "",
       "color": "#f4e950"
     },
     {
       "id": "p2",
-      "name": "Toàn",
+      "name": "",
       "color": "#66ff33"
     },
     {
       "id": "p3",
-      "name": "Thảo",
+      "name": "",
       "color": "#16e4ff"
     },
     {
       "id": "p4",
-      "name": "Kiên",
+      "name": "",
       "color": "#c073ff"
     },
     {
       "id": "p5",
-      "name": "Linh",
+      "name": "",
       "color": "#fd6161"
     }
   ],
-  "history": [
-    {
-      "id": "round-1790234109023",
-      "roundNumber": 1,
-      "scores": {
-        "p1": 2,
-        "p3": -2
-      },
-      "timestamp": 1790234109023
-    },
-    {
-      "id": "round-1790234645536",
-      "roundNumber": 2,
-      "scores": {
-        "p1": 33,
-        "p2": -33
-      },
-      "timestamp": 1790234645536
-    },
-    {
-      "id": "round-1790235312058",
-      "roundNumber": 3,
-      "scores": {
-        "p3": -2,
-        "p5": 2
-      },
-      "timestamp": 1790235312058
-    },
-    {
-      "id": "round-1790236031790",
-      "roundNumber": 4,
-      "scores": {
-        "p5": 2,
-        "p3": -2
-      },
-      "timestamp": 1790236031790
-    },
-    {
-      "id": "round-1790236048824",
-      "roundNumber": 5,
-      "scores": {
-        "p1": 22,
-        "p4": -22
-      },
-      "timestamp": 1790236048824
-    },
-    {
-      "id": "round-1790236075873",
-      "roundNumber": 6,
-      "scores": {
-        "p2": 22,
-        "p4": -22
-      },
-      "timestamp": 1790236075873
-    },
-    {
-      "id": "round-1790236241889",
-      "roundNumber": 7,
-      "scores": {
-        "p1": 2,
-        "p5": -2
-      },
-      "timestamp": 1790236241889
-    }
-  ],
+  "history": [],
   "roundDeltas": {},
-  "updatedAt": 1790236961715,
-  "dailyLedger": [
-    {
-      "id": "ledger-1790236940274",
-      "dateStr": "24/9",
-      "timestamp": 1790236940274,
-      "scores": {
-        "p1": 59,
-        "p2": -11,
-        "p3": -6,
-        "p4": -44,
-        "p5": 2
-      }
-    }
-  ]
+  "updatedAt": 1790240228004,
+  "dailyLedger": []
 }

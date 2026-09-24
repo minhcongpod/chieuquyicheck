@@ -1361,13 +1361,13 @@ td {
 }
 
 .stats-header-row th {
-  background-color: #0d0d0d;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   padding: 10px 4px;
   vertical-align: middle;
   position: sticky;
   top: 0;
   z-index: 25;
+  background-color: #0d0d0d;
 }
 
 /* Ô góc trên cùng bên trái: Ghim cả Top và Left, chứa nút Close [✕] */
@@ -1380,10 +1380,8 @@ td {
   min-width: 54px;
   max-width: 54px;
   text-align: -webkit-center;
-  background-color: #0d0d0d;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.7);
   overflow: hidden;
+  background-color: #0d0d0d;
 }
 
 .stats-close-btn {
@@ -1413,7 +1411,6 @@ td {
   width: 62px;
   text-align: center;
   padding: 10px 4px;
-  background-color: #0d0d0d;
 }
 
 .stats-player-head-box {
@@ -1445,11 +1442,22 @@ td {
 /* Các hàng dữ liệu theo từng lần chốt sổ */
 .stats-data-row {
   height: 40px;
+  transition: background-color 0.2s ease;
 }
 
 .stats-data-row td {
   border-bottom: none;
   vertical-align: middle;
+  transition: background-color 0.2s ease;
+}
+
+/* Trạng thái chuẩn bị xoá lần chốt sổ (Pending Delete) - Toàn hàng đỏ mờ 10% */
+.stats-data-row.is-deleting {
+  background-color: rgba(253, 97, 97, 0.1) !important;
+}
+
+.stats-data-row.is-deleting td {
+  background-color: rgba(253, 97, 97, 0.1) !important;
 }
 
 /* Cột Lần Chốt Sổ (#1, #2...) ghim cố định bên trái khi cuộn ngang */
@@ -1467,8 +1475,69 @@ td {
   white-space: nowrap;
   background-color: #0d0d0d;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.7);
   overflow: hidden;
+  padding: 0;
+}
+
+/* Ô Lần Chốt Sổ khi chọn xoá: Nền đỏ rượu đậm, viền đỏ, chứa icon thùng rác */
+.stats-data-row.is-deleting td.stats-td-sticky.stats-td-date,
+.stats-td-sticky.stats-td-date.is-deleting {
+  background-color: #4a181b !important;
+  border-right: 1px solid rgba(253, 97, 97, 0.35) !important;
+  padding: 0 !important;
+}
+
+/* Nút bấm vào thứ tự lần chốt sổ (#1, #2...) */
+.stats-round-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 14px;
+  font-weight: 800;
+  width: 100%;
+  height: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  font-family: inherit;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.stats-round-btn:hover {
+  color: #fd6161;
+}
+
+.stats-round-btn:active {
+  transform: scale(0.92);
+}
+
+/* Nút icon Thùng rác màu đỏ trong ô nền đỏ rượu */
+.stats-trash-btn {
+  width: 100%;
+  height: 100%;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  outline: none;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+.stats-trash-btn:hover {
+  transform: scale(1.12);
+  opacity: 0.9;
+}
+
+.stats-trash-btn:active {
+  transform: scale(0.9);
 }
 
 /* Cột điểm số của từng người */

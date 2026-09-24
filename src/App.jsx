@@ -23,7 +23,8 @@ export default function App() {
     undoRound,
     resetGame,
     addLedgerEntry,
-    setDailyLedgerData
+    setDailyLedgerData,
+    deleteLedgerEntry
   } = useRealtimeGame();
 
   // Trạng thái bàn phím số (Keyboard) của máy này
@@ -272,6 +273,7 @@ export default function App() {
         onClose={() => setIsDailyStatsOpen(false)}
         players={players}
         dailyLedger={dailyLedger}
+        onDeleteLedgerEntry={deleteLedgerEntry}
       />
 
       {/* 6. Cửa sổ Popup Mã QR Quỹ Chiếu Quỷ (dự phòng) */}

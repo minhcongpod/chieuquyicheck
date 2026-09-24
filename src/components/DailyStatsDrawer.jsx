@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PLAYER_COLORS_10 } from '../constants/sampleLedger';
+import { TrashIcon } from './Icons';
 
 /**
- * Bảng Thống Kê Điểm Theo Ngày (Daily Stats Ledger)
+ * Bảng Thống Kê Điểm Theo Lần Chốt Sổ (Daily Stats Ledger)
  * 
  * - Trượt xuống (Swipe/Drag down) để đóng trang
  * - Nền mờ blur và tối:
@@ -10,17 +11,20 @@ import { PLAYER_COLORS_10 } from '../constants/sampleLedger';
  *     backdrop-filter: blur(5px);
  * - Có thể có nhiều hơn 5 người chơi (Tối đa 10 người)
  * - Cho phép xem người thứ 6, 7, 8 bằng cách trượt ngang sang phải
- * - Cột ngày tháng và nút Close được ghim cố định bên trái (Sticky left)
+ * - Cột thứ tự và nút Close được ghim cố định bên trái (Sticky left)
  * - Toàn bộ chữ font-weight: 800 đồng nhất
+ * - Bấm vào thứ tự (Vd: #6) để hiển thị icon thùng rác màu đỏ, nền đỏ rượu, cả dòng đỏ mờ 10% để xoá
  */
 export default function DailyStatsDrawer({
   isOpen,
   onClose,
   players = [],
-  dailyLedger = []
+  dailyLedger = [],
+  onDeleteLedgerEntry
 }) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   const startYRef = useRef(0);
   const startXRef = useRef(0);
@@ -32,19 +36,26 @@ export default function DailyStatsDrawer({
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (pendingDeleteId) {
+          setPendingDeleteId(null);
+        } else {
+          onClose();
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, pendingDeleteId]);
 
-  // Reset drag position khi trạng thái isOpen thay đổi
+  // Reset drag position và trạng thái xoá khi trạng thái isOpen thay đổi
   useEffect(() => {
     if (!isOpen) {
       setDragY(0);
       setIsDragging(false);
       isDraggingRef.current = false;
       currentDragYRef.current = 0;
+      setPendingDeleteId(null);
     }
   }, [isOpen]);
 
@@ -209,6 +220,19 @@ export default function DailyStatsDrawer({
     return totals;
   }, [allPlayers, dailyLedger]);
 
+  // Sắp xếp các lần chốt sổ theo thứ tự mới nhất nằm trên cùng (#6 -> #5 -> #4 -> ... -> #1)
+  const sortedLedger = useMemo(() => {
+    const list = [...dailyLedger];
+    return list.sort((a, b) => {
+      const idxA = a.roundIndex || 0;
+      const idxB = b.roundIndex || 0;
+      if (idxA !== idxB) {
+        return idxB - idxA;
+      }
+      return (b.timestamp || 0) - (a.timestamp || 0);
+    });
+  }, [dailyLedger]);
+
   return (
     <div
       className={`daily-stats-drawer ${isOpen ? 'is-open' : ''} ${isDragging ? 'is-dragging' : ''}`}
@@ -234,7 +258,13 @@ export default function DailyStatsDrawer({
       </div>
 
       {/* Vùng cuộn 2 chiều: Cuộn ngang cho danh sách nhiều người chơi & Cuộn dọc cho danh sách ngày */}
-      <div className="daily-stats-scroll-area" ref={scrollRef}>
+      <div 
+        className="daily-stats-scroll-area" 
+        ref={scrollRef}
+        onClick={() => {
+          if (pendingDeleteId) setPendingDeleteId(null);
+        }}
+      >
         <table className="daily-stats-table">
           <thead>
             <tr className="stats-header-row">
@@ -274,7 +304,7 @@ export default function DailyStatsDrawer({
           </thead>
 
           <tbody>
-            {dailyLedger.length === 0 ? (
+            {sortedLedger.length === 0 ? (
               <tr>
                 <td colSpan={allPlayers.length + 1} className="stats-empty-cell">
                   <div className="stats-empty-state">
@@ -286,13 +316,47 @@ export default function DailyStatsDrawer({
                 </td>
               </tr>
             ) : (
-              dailyLedger.map((entry, idx) => {
-                const roundLabel = entry.label || (entry.roundIndex ? `#${entry.roundIndex}` : (entry.dateStr || `#${idx + 1}`));
+              sortedLedger.map((entry, idx) => {
+                const roundLabel = entry.label || (entry.roundIndex ? `#${entry.roundIndex}` : (entry.dateStr || `#${sortedLedger.length - idx}`));
+                const isDeleting = pendingDeleteId === entry.id;
+
                 return (
-                  <tr key={entry.id} className="stats-data-row">
+                  <tr 
+                    key={entry.id} 
+                    className={`stats-data-row ${isDeleting ? 'is-deleting' : ''}`}
+                  >
                     {/* Cột Lần Chốt Sổ (Ghim cố định bên trái khi lướt ngang) */}
-                    <td className="stats-td-sticky stats-td-date">
-                      {roundLabel}
+                    <td className={`stats-td-sticky stats-td-date ${isDeleting ? 'is-deleting' : ''}`}>
+                      {isDeleting ? (
+                        <button
+                          type="button"
+                          className="stats-trash-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (onDeleteLedgerEntry) {
+                              onDeleteLedgerEntry(entry.id);
+                            }
+                            setPendingDeleteId(null);
+                          }}
+                          title="Bấm để xác nhận xoá lần chốt sổ này"
+                          aria-label="Xoá lần chốt sổ"
+                        >
+                          <TrashIcon width={20} height={20} color="#fd6161" />
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="stats-round-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPendingDeleteId(entry.id);
+                          }}
+                          title={`Bấm để xoá ${roundLabel}`}
+                          aria-label={`Xoá ${roundLabel}`}
+                        >
+                          {roundLabel}
+                        </button>
+                      )}
                     </td>
 
                     {/* Các cột điểm tương ứng của từng người chơi theo ngày */}
@@ -301,7 +365,13 @@ export default function DailyStatsDrawer({
                       const isScoreDefined = score !== undefined && score !== null;
 
                       return (
-                        <td key={player.id} className="stats-td-score">
+                        <td 
+                          key={player.id} 
+                          className="stats-td-score"
+                          onClick={() => {
+                            if (pendingDeleteId) setPendingDeleteId(null);
+                          }}
+                        >
                           {isScoreDefined ? (
                             <span className="stats-score-value">
                               {score}
