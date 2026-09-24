@@ -220,6 +220,18 @@ export function setupWebSocketServer(httpServer) {
             break;
           }
 
+          case 'SET_DAILY_LEDGER': {
+            state.dailyLedger = payload.dailyLedger || [];
+            state.updatedAt = Date.now();
+            saveRoomState(roomId, state);
+            broadcastToRoom(roomId, {
+              type: 'STATE_UPDATE',
+              actionType: 'SET_DAILY_LEDGER',
+              payload: state
+            });
+            break;
+          }
+
           case 'PING': {
             ws.send(JSON.stringify({ type: 'PONG' }));
             break;

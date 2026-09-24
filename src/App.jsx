@@ -22,7 +22,8 @@ export default function App() {
     confirmRound,
     undoRound,
     resetGame,
-    addLedgerEntry
+    addLedgerEntry,
+    setDailyLedgerData
   } = useRealtimeGame();
 
   // Trạng thái bàn phím số (Keyboard) của máy này
@@ -180,7 +181,9 @@ export default function App() {
   };
 
   // Xử lý khi bấm nút "CHỐT SỔ" tại Bảng lịch sử điểm:
-  // Lưu số điểm tích luỹ của người chơi theo ngày hôm nay và mở bảng thống kê
+  // - Không chuyển sang trang Thống kê điểm theo ngày mà chỉ đóng bottom sheet Lịch sử điểm lại
+  // - Không cộng vào số điểm hiện tại ở trang Thống kê điểm theo ngày mà ghi mới
+  // - Chỉ giữ ngày hôm nay 24/9. Xóa hết điểm ở các ngày trước đó
   const handleChotSo = () => {
     const now = new Date();
     const dateStr = `${now.getDate()}/${now.getMonth() + 1}`;
@@ -197,8 +200,8 @@ export default function App() {
       scores: todayScores
     };
 
-    addLedgerEntry(newEntry);
-    setIsDailyStatsOpen(true);
+    // Ghi mới và chỉ giữ ngày hôm nay, xóa toàn bộ ngày cũ
+    setDailyLedgerData([newEntry]);
   };
 
   // Tính tổng điểm ván hiện tại để kiểm tra cân bằng

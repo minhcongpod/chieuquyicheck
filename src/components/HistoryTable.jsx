@@ -239,11 +239,14 @@ function HistoryTableContent({
             </div>
           </div>
 
-          {/* 3. Nút CHỐT SỔ */}
+          {/* 3. Nút CHỐT SỔ: Ghi sổ và đóng bottom sheet Lịch sử điểm lại */}
           <button
             type="button"
             className="btn-chot-so"
-            onClick={onChotSo || (() => alert('Tính năng Chốt Sổ & Thống kê điểm theo ngày đang được thiết lập!'))}
+            onClick={() => {
+              if (onChotSo) onChotSo();
+              if (onToggle) onToggle(); // Đóng bottom sheet lịch sử điểm lại
+            }}
           >
             CHỐT SỔ
           </button>

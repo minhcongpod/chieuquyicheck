@@ -1,17 +1,5 @@
-// Dữ liệu mẫu ban đầu cho Sổ thống kê điểm theo ngày (khớp với ảnh thiết kế của người dùng)
+// Dữ liệu mẫu ban đầu cho Sổ thống kê điểm theo ngày (Chỉ giữ ngày hôm nay 24/9)
 export const SAMPLE_DAILY_LEDGER = [
-  { id: 'ledger-24-9', dateStr: '24/9', scores: { p1: 20, p2: 0, p3: -20, p4: 0, p5: 0 } },
-  { id: 'ledger-23-9', dateStr: '23/9', scores: { p1: 80, p2: -20, p3: -20, p4: -20, p5: -20 } },
-  { id: 'ledger-22-9', dateStr: '22/9', scores: { p1: -1, p2: -1, p3: -11, p4: -1, p5: 14 } },
-  { id: 'ledger-18-9', dateStr: '18/9', scores: { p1: 15, p2: 0, p3: 0, p4: -7, p5: -8 } },
-  { id: 'ledger-12-9', dateStr: '12/9', scores: { p1: 5, p2: -1, p3: -1, p4: -1, p5: -2 } },
-  { id: 'ledger-1-9',  dateStr: '1/9',  scores: { p1: -5, p2: 10, p3: -5, p4: 0, p5: 0 } },
-  { id: 'ledger-15-9', dateStr: '15/9', scores: { p1: 25, p2: 5, p3: 10, p4: -3, p5: -1 } },
-  { id: 'ledger-16-9', dateStr: '16/9', scores: { p1: 30, p2: -5, p3: -8, p4: 0, p5: -3 } },
-  { id: 'ledger-17-9', dateStr: '17/9', scores: { p1: 12, p2: -2, p3: -4, p4: -2, p5: 5 } },
-  { id: 'ledger-19-9', dateStr: '19/9', scores: { p1: 50, p2: -10, p3: -2, p4: -5, p5: -4 } },
-  { id: 'ledger-20-9', dateStr: '20/9', scores: { p1: -15, p2: 15, p3: -1, p4: -3, p5: 1 } },
-  { id: 'ledger-21-9', dateStr: '21/9', scores: { p1: 40, p2: -8, p3: 0, p4: -4, p5: -2 } },
-  { id: 'ledger-14-9', dateStr: '14/9', scores: { p1: 0, p2: -3, p3: -7, p4: -2, p5: 2 } },
-  { id: 'ledger-13-9', dateStr: '13/9', scores: { p1: -2, p2: 8, p3: -6, p4: 0, p5: 3 } }
+  { id: 'ledger-24-9', dateStr: '24/9', scores: { p1: 20, p2: 0, p3: -20, p4: 0, p5: 0 } }
 ];
+
