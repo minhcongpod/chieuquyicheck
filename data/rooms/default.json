@@ -3,84 +3,81 @@
   "players": [
     {
       "id": "p1",
-      "name": "",
+      "name": "Công",
       "color": "#f4e950"
     },
     {
       "id": "p2",
-      "name": "",
+      "name": "SƠN",
       "color": "#66ff33"
     },
     {
       "id": "p3",
-      "name": "",
+      "name": "KIÊN",
       "color": "#16e4ff"
     },
     {
       "id": "p4",
-      "name": "",
+      "name": "THẢO",
       "color": "#c073ff"
     },
     {
       "id": "p5",
-      "name": "",
+      "name": "HOÀI",
       "color": "#fd6161"
     }
   ],
-  "history": [],
-  "roundDeltas": {},
-  "updatedAt": 1790242681695,
-  "dailyLedger": [
+  "history": [
     {
-      "id": "ledger-1790242390992",
-      "roundIndex": 1,
-      "label": "#1",
-      "timestamp": 1790242390992,
-      "playersInfo": [
-        {
-          "id": "P1",
-          "name": "P1",
-          "color": "#f4e950"
-        },
-        {
-          "id": "P2",
-          "name": "P2",
-          "color": "#66ff33"
-        },
-        {
-          "id": "P3",
-          "name": "P3",
-          "color": "#16e4ff"
-        },
-        {
-          "id": "P4",
-          "name": "P4",
-          "color": "#c073ff"
-        },
-        {
-          "id": "P5",
-          "name": "P5",
-          "color": "#fd6161"
-        }
-      ],
+      "id": "round-1790243436732",
+      "roundNumber": 1,
       "scores": {
-        "p1": 0,
-        "P1": 0,
-        "p2": 0,
-        "P2": 0,
-        "p3": 0,
-        "P3": 0,
-        "p4": 0,
-        "P4": 0,
-        "p5": 0,
-        "P5": 0
-      }
+        "p1": 80,
+        "p5": -80
+      },
+      "timestamp": 1790243436732
     },
     {
-      "id": "ledger-1790242526111",
+      "id": "round-1790243445857",
+      "roundNumber": 2,
+      "scores": {
+        "p2": 60,
+        "p3": -20,
+        "p4": -20,
+        "p1": -20
+      },
+      "timestamp": 1790243445857
+    },
+    {
+      "id": "round-1790243456352",
+      "roundNumber": 3,
+      "scores": {
+        "p1": -2,
+        "p2": -20,
+        "p3": -2,
+        "p4": -2,
+        "p5": 26
+      },
+      "timestamp": 1790243456352
+    },
+    {
+      "id": "round-1790243524675",
+      "roundNumber": 4,
+      "scores": {
+        "p1": 20,
+        "p4": -20
+      },
+      "timestamp": 1790243524675
+    }
+  ],
+  "roundDeltas": {},
+  "updatedAt": 1790243543604,
+  "dailyLedger": [
+    {
+      "id": "ledger-1790243496125",
       "roundIndex": 2,
       "label": "#2",
-      "timestamp": 1790242526111,
+      "timestamp": 1790243496125,
       "playersInfo": [
         {
           "id": "CÔNG",
@@ -88,37 +85,82 @@
           "color": "#f4e950"
         },
         {
-          "id": "KIÊN",
-          "name": "KIÊN",
+          "id": "SƠN",
+          "name": "SƠN",
           "color": "#66ff33"
         },
         {
-          "id": "P3",
-          "name": "P3",
+          "id": "KIÊN",
+          "name": "KIÊN",
           "color": "#16e4ff"
         },
         {
-          "id": "P4",
-          "name": "P4",
+          "id": "THẢO",
+          "name": "THẢO",
           "color": "#c073ff"
         },
         {
-          "id": "P5",
-          "name": "P5",
+          "id": "HOÀI",
+          "name": "HOÀI",
           "color": "#fd6161"
         }
       ],
       "scores": {
-        "p1": 20,
-        "CÔNG": 20,
-        "p2": -20,
-        "KIÊN": -20,
-        "p3": 0,
-        "P3": 0,
-        "p4": 0,
-        "P4": 0,
-        "p5": 0,
-        "P5": 0
+        "p1": 58,
+        "CÔNG": 58,
+        "p2": 40,
+        "SƠN": 40,
+        "p3": -22,
+        "KIÊN": -22,
+        "p4": -22,
+        "THẢO": -22,
+        "p5": -54,
+        "HOÀI": -54
+      }
+    },
+    {
+      "id": "ledger-1790243528050",
+      "roundIndex": 3,
+      "label": "#3",
+      "timestamp": 1790243528050,
+      "playersInfo": [
+        {
+          "id": "CÔNG",
+          "name": "CÔNG",
+          "color": "#f4e950"
+        },
+        {
+          "id": "SƠN",
+          "name": "SƠN",
+          "color": "#66ff33"
+        },
+        {
+          "id": "KIÊN",
+          "name": "KIÊN",
+          "color": "#16e4ff"
+        },
+        {
+          "id": "THẢO",
+          "name": "THẢO",
+          "color": "#c073ff"
+        },
+        {
+          "id": "HOÀI",
+          "name": "HOÀI",
+          "color": "#fd6161"
+        }
+      ],
+      "scores": {
+        "p1": 78,
+        "CÔNG": 78,
+        "p2": 40,
+        "SƠN": 40,
+        "p3": -22,
+        "KIÊN": -22,
+        "p4": -42,
+        "THẢO": -42,
+        "p5": -54,
+        "HOÀI": -54
       }
     }
   ]

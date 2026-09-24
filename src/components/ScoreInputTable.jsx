@@ -275,7 +275,7 @@ export default function ScoreInputTable({
     <div className="section-input-table">
       {/* 5 Hàng Người Chơi (Sắp xếp theo điểm sau mỗi ván: cao nhất trên cùng) */}
       <div className="players-list">
-        {sortedPlayers.map((player) => {
+        {sortedPlayers.map((player, index) => {
           // Điểm tổng tích luỹ ván trước (giữ nguyên cho đến khi bấm tích xanh chốt ván)
           const displayScore = cumulativeScores[player.id] || 0;
 

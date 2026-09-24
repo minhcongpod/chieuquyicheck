@@ -232,14 +232,17 @@ function HistoryTableContent({
             </div>
           </div>
 
-          {/* 3. Nút CHỐT SỔ: Ghi sổ và đóng bottom sheet Lịch sử điểm lại */}
+          {/* 3. Nút CHỐT SỔ: Ghi sổ và đóng bottom sheet Lịch sử điểm lại (Disable khi chưa có dữ liệu) */}
           <button
             type="button"
             className="btn-chot-so"
             onClick={() => {
+              if (history.length === 0) return;
               if (onChotSo) onChotSo();
               if (onToggle) onToggle(); // Đóng bottom sheet lịch sử điểm lại
             }}
+            disabled={history.length === 0}
+            title={history.length > 0 ? "Chốt sổ các ván đấu đã chơi" : "Chưa có dữ liệu nào để chốt sổ"}
           >
             CHỐT SỔ
           </button>

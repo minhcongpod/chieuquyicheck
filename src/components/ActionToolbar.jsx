@@ -3,6 +3,7 @@ import { ResetIcon, UndoIcon, LedgerCalendarIcon, QrCodeIcon, CheckmarkIcon, Cro
 
 export default function ActionToolbar({
   sumTotal = 0,
+  canConfirm = false,
   onConfirmRound,
   onResetConfirm,
   onUndoConfirm,
@@ -13,8 +14,7 @@ export default function ActionToolbar({
   onQrClick,
   onInfoClick,
   canUndo = false,
-  hasLedger = false,
-  isError = false
+  hasLedger = false
 }) {
   // Trạng thái trượt xác nhận inline: null | 'reset' | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
@@ -22,13 +22,6 @@ export default function ActionToolbar({
   const [displayMode, setDisplayMode] = useState('reset');
 
   const toolbarRef = useRef(null);
-
-  // Khi có lỗi LỖI CMNR, đóng ngay chế độ confirm nếu đang mở
-  useEffect(() => {
-    if (isError) {
-      setConfirmMode(null);
-    }
-  }, [isError]);
 
   // Kích hoạt chế độ trượt xác nhận
   const handleTriggerMode = (mode) => {
@@ -89,13 +82,14 @@ export default function ActionToolbar({
     <div className="action-toolbar" ref={toolbarRef}>
       {/* 1. KHU VỰC TRÁI: Chiếm toàn bộ độ rộng còn lại (flex: 1, tương đương độ rộng nút chốt ván xanh lá) */}
       <div className="toolbar-left-slot">
-        {/* Nút Chốt Ván kèm Tổng Điểm Kiểm Tra (Màu xanh lá - Trạng thái mặc định) */}
+        {/* Nút Chốt Ván kèm Tổng Điểm Kiểm Tra (Disable khi tổng chưa bằng 0 hoặc chưa nhập điểm) */}
         <button
           type="button"
           className={`toolbar-btn toolbar-btn-confirm ${confirmMode ? 'slide-left-out' : 'slide-in'}`}
-          onClick={confirmMode ? undefined : onConfirmRound}
-          title="Chốt ván và lưu lịch sử"
-          tabIndex={confirmMode ? -1 : 0}
+          onClick={confirmMode || !canConfirm ? undefined : onConfirmRound}
+          disabled={!canConfirm}
+          title={canConfirm ? "Chốt ván và lưu lịch sử" : "Tổng điểm phải bằng 0 để chốt ván"}
+          tabIndex={confirmMode || !canConfirm ? -1 : 0}
         >
           <span className="confirm-sum-text">{formattedSum}</span>
           <CheckmarkIcon width={28} height={28} className="confirm-sum-check" color="#000000" />
@@ -122,7 +116,7 @@ export default function ActionToolbar({
         {/* Bộ 3 nút chức năng mặc định: Reset, Undo, QR MoMo */}
         <div
           className={`toolbar-right-group toolbar-right-default ${
-            confirmMode || isError ? 'slide-left-out' : 'slide-in'
+            confirmMode ? 'slide-left-out' : 'slide-in'
           }`}
         >
           {/* Nút Reset (Cột 2) */}
@@ -131,7 +125,7 @@ export default function ActionToolbar({
             className="toolbar-btn toolbar-btn-reset"
             onClick={() => handleTriggerMode('reset')}
             title="Reset toàn bộ điểm về 0"
-            tabIndex={confirmMode || isError ? -1 : 0}
+            tabIndex={confirmMode ? -1 : 0}
           >
             <ResetIcon width={28} height={28} />
           </button>
@@ -143,7 +137,7 @@ export default function ActionToolbar({
             onClick={() => canUndo && handleTriggerMode('undo')}
             disabled={!canUndo}
             title="Hoàn tác ván trước"
-            tabIndex={confirmMode || isError ? -1 : 0}
+            tabIndex={confirmMode ? -1 : 0}
           >
             <UndoIcon width={28} height={28} />
           </button>
@@ -152,10 +146,10 @@ export default function ActionToolbar({
           <button
             type="button"
             className="toolbar-btn toolbar-btn-ledger toolbar-btn-info"
-            onClick={() => hasLedger && !confirmMode && !isError && (onStatsClick || onLedgerClick || onQrClick || onInfoClick)()}
+            onClick={() => hasLedger && !confirmMode && (onStatsClick || onLedgerClick || onQrClick || onInfoClick)()}
             disabled={!hasLedger}
             title={hasLedger ? "Sổ thống kê điểm" : "Chưa có lần chốt sổ nào"}
-            tabIndex={confirmMode || isError || !hasLedger ? -1 : 0}
+            tabIndex={confirmMode || !hasLedger ? -1 : 0}
           >
             <LedgerCalendarIcon width={24} height={24} color="#000000" />
           </button>
@@ -164,7 +158,7 @@ export default function ActionToolbar({
         {/* Bộ 2 nút xác nhận hiện ra: Nút Xác nhận (Xanh ✓) và Nút Hủy (Đỏ ✕) */}
         <div
           className={`toolbar-right-group toolbar-right-confirm ${
-            confirmMode && !isError ? 'slide-in' : 'slide-right-out'
+            confirmMode ? 'slide-in' : 'slide-right-out'
           }`}
         >
           {/* Nút Xác nhận Đồng ý (Xanh lá) */}
@@ -188,15 +182,6 @@ export default function ActionToolbar({
           >
             <CrossIcon width={32} height={32} color="#000000" />
           </button>
-        </div>
-
-        {/* Khối Thông báo lỗi "LỖI CMNR" khi tổng điểm chưa bằng 0 (Nền đỏ, tự mất sau 1s) */}
-        <div
-          className={`toolbar-right-group toolbar-right-error ${
-            isError ? 'slide-in' : 'slide-right-out'
-          }`}
-        >
-          <span className="toolbar-error-text">LỖI CMNR</span>
         </div>
       </div>
     </div>

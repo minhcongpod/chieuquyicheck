@@ -422,6 +422,11 @@ td {
   opacity: 0.85;
 }
 
+.toolbar-btn-confirm:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* Nút hành động đang kích hoạt (Reset hoặc Undo, cùng chiều ngang với nút tích xanh) */
 .toolbar-btn-active-action {
   width: 100%;
@@ -986,6 +991,12 @@ td {
 .btn-chot-so:active {
   transform: scale(0.98);
   opacity: 0.85;
+}
+
+.btn-chot-so:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* ==========================================================================

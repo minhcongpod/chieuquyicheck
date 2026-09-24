@@ -31,18 +31,6 @@ export default function App() {
   const [activeKeypad, setActiveKeypad] = useState(null); // { player, index, mode: '+' | '-' }
   const [currentKeypadValue, setCurrentKeypadValue] = useState('');
 
-  // Trạng thái hiển thị thông báo lỗi inline "LỖI CMNR" (tự tắt sau 1s)
-  const [isErrorBanner, setIsErrorBanner] = useState(false);
-  const errorTimerRef = useRef(null);
-
-  const triggerErrorBanner = () => {
-    setIsErrorBanner(true);
-    if (errorTimerRef.current) clearTimeout(errorTimerRef.current);
-    errorTimerRef.current = setTimeout(() => {
-      setIsErrorBanner(false);
-    }, 1000);
-  };
-
   // Trạng thái mở Bảng thống kê điểm theo ngày
   const [isDailyStatsOpen, setIsDailyStatsOpen] = useState(false);
 
@@ -141,20 +129,16 @@ export default function App() {
     setCurrentKeypadValue('');
   };
 
+  // Kiểm tra điều kiện chốt ván: Tổng điểm bằng 0 và có ít nhất 1 người có điểm khác 0
+  const currentSumTotal = players.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
+  const hasEnteredScore = Object.values(roundDeltas).some(val => val !== undefined && val !== 0);
+  const canConfirmRound = currentSumTotal === 0 && hasEnteredScore;
+
   // Chốt ván và lưu điểm vào lịch sử, phát sóng đồng bộ cho toàn bộ máy
   const handleConfirmRound = () => {
-    // 1. Tính tổng kiểm tra SUM
-    const sumTotal = players.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
-    // 2. Kiểm tra xem có người nào có điểm khác 0 không
-    const hasScore = Object.values(roundDeltas).some(val => val !== 0);
+    if (!canConfirmRound) return;
 
-    // Khi chưa nhập chính xác (tổng khác 0 hoặc chưa có ai nhập điểm): hiển thị thông báo "LỖI CMNR" trong 1s
-    if (sumTotal !== 0 || !hasScore) {
-      triggerErrorBanner();
-      return;
-    }
-
-    // 3. Tạo ván mới và phát sóng đồng bộ
+    // Tạo ván mới và phát sóng đồng bộ
     const nextRoundNumber = history.length + 1;
     const newRound = {
       id: `round-${Date.now()}`,
@@ -221,9 +205,6 @@ export default function App() {
     setDailyLedgerData(updatedLedger);
   };
 
-  // Tính tổng điểm ván hiện tại để kiểm tra cân bằng
-  const currentSumTotal = players.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
-
   return (
     <div className="app-screen">
       {/* 1. Phần bảng điểm nhập liệu 5 người chơi (Khu vực trên cùng) */}
@@ -236,9 +217,10 @@ export default function App() {
         onOpenKeyboard={handleOpenKeyboard}
       />
 
-      {/* 2. Hàng 4 nút chức năng kèm trượt xác nhận Reset, Undo và báo LỖI CMNR inline */}
+      {/* 2. Hàng 4 nút chức năng kèm trượt xác nhận Reset, Undo */}
       <ActionToolbar
         sumTotal={currentSumTotal}
+        canConfirm={canConfirmRound}
         onConfirmRound={handleConfirmRound}
         onResetConfirm={handleResetConfirm}
         onUndoConfirm={handleUndoConfirm}
@@ -247,7 +229,6 @@ export default function App() {
         onQrClick={() => setIsQrModalOpen(true)}
         canUndo={history.length > 0}
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
-        isError={isErrorBanner}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Khu vực dưới cùng) */}
