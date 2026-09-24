@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import ScoreInputTable from './components/ScoreInputTable';
 import ActionToolbar from './components/ActionToolbar';
 import HistoryTable from './components/HistoryTable';
@@ -45,6 +45,33 @@ export default function App() {
     acc[player.id] = total;
     return acc;
   }, {});
+
+  // Kiểm tra có bất kỳ thay đổi nào để cho phép Reset (Disable khi chưa có thay đổi nào)
+  const canReset = useMemo(() => {
+    // 1. Đã có ván đấu trong lịch sử
+    if (history && history.length > 0) return true;
+
+    // 2. Đang có điểm nhập dở trên bàn phím cho ván hiện tại
+    if (roundDeltas && Object.values(roundDeltas).some(v => v !== 0 && v !== undefined && v !== null && v !== '')) {
+      return true;
+    }
+
+    // 3. Có điểm tích luỹ khác 0
+    if (cumulativeScores && Object.values(cumulativeScores).some(s => s !== 0)) {
+      return true;
+    }
+
+    // 4. Có tên người chơi thay đổi so với mặc định ban đầu (A, B, C, D, E)
+    if (players && players.some((p, idx) => {
+      const defaultName = String.fromCharCode(65 + idx);
+      const currentName = p.name ? p.name.trim().toUpperCase() : '';
+      return currentName !== '' && currentName !== defaultName;
+    })) {
+      return true;
+    }
+
+    return false;
+  }, [history, roundDeltas, cumulativeScores, players]);
 
   // Cập nhật tên người chơi (đồng bộ realtime)
   const handleUpdatePlayerName = (id, newName) => {
@@ -256,6 +283,7 @@ export default function App() {
         onQrClick={() => setIsQrModalOpen(true)}
         canUndo={history.length > 0}
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
+        canReset={canReset}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Khu vực dưới cùng) */}

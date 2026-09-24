@@ -512,6 +512,7 @@ td {
   opacity: 0.8;
 }
 
+.toolbar-btn-reset:disabled,
 .toolbar-btn-undo:disabled,
 .toolbar-btn-ledger:disabled {
   opacity: 0.4;

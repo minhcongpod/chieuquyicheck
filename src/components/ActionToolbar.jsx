@@ -14,7 +14,8 @@ export default function ActionToolbar({
   onQrClick,
   onInfoClick,
   canUndo = false,
-  hasLedger = false
+  hasLedger = false,
+  canReset = false
 }) {
   // Trạng thái trượt xác nhận inline: null | 'reset' | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
@@ -25,6 +26,9 @@ export default function ActionToolbar({
 
   // Kích hoạt chế độ trượt xác nhận
   const handleTriggerMode = (mode) => {
+    if (mode === 'reset' && !canReset) return;
+    if (mode === 'undo' && !canUndo) return;
+
     // Nếu có onResetClick hoặc onUndoClick từ ngoài mà không dùng confirm inline
     if (mode === 'reset' && onResetClick && !onResetConfirm) {
       onResetClick();
@@ -119,13 +123,14 @@ export default function ActionToolbar({
             confirmMode ? 'slide-left-out' : 'slide-in'
           }`}
         >
-          {/* Nút Reset (Cột 2) */}
+          {/* Nút Reset (Cột 2) - Disable khi chưa có bất kỳ thay đổi nào */}
           <button
             type="button"
             className="toolbar-btn toolbar-btn-reset"
-            onClick={() => handleTriggerMode('reset')}
-            title="Reset toàn bộ điểm về 0"
-            tabIndex={confirmMode ? -1 : 0}
+            onClick={() => canReset && handleTriggerMode('reset')}
+            disabled={!canReset}
+            title={canReset ? "Reset toàn bộ điểm về 0" : "Chưa có thay đổi nào để reset"}
+            tabIndex={confirmMode || !canReset ? -1 : 0}
           >
             <ResetIcon width={28} height={28} />
           </button>
