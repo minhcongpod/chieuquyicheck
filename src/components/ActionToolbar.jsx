@@ -100,7 +100,7 @@ export default function ActionToolbar({
           <CheckmarkIcon width={28} height={28} className="confirm-sum-check" color="#000000" />
         </button>
 
-        {/* Nút hành động đang được kích hoạt (Reset hoặc Undo) - Trượt sang bên trái với cùng chiều ngang */}
+        {/* Nút hành động đang được kích hoạt (Reset hoặc Back) - Hiển thị chữ RESET / BACK theo yêu cầu */}
         <button
           type="button"
           className={`toolbar-btn toolbar-btn-active-action ${confirmMode ? 'slide-in' : 'slide-right-out'}`}
@@ -109,9 +109,9 @@ export default function ActionToolbar({
           tabIndex={confirmMode ? 0 : -1}
         >
           {displayMode === 'reset' ? (
-            <ResetIcon width={28} height={28} color="#000000" />
+            <span className="action-confirm-label">RESET</span>
           ) : (
-            <UndoIcon width={28} height={28} />
+            <span className="action-confirm-label">BACK</span>
           )}
         </button>
       </div>
