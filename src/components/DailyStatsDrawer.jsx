@@ -269,39 +269,95 @@ export default function DailyStatsDrawer({
         <div className="drawer-drag-pill" />
       </div>
 
-      {/* Vùng cuộn 2 chiều: Cuộn ngang cho danh sách nhiều người chơi & Cuộn dọc cho danh sách ngày */}
+      {/* Vùng cuộn dọc chung cho cả Khối 1 và Khối 2 */}
       <div 
-        className="daily-stats-scroll-area" 
+        className="daily-stats-v-scroll" 
         ref={scrollRef}
         onClick={() => {
           if (pendingDeleteId) setPendingDeleteId(null);
         }}
       >
-        <table className="daily-stats-table">
-          <thead>
-            <tr className="stats-header-row">
-              {/* Ô góc trên cùng bên trái: Ghim cả Top và Left, chứa nút Close [✕] */}
-              <th className="stats-th-sticky stats-th-close">
-                <button
-                  type="button"
-                  className="stats-close-btn"
-                  onClick={onClose}
-                  title="Đóng bảng thống kê"
-                  aria-label="Đóng"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3.2" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18"></line>
-                    <line x1="6" y1="6" x2="18" y2="18"></line>
-                  </svg>
-                </button>
-              </th>
+        <div className="daily-stats-panels-wrapper">
+          {/* Khối 1 (Fixed Panel - Bên trái):
+              - Chứa nút 'X' và các mốc thứ tự ván (#1, #2, #3...).
+              - Chiều rộng cố định 54px, không cho phép cuộn ngang (overflow-x: hidden).
+              - Nền hoàn toàn trong suốt (transparent). */}
+          <div className="daily-stats-fixed-panel">
+            {/* Header cell: Nút Close [✕] */}
+            <div className="stats-fixed-header-cell">
+              <button
+                type="button"
+                className="stats-close-btn"
+                onClick={onClose}
+                title="Đóng bảng thống kê"
+                aria-label="Đóng"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3.2" strokeLinecap="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
 
-              {/* Các cột người chơi: Tên người chơi và Tổng điểm tích luỹ (Điểm cao nhất bên trái -> Thấp nhất bên phải, bỏ màu sắc) */}
-              {sortedPlayers.map((player) => {
-                const total = totalScoresByPlayer[player.id] || 0;
+            {/* Danh sách các ô thứ tự lần chốt sổ (#6, #5... hoặc thùng rác) */}
+            <div className="stats-fixed-body">
+              {sortedLedger.map((entry, idx) => {
+                const roundLabel = entry.label || (entry.roundIndex ? `#${entry.roundIndex}` : (entry.dateStr || `#${sortedLedger.length - idx}`));
+                const isDeleting = pendingDeleteId === entry.id;
+
                 return (
-                  <th key={player.id} className="stats-th-player">
-                    <div className="stats-player-head-box">
+                  <div 
+                    key={entry.id} 
+                    className={`stats-fixed-row-cell ${isDeleting ? 'is-deleting' : ''}`}
+                  >
+                    {isDeleting ? (
+                      <button
+                        type="button"
+                        className="stats-trash-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onDeleteLedgerEntry) {
+                            onDeleteLedgerEntry(entry.id);
+                          }
+                          setPendingDeleteId(null);
+                        }}
+                        title="Bấm để xác nhận xoá lần chốt sổ này"
+                        aria-label="Xoá lần chốt sổ"
+                      >
+                        <TrashIcon width={20} height={20} color="#fd6161" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="stats-round-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPendingDeleteId(entry.id);
+                        }}
+                        title={`Bấm để xoá ${roundLabel}`}
+                        aria-label={`Xoá ${roundLabel}`}
+                      >
+                        {roundLabel}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Khối 2 (Scrollable Panel - Bên phải):
+              - Chứa danh sách tên người chơi và các ô điểm số.
+              - width: calc(100% - 54px); overflow-x: auto;
+              - Cuộn ngầm bên trong phạm vi Khối 2, biến mất khi chạm mép trái Khối 2, không trượt sang Khối 1. */}
+          <div className="daily-stats-scrollable-panel">
+            <div className="stats-scrollable-track">
+              {/* Header row: Tên người chơi và Tổng điểm tích luỹ (Điểm cao nhất bên trái -> Thấp nhất bên phải, bỏ màu sắc) */}
+              <div className="stats-scrollable-header-row">
+                {sortedPlayers.map((player) => {
+                  const total = totalScoresByPlayer[player.id] || 0;
+                  return (
+                    <div key={player.id} className="stats-player-head-cell">
                       <span className="stats-player-name">
                         {player.name}
                       </span>
@@ -309,97 +365,58 @@ export default function DailyStatsDrawer({
                         {total}
                       </span>
                     </div>
-                  </th>
-                );
-              })}
-            </tr>
-          </thead>
+                  );
+                })}
+              </div>
 
-          <tbody>
-            {sortedLedger.length === 0 ? (
-              <tr>
-                <td colSpan={sortedPlayers.length + 1} className="stats-empty-cell">
-                  <div className="stats-empty-state">
+              {/* Danh sách các dòng điểm số tương ứng theo thứ tự sortedPlayers */}
+              <div className="stats-scrollable-body">
+                {sortedLedger.length === 0 ? (
+                  <div className="stats-empty-state-box">
                     <p className="stats-empty-title">Chưa có lần chốt sổ nào</p>
                     <p className="stats-empty-sub">
                       Hãy hoàn thành các ván đấu và bấm nút <strong>CHỐT SỔ</strong> ở Bảng lịch sử điểm để lưu số liệu!
                     </p>
                   </div>
-                </td>
-              </tr>
-            ) : (
-              sortedLedger.map((entry, idx) => {
-                const roundLabel = entry.label || (entry.roundIndex ? `#${entry.roundIndex}` : (entry.dateStr || `#${sortedLedger.length - idx}`));
-                const isDeleting = pendingDeleteId === entry.id;
+                ) : (
+                  sortedLedger.map((entry) => {
+                    const isDeleting = pendingDeleteId === entry.id;
 
-                return (
-                  <tr 
-                    key={entry.id} 
-                    className={`stats-data-row ${isDeleting ? 'is-deleting' : ''}`}
-                  >
-                    {/* Cột Lần Chốt Sổ (Ghim cố định bên trái khi lướt ngang) */}
-                    <td className={`stats-td-sticky stats-td-date ${isDeleting ? 'is-deleting' : ''}`}>
-                      {isDeleting ? (
-                        <button
-                          type="button"
-                          className="stats-trash-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onDeleteLedgerEntry) {
-                              onDeleteLedgerEntry(entry.id);
-                            }
-                            setPendingDeleteId(null);
-                          }}
-                          title="Bấm để xác nhận xoá lần chốt sổ này"
-                          aria-label="Xoá lần chốt sổ"
-                        >
-                          <TrashIcon width={20} height={20} color="#fd6161" />
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          className="stats-round-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPendingDeleteId(entry.id);
-                          }}
-                          title={`Bấm để xoá ${roundLabel}`}
-                          aria-label={`Xoá ${roundLabel}`}
-                        >
-                          {roundLabel}
-                        </button>
-                      )}
-                    </td>
+                    return (
+                      <div 
+                        key={entry.id} 
+                        className={`stats-scrollable-data-row ${isDeleting ? 'is-deleting' : ''}`}
+                      >
+                        {sortedPlayers.map((player) => {
+                          const score = getPlayerScore(entry, player);
+                          const isScoreDefined = score !== undefined && score !== null;
 
-                    {/* Các cột điểm tương ứng của từng người chơi theo thứ tự sortedPlayers */}
-                    {sortedPlayers.map((player) => {
-                      const score = getPlayerScore(entry, player);
-                      const isScoreDefined = score !== undefined && score !== null;
-
-                      return (
-                        <td 
-                          key={player.id} 
-                          className="stats-td-score"
-                          onClick={() => {
-                            if (pendingDeleteId) setPendingDeleteId(null);
-                          }}
-                        >
-                          {isScoreDefined ? (
-                            <span className="stats-score-value">
-                              {score}
-                            </span>
-                          ) : (
-                            <span className="stats-score-dash">-</span>
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
+                          return (
+                            <div 
+                              key={player.id} 
+                              className="stats-score-cell"
+                              onClick={() => {
+                                if (pendingDeleteId) setPendingDeleteId(null);
+                              }}
+                            >
+                              {isScoreDefined ? (
+                                <span className="stats-score-value">
+                                  {score}
+                                </span>
+                              ) : (
+                                <span className="stats-score-dash">-</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

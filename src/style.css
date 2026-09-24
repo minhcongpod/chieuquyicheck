@@ -1322,66 +1322,68 @@ td {
   transition: none !important;
 }
 
-.daily-stats-scroll-area {
+/* Container cuộn dọc chung cho cả Khối 1 và Khối 2 */
+.daily-stats-v-scroll {
   flex: 1;
   width: 100%;
   height: 100%;
   min-height: 0;
-  overflow-x: auto;
   overflow-y: auto;
+  overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
 }
 
-.daily-stats-scroll-area::-webkit-scrollbar {
+.daily-stats-v-scroll::-webkit-scrollbar {
   width: 4px;
-  height: 4px;
 }
 
-.daily-stats-scroll-area::-webkit-scrollbar-thumb {
+.daily-stats-v-scroll::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.25);
   border-radius: 2px;
 }
 
-.daily-stats-table {
-  border-collapse: separate;
-  border-spacing: 0;
+/* Vùng chứa 2 khối Flexbox độc lập nằm cạnh nhau */
+.daily-stats-panels-wrapper {
+  display: flex;
+  flex-direction: row;
   width: 100%;
-  min-width: 100%;
-  table-layout: auto;
+  min-height: 100%;
+  align-items: stretch;
 }
 
-/* Hàng tiêu đề trên cùng: Ghim cố định khi cuộn dọc */
-.stats-header-row {
-  position: sticky;
-  top: 0;
-  z-index: 25;
-}
-
-.stats-header-row th {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 10px 4px;
-  vertical-align: middle;
-  position: sticky;
-  top: 0;
-  z-index: 25;
-  background-color: #0d0d0d;
-}
-
-/* Ô góc trên cùng bên trái: Ghim cả Top và Left, chứa nút Close [✕] */
-.stats-th-sticky.stats-th-close {
-  position: sticky;
-  top: 0;
-  left: 0;
-  z-index: 60;
+/* ==========================================================================
+   Khối 1 (Fixed Panel - Bên trái):
+   - Chứa nút 'X' và các mốc thứ tự ván (#1, #2, #3...).
+   - Chiều rộng cố định 54px, tuyệt đối không cho phép cuộn ngang (overflow-x: hidden).
+   - Nền hoàn toàn trong suốt (transparent).
+   ========================================================================== */
+.daily-stats-fixed-panel {
+  flex: 0 0 54px;
   width: 54px;
   min-width: 54px;
   max-width: 54px;
-  text-align: -webkit-center;
-  overflow: hidden;
-  background-color: #0d0d0d;
+  overflow-x: hidden;
+  background: transparent;
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header cell trong Khối 1 chứa nút Close [✕] */
+.stats-fixed-header-cell {
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
+  background: transparent;
 }
 
 .stats-close-btn {
@@ -1390,7 +1392,9 @@ td {
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   padding: 6px;
   color: #ffffff;
   transition: transform 0.15s ease, opacity 0.15s ease;
@@ -1405,88 +1409,28 @@ td {
   transform: scale(0.85);
 }
 
-/* Cột thông tin từng người chơi trên Header */
-.stats-th-player {
-  min-width: 62px;
-  width: 62px;
-  text-align: center;
-  padding: 10px 4px;
-}
-
-.stats-player-head-box {
+/* Thân của Khối 1 chứa các ô thứ tự lần chốt sổ */
+.stats-fixed-body {
   display: flex;
   flex-direction: column;
+}
+
+.stats-fixed-row-cell {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-}
-
-.stats-player-name {
-  font-size: 13px;
-  font-weight: 800;
-  text-transform: uppercase;
-  line-height: 1.4;
-  letter-spacing: 0.5px;
-  white-space: nowrap;
-  max-width: 62px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #ffffff;
-}
-
-.stats-player-score {
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.2;
-  color: #ffffff;
-}
-
-/* Các hàng dữ liệu theo từng lần chốt sổ */
-.stats-data-row {
-  height: 40px;
+  box-sizing: border-box;
+  background: transparent;
   transition: background-color 0.2s ease;
 }
 
-.stats-data-row td {
-  border-bottom: none;
-  vertical-align: middle;
-  transition: background-color 0.2s ease;
-}
-
-/* Trạng thái chuẩn bị xoá lần chốt sổ (Pending Delete) - Toàn hàng đỏ mờ 10% */
-.stats-data-row.is-deleting {
-  background-color: rgba(253, 97, 97, 0.1) !important;
-}
-
-.stats-data-row.is-deleting td {
-  background-color: rgba(253, 97, 97, 0.1) !important;
-}
-
-/* Cột Lần Chốt Sổ (#1, #2...) ghim cố định bên trái khi cuộn ngang */
-.stats-td-sticky.stats-td-date {
-  position: sticky;
-  left: 0;
-  z-index: 40;
-  width: 54px;
-  min-width: 54px;
-  max-width: 54px;
-  text-align: center;
-  font-size: 14px;
-  font-weight: 800;
-  color: rgba(255, 255, 255, 0.7);
-  white-space: nowrap;
-  background-color: #0d0d0d;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
-  overflow: hidden;
-  padding: 0;
-}
-
-/* Ô Lần Chốt Sổ khi chọn xoá: Nền đỏ rượu đậm, viền đỏ, chứa icon thùng rác */
-.stats-data-row.is-deleting td.stats-td-sticky.stats-td-date,
-.stats-td-sticky.stats-td-date.is-deleting {
+/* Trạng thái xóa ở Khối 1: Nền đỏ rượu đậm, viền đỏ, chứa icon thùng rác */
+.stats-fixed-row-cell.is-deleting {
   background-color: #4a181b !important;
-  border-right: 1px solid rgba(253, 97, 97, 0.35) !important;
-  padding: 0 !important;
+  border-right: 1px solid rgba(253, 97, 97, 0.35);
 }
 
 /* Nút bấm vào thứ tự lần chốt sổ (#1, #2...) */
@@ -1542,14 +1486,119 @@ td {
   transform: scale(0.9);
 }
 
-/* Cột điểm số của từng người */
-.stats-td-score {
-  position: relative;
-  z-index: 1;
-  min-width: 62px;
+/* ==========================================================================
+   Khối 2 (Scrollable Panel - Bên phải):
+   - Chứa danh sách tên người chơi và các ô điểm số.
+   - width: calc(100% - 54px); overflow-x: auto;
+   - Cuộn ngang độc lập, biến mất khi chạm mép trái Khối 2, tuyệt đối không trượt sang Khối 1.
+   ========================================================================== */
+.daily-stats-scrollable-panel {
+  flex: 1 1 calc(100% - 54px);
+  width: calc(100% - 54px);
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  box-sizing: border-box;
+}
+
+.daily-stats-scrollable-panel::-webkit-scrollbar {
+  height: 4px;
+}
+
+.daily-stats-scrollable-panel::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+}
+
+.stats-scrollable-track {
+  min-width: 100%;
+  width: max-content;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hàng tiêu đề người chơi trên Khối 2 */
+.stats-scrollable-header-row {
+  height: 58px;
+  min-height: 58px;
+  max-height: 58px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  box-sizing: border-box;
+}
+
+.stats-player-head-cell {
   width: 62px;
-  text-align: center;
-  padding: 8px 4px;
+  min-width: 62px;
+  max-width: 62px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  box-sizing: border-box;
+  padding: 0 4px;
+}
+
+.stats-player-name {
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1.4;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  max-width: 62px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #ffffff;
+}
+
+.stats-player-score {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+/* Thân Khối 2 chứa các dòng điểm */
+.stats-scrollable-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.stats-scrollable-data-row {
+  height: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  box-sizing: border-box;
+  transition: background-color 0.2s ease;
+}
+
+/* Trạng thái xóa ở Khối 2: Cả dòng màu đỏ mờ 10% */
+.stats-scrollable-data-row.is-deleting {
+  background-color: rgba(253, 97, 97, 0.1) !important;
+}
+
+.stats-score-cell {
+  width: 62px;
+  min-width: 62px;
+  max-width: 62px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 0 4px;
+  cursor: pointer;
 }
 
 .stats-score-value {
@@ -1569,18 +1618,18 @@ td {
   text-align: center;
 }
 
-/* Empty state khi chưa có ngày nào */
-.stats-empty-cell {
+/* Empty state khi chưa có lần chốt sổ nào */
+.stats-empty-state-box {
   padding: 80px 20px;
-  text-align: center;
-}
-
-.stats-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 10px;
+  text-align: center;
   color: rgba(255, 255, 255, 0.6);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .stats-empty-title {
