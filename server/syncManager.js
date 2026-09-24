@@ -197,6 +197,10 @@ export function setupWebSocketServer(httpServer) {
           case 'RESET_GAME': {
             state.history = [];
             state.roundDeltas = {};
+            state.players = (state.players || []).map((p) => ({
+              ...p,
+              name: ''
+            }));
             state.updatedAt = Date.now();
             saveRoomState(roomId, state);
             broadcastToRoom(roomId, {

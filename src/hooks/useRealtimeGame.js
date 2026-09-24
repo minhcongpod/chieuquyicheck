@@ -210,7 +210,18 @@ export function useRealtimeGame() {
 
   const resetGame = useCallback(() => {
     sendMessage('RESET_GAME', {});
-  }, [sendMessage]);
+    // Cập nhật ngay lập tức tại máy này: reset toàn bộ tên người chơi về trống
+    setPlayers(prev => {
+      const next = prev.map(p => ({ ...p, name: '' }));
+      localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(next));
+      return next;
+    });
+    setHistory(() => {
+      localStorage.setItem(`cq_history_${roomId}`, JSON.stringify([]));
+      return [];
+    });
+    setRoundDeltas({});
+  }, [roomId, sendMessage]);
 
   const addLedgerEntry = useCallback((entry) => {
     sendMessage('ADD_LEDGER_ENTRY', { entry });
