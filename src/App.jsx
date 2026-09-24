@@ -202,6 +202,7 @@ export default function App() {
       <HistoryTable
         players={players}
         history={history}
+        cumulativeScores={cumulativeScores}
       />
 
       {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 */}

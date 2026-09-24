@@ -544,6 +544,13 @@ body {
   flex-direction: row;
   align-items: center;
   flex-shrink: 0;
+  transition: height 0.2s ease;
+}
+
+/* Header khi phóng to bảng lịch sử (Hiện tên và tổng điểm tích luỹ ngay dưới tên) */
+.history-header.expanded-header {
+  height: 60px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .history-trophy-col {
@@ -553,6 +560,11 @@ body {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+}
+
+.history-header.expanded-header .history-trophy-col {
+  width: 44px;
+  height: 60px;
 }
 
 /* Nút bấm chuyển đổi Phóng to / Thu nhỏ bảng lịch sử */
@@ -611,6 +623,33 @@ body {
   display: block;
   width: 100%;
   text-transform: uppercase;
+}
+
+.history-header.expanded-header .history-names-group {
+  height: 60px;
+}
+
+.history-header.expanded-header .history-name-col {
+  height: 60px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+}
+
+.history-header.expanded-header .history-name-text {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+}
+
+/* Số điểm tích luỹ của từng người chơi ngay dưới tên khi phóng to */
+.history-cumulative-score {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
 }
 
 /* Màu chữ của tên người chơi trong header lịch sử */
@@ -680,6 +719,10 @@ body {
   flex-shrink: 0;
 }
 
+.history-expanded-drawer .history-round-num {
+  width: 44px;
+}
+
 /* Các cột điểm từng người chơi (Chia đều cho 5 người) */
 .history-score-cell {
   flex: 1;
@@ -703,6 +746,105 @@ body {
 /* Trường hợp 1 (Bị chặt) & Trường hợp 2 (Thua Sâm): Người bị phạt - Nền đỏ sẫm */
 .history-score-lose {
   background-color: rgba(253, 97, 97, 0.2);
+}
+
+/* Footer thống kê SÂM, CHÁY và nút CHỐT SỔ khi phóng to */
+.history-expanded-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 10px;
+  flex-shrink: 0;
+  margin-top: auto;
+}
+
+.history-stat-row {
+  width: 100%;
+  height: 36px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.history-stat-label {
+  width: 44px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 900;
+  text-transform: uppercase;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
+.history-stat-label.text-sam,
+.stat-num.text-sam {
+  color: #66ff33;
+}
+
+.history-stat-label.text-chay,
+.stat-num.text-chay {
+  color: #fd6161;
+}
+
+.history-stat-cells {
+  flex: 1;
+  height: 36px;
+  display: flex;
+  flex-direction: row;
+}
+
+.history-stat-cell {
+  flex: 1;
+  width: 0;
+  min-width: 0;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-num {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.stat-dash {
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* Nút CHỐT SỔ */
+.btn-chot-so {
+  width: 100%;
+  height: 52px;
+  background-color: #66ff33;
+  color: #000000;
+  border: none;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+  margin-top: 6px;
+  margin-bottom: 2px;
+  border-radius: 2px;
+}
+
+.btn-chot-so:active {
+  transform: scale(0.98);
+  opacity: 0.85;
 }
 
 /* ==========================================================================

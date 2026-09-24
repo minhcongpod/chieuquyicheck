@@ -14,8 +14,6 @@ import { ExpandIcon, CompressIcon } from './Icons';
  *   + 3 người chơi (2 người thua): Người thắng +40 (xanh), 2 người còn lại -20 (đỏ).
  *   + 4 người chơi (3 người thua): Người thắng +60 (xanh), 3 người còn lại -20 (đỏ).
  *   + 5 người chơi (4 người thua): Người thắng +80 (xanh), 4 người còn lại -20 (đỏ).
- *
- * Các ván thông thường khác: Giữ nền mặc định để nổi bật các ván bước ngoặt.
  */
 function getScoreCellClass(score, roundScores) {
   const scoresArray = Object.values(roundScores || {});
@@ -44,17 +42,81 @@ function getScoreCellClass(score, roundScores) {
   return '';
 }
 
+/**
+ * Tính số lần SÂM và CHÁY của từng người chơi dựa trên lịch sử ván đấu:
+ * 
+ * 1. Luật tính SÂM (Dành cho người thắng):
+ * - Bàn 2 người: Người thắng được +20 điểm; 1 người thua bị -20 điểm.
+ * - Bàn 3 người: Người thắng được +40 điểm; 2 người thua đều bị -20 điểm/người.
+ * - Bàn 4 người: Người thắng được +60 điểm; 3 người thua đều bị -20 điểm/người.
+ * - Bàn 5 người: Người thắng được +80 điểm; 4 người thua đều bị -20 điểm/người.
+ *
+ * 2. Luật tính CHÁY (Dành cho người thua):
+ * - Bất kỳ người chơi nào kết thúc ván đấu với số điểm là -20 điểm sẽ bị hệ thống ghi nhận là "1 Cháy".
+ */
+export function calculateSamAndChay(history, players) {
+  const samCount = {};
+  const chayCount = {};
+
+  players.forEach((p) => {
+    samCount[p.id] = 0;
+    chayCount[p.id] = 0;
+  });
+
+  if (!history || history.length === 0) {
+    return { samCount, chayCount };
+  }
+
+  history.forEach((round) => {
+    const scores = round.scores || {};
+
+    // 1. TÍNH CHÁY: Bất kỳ người chơi nào có điểm kết thúc ván là -20
+    players.forEach((p) => {
+      if (scores[p.id] === -20) {
+        chayCount[p.id] = (chayCount[p.id] || 0) + 1;
+      }
+    });
+
+    // 2. TÍNH SÂM:
+    const losersMinus20 = players.filter((p) => scores[p.id] === -20);
+    const loserCount = losersMinus20.length;
+
+    // Quy mô bàn chơi từ 2 đến 5 người tương ứng 1 đến 4 người thua bị -20
+    if (loserCount >= 1 && loserCount <= 4) {
+      const expectedWinScore = loserCount * 20; // 1->+20, 2->+40, 3->+60, 4->+80
+      const winners = players.filter((p) => scores[p.id] === expectedWinScore);
+
+      if (winners.length === 1) {
+        const winner = winners[0];
+        // Đảm bảo những người còn lại (không thắng và không bị -20) đều có điểm bằng 0
+        const others = players.filter((p) => p.id !== winner.id && scores[p.id] !== -20);
+        const allOthersZero = others.every((p) => (scores[p.id] || 0) === 0);
+
+        if (allOthersZero) {
+          samCount[winner.id] = (samCount[winner.id] || 0) + 1;
+        }
+      }
+    }
+  });
+
+  return { samCount, chayCount };
+}
+
 function HistoryTableContent({
   players,
   reversedHistory,
   isExpanded,
   onToggle,
-  listRef
+  listRef,
+  cumulativeScores = {},
+  samCount = {},
+  chayCount = {},
+  onChotSo
 }) {
   return (
     <>
-      {/* Header Bảng Lịch Sử (Icon Phóng to/Thu nhỏ + 5 tên người chơi căn trái, ellipsis nếu dài) */}
-      <div className="history-header">
+      {/* Header Bảng Lịch Sử (Icon Phóng to/Thu nhỏ + 5 tên người chơi và điểm tích luỹ) */}
+      <div className={`history-header ${isExpanded ? 'expanded-header' : ''}`}>
         {/* Cột Phóng to / Thu nhỏ */}
         <div className="history-trophy-col">
           <button
@@ -68,19 +130,27 @@ function HistoryTableContent({
           </button>
         </div>
 
-        {/* 5 Cột Tên Người Chơi (Căn trái, hiển thị ... nếu tên quá dài) */}
+        {/* 5 Cột Tên Người Chơi (và Điểm tích luỹ hiện ngay dưới tên khi phóng to) */}
         <div className="history-names-group">
-          {players.map((player, index) => (
-            <div
-              key={player.id}
-              className={`history-name-col text-p${index + 1}`}
-              title={player.name}
-            >
-              <span className="history-name-text">
-                {player.name ? player.name.toUpperCase() : ''}
-              </span>
-            </div>
-          ))}
+          {players.map((player, index) => {
+            const totalScore = cumulativeScores[player.id] !== undefined ? cumulativeScores[player.id] : 0;
+            return (
+              <div
+                key={player.id}
+                className={`history-name-col text-p${index + 1}`}
+                title={player.name}
+              >
+                <span className="history-name-text">
+                  {player.name ? player.name.toUpperCase() : ''}
+                </span>
+                {isExpanded && (
+                  <span className="history-cumulative-score">
+                    {totalScore}
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -127,13 +197,67 @@ function HistoryTableContent({
           })
         )}
       </div>
+
+      {/* Footer hiển thị khi phóng to: Dòng SÂM, Dòng CHÁY và Nút CHỐT SỔ */}
+      {isExpanded && (
+        <div className="history-expanded-footer">
+          {/* 1. Dòng SÂM */}
+          <div className="history-stat-row">
+            <div className="history-stat-label text-sam">SÂM</div>
+            <div className="history-stat-cells">
+              {players.map((player) => {
+                const count = samCount[player.id] || 0;
+                return (
+                  <div key={player.id} className="history-stat-cell">
+                    {count > 0 ? (
+                      <span className="stat-num text-sam">{count}</span>
+                    ) : (
+                      <span className="stat-dash">-</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 2. Dòng CHÁY */}
+          <div className="history-stat-row">
+            <div className="history-stat-label text-chay">CHÁY</div>
+            <div className="history-stat-cells">
+              {players.map((player) => {
+                const count = chayCount[player.id] || 0;
+                return (
+                  <div key={player.id} className="history-stat-cell">
+                    {count > 0 ? (
+                      <span className="stat-num text-chay">{count}</span>
+                    ) : (
+                      <span className="stat-dash">-</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. Nút CHỐT SỔ */}
+          <button
+            type="button"
+            className="btn-chot-so"
+            onClick={onChotSo || (() => alert('Tính năng Chốt Sổ & Thống kê điểm theo ngày đang được thiết lập!'))}
+          >
+            CHỐT SỔ
+          </button>
+        </div>
+      )}
     </>
   );
 }
 
 export default function HistoryTable({
   players,
-  history
+  history,
+  cumulativeScores,
+  onChotSo
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -144,6 +268,15 @@ export default function HistoryTable({
   const currentDragYRef = useRef(0);
   const isDraggingRef = useRef(false);
   const listRef = useRef(null);
+
+  // Tính số lần Sâm và Cháy từ danh sách ván đấu
+  const { samCount, chayCount } = calculateSamAndChay(history, players);
+
+  // Tính tổng điểm tích lũy của từng người chơi
+  const finalCumulativeScores = cumulativeScores || players.reduce((acc, player) => {
+    acc[player.id] = (history || []).reduce((sum, round) => sum + (round.scores?.[player.id] || 0), 0);
+    return acc;
+  }, {});
 
   // Nhấn Escape để đóng chế độ phóng to
   useEffect(() => {
@@ -257,6 +390,9 @@ export default function HistoryTable({
           reversedHistory={reversedHistory}
           isExpanded={false}
           onToggle={() => setIsExpanded(true)}
+          cumulativeScores={finalCumulativeScores}
+          samCount={samCount}
+          chayCount={chayCount}
         />
       </div>
 
@@ -290,6 +426,10 @@ export default function HistoryTable({
           isExpanded={true}
           onToggle={() => setIsExpanded(false)}
           listRef={listRef}
+          cumulativeScores={finalCumulativeScores}
+          samCount={samCount}
+          chayCount={chayCount}
+          onChotSo={onChotSo}
         />
       </div>
     </>
