@@ -220,6 +220,18 @@ export default function DailyStatsDrawer({
     return totals;
   }, [allPlayers, dailyLedger]);
 
+  // Sắp xếp các cột người chơi theo thứ tự: Điểm cao nhất bên trái, thấp nhất bên phải
+  const sortedPlayers = useMemo(() => {
+    return [...allPlayers].sort((a, b) => {
+      const scoreA = totalScoresByPlayer[a.id] || 0;
+      const scoreB = totalScoresByPlayer[b.id] || 0;
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA; // Cao nhất bên trái -> Thấp nhất bên phải
+      }
+      return 0;
+    });
+  }, [allPlayers, totalScoresByPlayer]);
+
   // Sắp xếp các lần chốt sổ theo thứ tự mới nhất nằm trên cùng (#6 -> #5 -> #4 -> ... -> #1)
   const sortedLedger = useMemo(() => {
     const list = [...dailyLedger];
@@ -284,16 +296,16 @@ export default function DailyStatsDrawer({
                 </button>
               </th>
 
-              {/* Các cột người chơi: Tên người chơi và Tổng điểm tích luỹ (Tối đa 10 người, trượt ngang để xem) */}
-              {allPlayers.map((player) => {
+              {/* Các cột người chơi: Tên người chơi và Tổng điểm tích luỹ (Điểm cao nhất bên trái -> Thấp nhất bên phải, bỏ màu sắc) */}
+              {sortedPlayers.map((player) => {
                 const total = totalScoresByPlayer[player.id] || 0;
                 return (
                   <th key={player.id} className="stats-th-player">
                     <div className="stats-player-head-box">
-                      <span className="stats-player-name" style={{ color: player.color }}>
+                      <span className="stats-player-name">
                         {player.name}
                       </span>
-                      <span className="stats-player-score" style={{ color: player.color }}>
+                      <span className="stats-player-score">
                         {total}
                       </span>
                     </div>
@@ -306,7 +318,7 @@ export default function DailyStatsDrawer({
           <tbody>
             {sortedLedger.length === 0 ? (
               <tr>
-                <td colSpan={allPlayers.length + 1} className="stats-empty-cell">
+                <td colSpan={sortedPlayers.length + 1} className="stats-empty-cell">
                   <div className="stats-empty-state">
                     <p className="stats-empty-title">Chưa có lần chốt sổ nào</p>
                     <p className="stats-empty-sub">
@@ -359,8 +371,8 @@ export default function DailyStatsDrawer({
                       )}
                     </td>
 
-                    {/* Các cột điểm tương ứng của từng người chơi theo ngày */}
-                    {allPlayers.map((player) => {
+                    {/* Các cột điểm tương ứng của từng người chơi theo thứ tự sortedPlayers */}
+                    {sortedPlayers.map((player) => {
                       const score = getPlayerScore(entry, player);
                       const isScoreDefined = score !== undefined && score !== null;
 

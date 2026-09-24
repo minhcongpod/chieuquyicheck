@@ -1431,12 +1431,14 @@ td {
   max-width: 62px;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #ffffff;
 }
 
 .stats-player-score {
   font-size: 16px;
   font-weight: 800;
   line-height: 1.2;
+  color: #ffffff;
 }
 
 /* Các hàng dữ liệu theo từng lần chốt sổ */
