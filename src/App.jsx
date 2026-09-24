@@ -166,22 +166,44 @@ export default function App() {
   };
 
   // Xử lý khi bấm nút "CHỐT SỔ" tại Bảng lịch sử điểm:
-  // - Thống kê theo mỗi lần bấm chốt sổ (#1, #2, #3...) thay vì theo ngày
-  // - Những người đã có tên trong sổ sẽ được cộng dồn điểm qua các lần chốt sổ
-  // - Những người chưa có tên trong sổ sẽ hiện lần lượt sang bên phải của bảng
+  // - Kiểm tra trùng lặp (Deduplication): Quét danh sách người chơi mới và so sánh với Master List hiện đang có trong bảng thống kê
+  // - Cập nhật dữ liệu cho người cũ (Merge): Nếu tên đã tồn tại, không tạo thêm cột mới, lưu điểm theo tên để cộng dồn
+  // - Thêm cột mới vào bên phải cho người mới: Nếu chưa có trong Master List, đẩy vào cuối mảng để xuất hiện ở ngoài cùng bên phải
   const handleChotSo = () => {
     const nextRoundIndex = (dailyLedger?.length || 0) + 1;
     const label = `#${nextRoundIndex}`;
 
+    // 1. Quét Master List hiện tại từ dailyLedger
+    const masterListNames = [];
+    (dailyLedger || []).forEach((entry) => {
+      if (entry.playersInfo && Array.isArray(entry.playersInfo)) {
+        entry.playersInfo.forEach((p) => {
+          const n = (p.name || p.id || '').trim().toUpperCase();
+          if (n && !masterListNames.includes(n)) {
+            masterListNames.push(n);
+          }
+        });
+      }
+    });
+
+    // 2. Chuẩn hoá danh sách người chơi hiện tại ở bàn đấu
     const sessionScores = {};
     const playersInfo = [];
+    const seenNamesInRound = new Set();
 
     players.forEach((p, idx) => {
-      const score = cumulativeScores[p.id] || 0;
-      sessionScores[p.id] = score;
+      const rawName = (p.name && p.name.trim()) ? p.name.trim() : String.fromCharCode(65 + idx);
+      let displayName = rawName.toUpperCase();
 
-      const pName = p.name?.trim();
-      const displayName = pName ? pName.toUpperCase() : String.fromCharCode(65 + idx);
+      // Đảm bảo không trùng tên nếu tại bàn có 2 người đặt cùng tên
+      if (seenNamesInRound.has(displayName)) {
+        displayName = `${displayName}_${idx + 1}`;
+      }
+      seenNamesInRound.add(displayName);
+
+      const score = cumulativeScores[p.id] || 0;
+
+      // Lưu điểm duy nhất theo tên chuẩn displayName (không lưu thêm p.id tránh sinh cột trùng)
       sessionScores[displayName] = score;
 
       playersInfo.push({
@@ -189,6 +211,11 @@ export default function App() {
         name: displayName,
         color: p.color
       });
+
+      // Nếu là người mới chưa có trong Master List, ghi nhận tiếp vào danh sách
+      if (!masterListNames.includes(displayName)) {
+        masterListNames.push(displayName);
+      }
     });
 
     const newEntry = {
@@ -200,7 +227,7 @@ export default function App() {
       scores: sessionScores
     };
 
-    // Thêm lần chốt sổ mới vào sổ (không xoá lần cũ, điểm tự động cộng dồn ở tổng kết)
+    // Thêm lần chốt sổ mới vào sổ
     const updatedLedger = [...(dailyLedger || []), newEntry];
     setDailyLedgerData(updatedLedger);
   };

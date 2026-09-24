@@ -135,102 +135,127 @@ export default function DailyStatsDrawer({
     currentDragYRef.current = 0;
   };
 
-  // Tập hợp danh sách tất cả người chơi từng tham gia (tối đa 10 người chơi)
-  // Quy tắc: Những người đã có tên trong sổ từ các lần chốt trước sẽ giữ nguyên thứ tự cột bên trái.
-  // Những người mới vào sau / chưa có tên trong sổ sẽ lần lượt xuất hiện tiếp sang bên phải.
-  const allPlayers = useMemo(() => {
-    const playerMap = new Map();
+  // =========================================================================
+  // XÂY DỰNG DANH SÁCH TIÊU ĐỀ CỘT (MASTER LIST) & XỬ LÝ MẢNG DỮ LIỆU
+  //
+  // 1. Kiểm tra trùng lặp (Deduplication):
+  //    So sánh từng người chơi với Master List bằng find() / some() theo tên/ID.
+  // 2. Cập nhật dữ liệu cho người cũ (Merge):
+  //    Nếu tên người chơi đã tồn tại trong bảng, tuyệt đối không tạo thêm cột mới.
+  //    Giữ nguyên vị trí (index) của người này, cộng dồn điểm mới vào tổng điểm cột.
+  // 3. Thêm cột mới vào bên phải cho người mới:
+  //    Nếu phát hiện tên người chơi hoàn toàn mới, push vào cuối mảng Master List
+  //    để cột xuất hiện ở ngoài cùng bên phải. Các hàng trước đó tự động điền 0 hoặc -.
+  // 4. Xử lý khoảng trống (Null/Undefined):
+  //    Mỗi hàng sinh ra khớp chính xác số lượng ô <td> với tổng số cột <th>.
+  // =========================================================================
+  const masterPlayers = useMemo(() => {
+    const masterList = [];
 
-    // 1. Quét qua toàn bộ lịch sử dailyLedger theo thứ tự xuất hiện (#1, #2, #3...)
-    dailyLedger.forEach((entry) => {
+    // Sắp xếp các lần chốt sổ theo thứ tự thời gian tăng dần (#1 -> #2 -> #3...)
+    // để xác định thứ tự cột ban đầu và lần lượt thêm người mới sang phải
+    const chronologicalLedger = [...dailyLedger].sort((a, b) => {
+      const idxA = a.roundIndex || 0;
+      const idxB = b.roundIndex || 0;
+      if (idxA !== idxB) return idxA - idxB;
+      return (a.timestamp || 0) - (b.timestamp || 0);
+    });
+
+    chronologicalLedger.forEach((entry) => {
+      // 1. Duyệt playersInfo của entry
       if (entry.playersInfo && Array.isArray(entry.playersInfo)) {
         entry.playersInfo.forEach((pInfo) => {
-          const rawName = pInfo.name?.trim();
-          const key = rawName ? rawName.toUpperCase() : pInfo.id;
-          if (!playerMap.has(key)) {
-            playerMap.set(key, {
-              id: key,
-              originalId: pInfo.id,
-              name: rawName ? rawName.toUpperCase() : key,
-              color: pInfo.color || PLAYER_COLORS_10[playerMap.size % PLAYER_COLORS_10.length]
+          const rawName = pInfo.name || pInfo.id;
+          if (!rawName) return;
+          const cleanName = rawName.trim().toUpperCase();
+          if (!cleanName) return;
+
+          // Deduplication: Dùng find() kiểm tra xem người chơi này đã có trong Master List chưa
+          const exists = masterList.find(
+            (col) => col.name.toUpperCase() === cleanName || (col.id && col.id.toUpperCase() === cleanName)
+          );
+
+          if (!exists) {
+            // Người chơi mới hoàn toàn: PUSH vào cuối mảng để cột xuất hiện ở ngoài cùng bên phải
+            masterList.push({
+              id: cleanName,
+              name: cleanName,
+              color: pInfo.color || PLAYER_COLORS_10[masterList.length % PLAYER_COLORS_10.length]
             });
           }
         });
-      }
-
-      if (entry.scores) {
+      } else if (entry.scores) {
+        // Fallback an toàn cho dữ liệu cũ nếu không có playersInfo:
+        // Lọc bỏ các key ghế nội bộ p1..p5
         Object.keys(entry.scores).forEach((sKey) => {
-          const keyUpper = sKey.toUpperCase();
-          if (!playerMap.has(sKey) && !playerMap.has(keyUpper)) {
-            const matchedP = players.find((p) => p.id === sKey);
-            const name = matchedP?.name?.trim()?.toUpperCase() || keyUpper;
-            playerMap.set(keyUpper, {
-              id: keyUpper,
-              originalId: sKey,
-              name: name,
-              color: matchedP?.color || PLAYER_COLORS_10[playerMap.size % PLAYER_COLORS_10.length]
+          if (/^p[1-5]$/i.test(sKey)) return;
+          const cleanName = sKey.trim().toUpperCase();
+          if (!cleanName) return;
+
+          const exists = masterList.find(
+            (col) => col.name.toUpperCase() === cleanName || (col.id && col.id.toUpperCase() === cleanName)
+          );
+
+          if (!exists) {
+            masterList.push({
+              id: cleanName,
+              name: cleanName,
+              color: PLAYER_COLORS_10[masterList.length % PLAYER_COLORS_10.length]
             });
           }
         });
       }
     });
 
-    // 2. Thêm những người chơi hiện đang ngồi tại bàn nếu họ chưa từng xuất hiện trong bất kỳ lần chốt sổ nào
-    players.forEach((p, idx) => {
-      const rawName = p.name?.trim();
-      const displayName = rawName ? rawName.toUpperCase() : String.fromCharCode(65 + idx);
-      const key = rawName ? rawName.toUpperCase() : p.id;
-      if (!playerMap.has(key)) {
-        playerMap.set(key, {
-          id: key,
-          originalId: p.id,
-          name: displayName,
-          color: p.color || PLAYER_COLORS_10[playerMap.size % PLAYER_COLORS_10.length]
-        });
-      }
-    });
-
-    // Giới hạn tối đa 10 người chơi theo yêu cầu
-    return Array.from(playerMap.values()).slice(0, 10);
-  }, [players, dailyLedger]);
+    // Giới hạn tối đa 10 người chơi theo thiết kế
+    return masterList.slice(0, 10);
+  }, [dailyLedger]);
 
   // Hàm lấy điểm của 1 người chơi trong 1 lần chốt sổ cụ thể
   const getPlayerScore = (entry, player) => {
-    if (!entry.scores) return undefined;
-    if (entry.scores[player.id] !== undefined) return entry.scores[player.id];
-    if (entry.scores[player.name] !== undefined) return entry.scores[player.name];
-    if (player.originalId && entry.scores[player.originalId] !== undefined) {
-      return entry.scores[player.originalId];
+    if (!entry || !entry.scores) return undefined;
+    const targetName = player.name.toUpperCase();
+
+    // 1. Tìm trực tiếp theo tên chuẩn trong object scores
+    for (const key of Object.keys(entry.scores)) {
+      if (key.trim().toUpperCase() === targetName) {
+        return entry.scores[key];
+      }
     }
+
+    // 2. Tra cứu qua playersInfo của entry nếu có
+    if (entry.playersInfo && Array.isArray(entry.playersInfo)) {
+      const match = entry.playersInfo.find(
+        (p) =>
+          (p.name && p.name.trim().toUpperCase() === targetName) ||
+          (p.id && p.id.trim().toUpperCase() === targetName)
+      );
+      if (match) {
+        if (entry.scores[match.name] !== undefined) return entry.scores[match.name];
+        if (entry.scores[match.id] !== undefined) return entry.scores[match.id];
+      }
+    }
+
     return undefined;
   };
 
-  // Tính tổng số điểm tích luỹ của từng người chơi qua các ngày đã chốt sổ
+  // Tính tổng số điểm tích luỹ của từng cột người chơi qua tất cả các lần chốt sổ
+  // (Cộng dồn điểm mới vào tổng điểm của cột hiện tại)
   const totalScoresByPlayer = useMemo(() => {
     const totals = {};
-    allPlayers.forEach(p => { totals[p.id] = 0; });
-    dailyLedger.forEach(entry => {
-      allPlayers.forEach(p => {
+    masterPlayers.forEach((p) => { totals[p.name] = 0; });
+
+    dailyLedger.forEach((entry) => {
+      masterPlayers.forEach((p) => {
         const score = getPlayerScore(entry, p);
-        if (score !== undefined && score !== null) {
-          totals[p.id] = (totals[p.id] || 0) + score;
+        if (score !== undefined && score !== null && !isNaN(score)) {
+          totals[p.name] = (totals[p.name] || 0) + Number(score);
         }
       });
     });
-    return totals;
-  }, [allPlayers, dailyLedger]);
 
-  // Sắp xếp các cột người chơi theo thứ tự: Điểm cao nhất bên trái, thấp nhất bên phải
-  const sortedPlayers = useMemo(() => {
-    return [...allPlayers].sort((a, b) => {
-      const scoreA = totalScoresByPlayer[a.id] || 0;
-      const scoreB = totalScoresByPlayer[b.id] || 0;
-      if (scoreB !== scoreA) {
-        return scoreB - scoreA; // Cao nhất bên trái -> Thấp nhất bên phải
-      }
-      return 0;
-    });
-  }, [allPlayers, totalScoresByPlayer]);
+    return totals;
+  }, [masterPlayers, dailyLedger]);
 
   // Sắp xếp các lần chốt sổ theo thứ tự mới nhất nằm trên cùng (#6 -> #5 -> #4 -> ... -> #1)
   const sortedLedger = useMemo(() => {
@@ -352,12 +377,12 @@ export default function DailyStatsDrawer({
               - Cuộn ngầm bên trong phạm vi Khối 2, biến mất khi chạm mép trái Khối 2, không trượt sang Khối 1. */}
           <div className="daily-stats-scrollable-panel">
             <div className="stats-scrollable-track">
-              {/* Header row: Tên người chơi và Tổng điểm tích luỹ (Điểm cao nhất bên trái -> Thấp nhất bên phải, bỏ màu sắc) */}
+              {/* Header row: Tên người chơi và Tổng điểm tích luỹ theo Master List (Bỏ màu sắc) */}
               <div className="stats-scrollable-header-row">
-                {sortedPlayers.map((player) => {
-                  const total = totalScoresByPlayer[player.id] || 0;
+                {masterPlayers.map((player) => {
+                  const total = totalScoresByPlayer[player.name] || 0;
                   return (
-                    <div key={player.id} className="stats-player-head-cell">
+                    <div key={player.name} className="stats-player-head-cell">
                       <span className="stats-player-name">
                         {player.name}
                       </span>
@@ -369,40 +394,40 @@ export default function DailyStatsDrawer({
                 })}
               </div>
 
-              {/* Danh sách các dòng điểm số tương ứng theo thứ tự sortedPlayers */}
+              {/* Danh sách các dòng điểm số tương ứng khớp chính xác với Master List */}
               <div className="stats-scrollable-body">
                 {sortedLedger.map((entry) => {
                   const isDeleting = pendingDeleteId === entry.id;
 
-                    return (
-                      <div 
-                        key={entry.id} 
-                        className={`stats-scrollable-data-row ${isDeleting ? 'is-deleting' : ''}`}
-                      >
-                        {sortedPlayers.map((player) => {
-                          const score = getPlayerScore(entry, player);
-                          const isScoreDefined = score !== undefined && score !== null;
+                  return (
+                    <div 
+                      key={entry.id} 
+                      className={`stats-scrollable-data-row ${isDeleting ? 'is-deleting' : ''}`}
+                    >
+                      {masterPlayers.map((player) => {
+                        const score = getPlayerScore(entry, player);
+                        const isScoreDefined = score !== undefined && score !== null;
 
-                          return (
-                            <div 
-                              key={player.id} 
-                              className="stats-score-cell"
-                              onClick={() => {
-                                if (pendingDeleteId) setPendingDeleteId(null);
-                              }}
-                            >
-                              {isScoreDefined ? (
-                                <span className="stats-score-value">
-                                  {score}
-                                </span>
-                              ) : (
-                                <span className="stats-score-dash">-</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
+                        return (
+                          <div 
+                            key={player.name} 
+                            className="stats-score-cell"
+                            onClick={() => {
+                              if (pendingDeleteId) setPendingDeleteId(null);
+                            }}
+                          >
+                            {isScoreDefined ? (
+                              <span className="stats-score-value">
+                                {score}
+                              </span>
+                            ) : (
+                              <span className="stats-score-dash">-</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
                 })}
               </div>
             </div>

@@ -63,9 +63,9 @@ export function useRealtimeGame() {
   const [dailyLedger, setDailyLedger] = useState(() => {
     try {
       const saved = localStorage.getItem(`cq_dailyLedger_${roomId}`);
-      return saved ? JSON.parse(saved) : SAMPLE_DAILY_LEDGER;
+      return saved ? JSON.parse(saved) : [];
     } catch (e) {
-      return SAMPLE_DAILY_LEDGER;
+      return [];
     }
   });
 
