@@ -91,6 +91,29 @@ export function QrCodeIcon({ className = "w-[28px] h-[28px]", width = 28, height
   );
 }
 
+// Icon Lịch / Sổ thống kê điểm theo ngày
+export function LedgerCalendarIcon({ className = "w-[26px] h-[26px]", width = 26, height = 26, color = "black" }) {
+  return (
+    <svg
+      className={className}
+      width={width}
+      height={height}
+      viewBox="0 0 16 16"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M0,5.31v10.69h16V5.31H0ZM10.06,10.66l-3.7,3.69h-2.05v-2.05l3.69-3.7s.13-.05.17,0h0s1.89,1.89,1.89,1.89c.05.05.05.13,0,.17ZM11.45,9.28l-.77.77s-.13.05-.17,0l-1.9-1.9s-.05-.13,0-.17l.77-.77c.32-.32.84-.32,1.16,0l.91.91c.32.32.32.84,0,1.16Z"
+        fill={color}
+      />
+      <polygon
+        points="13.17 1.53 13.17 0 11.86 0 11.86 1.53 4.17 1.53 4.17 0 2.87 0 2.87 .63 2.87 .63 2.87 1.53 0 1.53 0 4.05 16 4.05 16 1.53 13.17 1.53"
+        fill={color}
+      />
+    </svg>
+  );
+}
+
 // Exact SVG from Figma node 20:713
 export function CheckmarkIcon({ className = "w-[28px] h-[28px]", width = 28, height = 28, color = "black" }) {
   return (

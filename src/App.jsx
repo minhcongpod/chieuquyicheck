@@ -3,6 +3,7 @@ import ScoreInputTable from './components/ScoreInputTable';
 import ActionToolbar from './components/ActionToolbar';
 import HistoryTable from './components/HistoryTable';
 import Keyboard from './components/Keyboard';
+import DailyStatsDrawer from './components/DailyStatsDrawer';
 import { QrTransferModal } from './components/Modals';
 import { useRealtimeGame } from './hooks/useRealtimeGame';
 import './style.css';
@@ -13,13 +14,15 @@ export default function App() {
     players,
     history,
     roundDeltas,
+    dailyLedger,
     isConnected,
     userCount,
     updatePlayerName,
     updateRoundDeltas,
     confirmRound,
     undoRound,
-    resetGame
+    resetGame,
+    addLedgerEntry
   } = useRealtimeGame();
 
   // Trạng thái bàn phím số (Keyboard) của máy này
@@ -37,6 +40,9 @@ export default function App() {
       setIsErrorBanner(false);
     }, 1000);
   };
+
+  // Trạng thái mở Bảng thống kê điểm theo ngày
+  const [isDailyStatsOpen, setIsDailyStatsOpen] = useState(false);
 
   // Trạng thái Modal QR MoMo
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
@@ -173,6 +179,28 @@ export default function App() {
     undoRound();
   };
 
+  // Xử lý khi bấm nút "CHỐT SỔ" tại Bảng lịch sử điểm:
+  // Lưu số điểm tích luỹ của người chơi theo ngày hôm nay và mở bảng thống kê
+  const handleChotSo = () => {
+    const now = new Date();
+    const dateStr = `${now.getDate()}/${now.getMonth() + 1}`;
+
+    const todayScores = {};
+    players.forEach(p => {
+      todayScores[p.id] = cumulativeScores[p.id] || 0;
+    });
+
+    const newEntry = {
+      id: `ledger-${Date.now()}`,
+      dateStr,
+      timestamp: Date.now(),
+      scores: todayScores
+    };
+
+    addLedgerEntry(newEntry);
+    setIsDailyStatsOpen(true);
+  };
+
   // Tính tổng điểm ván hiện tại để kiểm tra cân bằng
   const currentSumTotal = players.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
 
@@ -193,6 +221,8 @@ export default function App() {
         onConfirmRound={handleConfirmRound}
         onResetConfirm={handleResetConfirm}
         onUndoConfirm={handleUndoConfirm}
+        onStatsClick={() => setIsDailyStatsOpen(true)}
+        onLedgerClick={() => setIsDailyStatsOpen(true)}
         onQrClick={() => setIsQrModalOpen(true)}
         canUndo={history.length > 0}
         isError={isErrorBanner}
@@ -203,6 +233,7 @@ export default function App() {
         players={players}
         history={history}
         cumulativeScores={cumulativeScores}
+        onChotSo={handleChotSo}
       />
 
       {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 */}
@@ -215,7 +246,15 @@ export default function App() {
         />
       )}
 
-      {/* 5. Cửa sổ Popup Mã QR Quỹ Chiếu Quỷ */}
+      {/* 5. Bảng thống kê điểm theo ngày (Daily Stats Ledger) */}
+      <DailyStatsDrawer
+        isOpen={isDailyStatsOpen}
+        onClose={() => setIsDailyStatsOpen(false)}
+        players={players}
+        dailyLedger={dailyLedger}
+      />
+
+      {/* 6. Cửa sổ Popup Mã QR Quỹ Chiếu Quỷ (dự phòng) */}
       <QrTransferModal
         isOpen={isQrModalOpen}
         onClose={() => setIsQrModalOpen(false)}

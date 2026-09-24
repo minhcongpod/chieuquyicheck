@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
+import { SAMPLE_DAILY_LEDGER } from '../constants/sampleLedger';
 
 const INITIAL_PLAYERS = [
   { id: 'p1', name: '', color: '#f4e950' },
@@ -59,6 +60,15 @@ export function useRealtimeGame() {
     }
   });
 
+  const [dailyLedger, setDailyLedger] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`cq_dailyLedger_${roomId}`);
+      return saved ? JSON.parse(saved) : SAMPLE_DAILY_LEDGER;
+    } catch (e) {
+      return SAMPLE_DAILY_LEDGER;
+    }
+  });
+
   const [roundDeltas, setRoundDeltas] = useState({});
   const [isConnected, setIsConnected] = useState(false);
   const [userCount, setUserCount] = useState(1);
@@ -102,16 +112,22 @@ export function useRealtimeGame() {
             if (payload.players) setPlayers(payload.players);
             if (payload.history) setHistory(payload.history);
             if (payload.roundDeltas) setRoundDeltas(payload.roundDeltas);
+            if (payload.dailyLedger) setDailyLedger(payload.dailyLedger);
             // Lưu cache offline
             localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(payload.players || []));
             localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(payload.history || []));
+            if (payload.dailyLedger) localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(payload.dailyLedger));
           } else if (type === 'STATE_UPDATE') {
             if (payload.players) setPlayers(payload.players);
             if (payload.history) setHistory(payload.history);
             if (payload.roundDeltas !== undefined) setRoundDeltas(payload.roundDeltas);
+            if (payload.dailyLedger !== undefined) {
+              setDailyLedger(payload.dailyLedger);
+              localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(payload.dailyLedger));
+            }
 
-            // Bắn pháo hoa ăn mừng khi chốt ván mới
-            if (actionType === 'CONFIRM_ROUND') {
+            // Bắn pháo hoa ăn mừng khi chốt ván mới hoặc chốt sổ
+            if (actionType === 'CONFIRM_ROUND' || actionType === 'ADD_LEDGER_ENTRY') {
               fireConfetti();
             }
 
@@ -196,17 +212,29 @@ export function useRealtimeGame() {
     sendMessage('RESET_GAME', {});
   }, [sendMessage]);
 
+  const addLedgerEntry = useCallback((entry) => {
+    sendMessage('ADD_LEDGER_ENTRY', { entry });
+    setDailyLedger(prev => {
+      const next = [entry, ...prev];
+      localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(next));
+      return next;
+    });
+    fireConfetti();
+  }, [roomId, sendMessage]);
+
   return {
     roomId,
     players,
     history,
     roundDeltas,
+    dailyLedger,
     isConnected,
     userCount,
     updatePlayerName,
     updateRoundDeltas,
     confirmRound,
     undoRound,
-    resetGame
+    resetGame,
+    addLedgerEntry
   };
 }

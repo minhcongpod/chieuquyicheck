@@ -638,15 +638,15 @@ body {
 }
 
 .history-header.expanded-header .history-name-text {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.6;
   text-align: center;
 }
 
 /* Số điểm tích luỹ của từng người chơi ngay dưới tên khi phóng to */
 .history-cumulative-score {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 900;
   line-height: 1;
   text-align: center;
@@ -753,9 +753,8 @@ body {
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0px;
   border-top: 1px solid rgba(255, 255, 255, 0.2);
-  padding-top: 10px;
   flex-shrink: 0;
   margin-top: auto;
 }
@@ -773,7 +772,7 @@ body {
   height: 36px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   font-size: 13px;
   font-weight: 900;
   text-transform: uppercase;
@@ -809,26 +808,26 @@ body {
 }
 
 .stat-num {
-  font-size: 18px;
-  font-weight: 900;
+  font-size: 13px;
+  font-weight: 800;
   line-height: 1;
 }
 
 .stat-dash {
   color: rgba(255, 255, 255, 0.45);
-  font-size: 18px;
-  font-weight: 700;
+  font-size: 16px;
+  font-weight: 800;
   line-height: 1;
 }
 
 /* Nút CHỐT SỔ */
 .btn-chot-so {
   width: 100%;
-  height: 52px;
+  height: 40px;
   background-color: #66ff33;
   color: #000000;
   border: none;
-  font-size: 22px;
+  font-size: 16px;
   font-weight: 900;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -1138,4 +1137,239 @@ body {
 
 .modal-btn-close-qr:active {
   background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ==========================================================================
+   9. BẢNG THỐNG KÊ ĐIỂM THEO NGÀY (DAILY STATS LEDGER - ẢNH THIẾT KẾ MỚI)
+   Gồm: Header cố định, Nút Close [✕], Tên người chơi + Tổng điểm tích luỹ,
+   Cuộn ngang cho nhiều người chơi, Cột ngày ghim sticky, Cuộn dọc vô tận.
+   ========================================================================== */
+.daily-stats-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  z-index: 250;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeInDailyStats 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.daily-stats-container {
+  width: var(--screen-width);
+  max-width: 100vw;
+  height: var(--screen-height);
+  max-height: 100dvh;
+  background-color: #000000;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+}
+
+.daily-stats-scroll-area {
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+}
+
+.daily-stats-scroll-area::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.daily-stats-scroll-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 2px;
+}
+
+.daily-stats-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  min-width: 100%;
+  table-layout: auto;
+}
+
+/* Hàng tiêu đề trên cùng */
+.stats-header-row {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.stats-header-row th {
+  background-color: #000000;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 14px 6px;
+  vertical-align: middle;
+  position: sticky;
+  top: 0;
+}
+
+/* Ô góc trên cùng bên trái: Ghim cả Top và Left, chứa nút Close [✕] */
+.stats-th-sticky.stats-th-close {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  background-color: #000000;
+  width: 68px;
+  min-width: 68px;
+  max-width: 68px;
+  text-align: left;
+  padding-left: 20px;
+}
+
+.stats-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 4px 0;
+  color: #ffffff;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  outline: none;
+}
+
+.stats-close-btn:hover {
+  opacity: 0.8;
+}
+
+.stats-close-btn:active {
+  transform: scale(0.85);
+}
+
+/* Cột thông tin từng người chơi trên Header */
+.stats-th-player {
+  min-width: 60px;
+  width: 60px;
+  text-align: center;
+  padding: 10px 4px;
+}
+
+.stats-player-head-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+}
+
+.stats-player-name {
+  font-size: 16px;
+  font-weight: 800;
+  text-transform: uppercase;
+  line-height: 1.2;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  max-width: 58px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stats-player-score {
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+/* Các hàng dữ liệu theo ngày */
+.stats-data-row {
+  height: 46px;
+}
+
+.stats-data-row td {
+  border-bottom: none;
+  vertical-align: middle;
+}
+
+/* Cột Ngày/Tháng ghim cố định bên trái khi cuộn ngang */
+.stats-td-sticky.stats-td-date {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background-color: #000000;
+  width: 68px;
+  min-width: 68px;
+  max-width: 68px;
+  text-align: left;
+  padding-left: 20px;
+  font-size: 15px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+}
+
+/* Cột điểm số của từng người */
+.stats-td-score {
+  min-width: 60px;
+  width: 60px;
+  text-align: center;
+  padding: 8px 4px;
+}
+
+.stats-score-value {
+  font-size: 18px;
+  font-weight: 900;
+  color: #ffffff;
+  display: block;
+  text-align: center;
+  letter-spacing: -0.3px;
+}
+
+.stats-score-dash {
+  font-size: 18px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.35);
+  display: block;
+  text-align: center;
+}
+
+/* Empty state khi chưa có ngày nào */
+.stats-empty-cell {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.stats-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.stats-empty-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.stats-empty-sub {
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+@keyframes fadeInDailyStats {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }

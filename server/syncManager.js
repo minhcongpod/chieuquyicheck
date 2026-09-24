@@ -25,6 +25,8 @@ const INITIAL_PLAYERS = [
 const roomStates = new Map(); // roomId -> state
 const roomClients = new Map(); // roomId -> Set<ws>
 
+import { SAMPLE_DAILY_LEDGER } from '../src/constants/sampleLedger.js';
+
 /**
  * Đọc trạng thái phòng từ file (nếu có) hoặc khởi tạo mới
  */
@@ -37,6 +39,9 @@ function getOrCreateRoomState(roomId) {
   if (fs.existsSync(filePath)) {
     try {
       const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      if (!data.dailyLedger || data.dailyLedger.length === 0) {
+        data.dailyLedger = JSON.parse(JSON.stringify(SAMPLE_DAILY_LEDGER));
+      }
       roomStates.set(roomId, data);
       return data;
     } catch (e) {
@@ -49,6 +54,7 @@ function getOrCreateRoomState(roomId) {
     players: JSON.parse(JSON.stringify(INITIAL_PLAYERS)),
     history: [],
     roundDeltas: {},
+    dailyLedger: JSON.parse(JSON.stringify(SAMPLE_DAILY_LEDGER)),
     updatedAt: Date.now()
   };
 
@@ -196,6 +202,19 @@ export function setupWebSocketServer(httpServer) {
             broadcastToRoom(roomId, {
               type: 'STATE_UPDATE',
               actionType: 'RESET_GAME',
+              payload: state
+            });
+            break;
+          }
+
+          case 'ADD_LEDGER_ENTRY': {
+            if (!state.dailyLedger) state.dailyLedger = [];
+            state.dailyLedger.unshift(payload.entry);
+            state.updatedAt = Date.now();
+            saveRoomState(roomId, state);
+            broadcastToRoom(roomId, {
+              type: 'STATE_UPDATE',
+              actionType: 'ADD_LEDGER_ENTRY',
               payload: state
             });
             break;

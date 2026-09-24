@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ResetIcon, UndoIcon, QrCodeIcon, CheckmarkIcon, CrossIcon } from './Icons';
+import { ResetIcon, UndoIcon, LedgerCalendarIcon, QrCodeIcon, CheckmarkIcon, CrossIcon } from './Icons';
 
 export default function ActionToolbar({
   sumTotal = 0,
@@ -8,6 +8,8 @@ export default function ActionToolbar({
   onUndoConfirm,
   onResetClick,
   onUndoClick,
+  onStatsClick,
+  onLedgerClick,
   onQrClick,
   onInfoClick,
   canUndo = false,
@@ -145,15 +147,15 @@ export default function ActionToolbar({
             <UndoIcon width={28} height={28} />
           </button>
 
-          {/* Nút QR Code Quỹ Chiếu Quỷ (Cột 4) */}
+          {/* Nút Sổ Thống Kê Điểm Theo Ngày (Cột 4) */}
           <button
             type="button"
-            className="toolbar-btn toolbar-btn-qr toolbar-btn-info"
-            onClick={confirmMode || isError ? undefined : (onQrClick || onInfoClick)}
-            title="Quỹ Chiếu Quỷ (Mã QR MoMo)"
+            className="toolbar-btn toolbar-btn-ledger toolbar-btn-info"
+            onClick={confirmMode || isError ? undefined : (onStatsClick || onLedgerClick || onQrClick || onInfoClick)}
+            title="Sổ thống kê điểm theo ngày"
             tabIndex={confirmMode || isError ? -1 : 0}
           >
-            <QrCodeIcon width={28} height={28} />
+            <LedgerCalendarIcon width={24} height={24} color="#000000" />
           </button>
         </div>
 
