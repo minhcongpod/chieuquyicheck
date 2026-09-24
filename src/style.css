@@ -331,12 +331,28 @@ td {
   top: 0;
   left: 0;
   color: #000000;
+  font-size: 26px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
   will-change: transform, opacity;
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 
 .toolbar-btn-active-action:active {
   opacity: 0.85;
+}
+
+/* Chữ hiển thị khi xác nhận: RESET hoặc BACK */
+.action-confirm-label {
+  font-size: 26px;
+  font-weight: 800;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  text-align: center;
 }
 
 /* KHU VỰC PHẢI (212px = 3 nút 68px + 2 khoảng cách 4px) */
@@ -1182,7 +1198,7 @@ td {
   z-index: 95;
   display: flex;
   flex-direction: column;
-  padding: 10px 16px 16px 16px;
+  padding: 16px 16px 16px 16px;
   overflow: hidden;
   box-sizing: border-box;
   transform: translateY(100%);
@@ -1254,8 +1270,6 @@ td {
   left: 0;
   z-index: 30;
   width: 40px;
-  min-width: 58px;
-  max-width: 58px;
   text-align: -webkit-center;
 }
 

@@ -3,27 +3,27 @@
   "players": [
     {
       "id": "p1",
-      "name": "",
+      "name": "Công",
       "color": "#f4e950"
     },
     {
       "id": "p2",
-      "name": "123Cong",
+      "name": "Toàn",
       "color": "#66ff33"
     },
     {
       "id": "p3",
-      "name": "Toan11",
+      "name": "Thảo",
       "color": "#16e4ff"
     },
     {
       "id": "p4",
-      "name": "A",
+      "name": "Kiên",
       "color": "#c073ff"
     },
     {
       "id": "p5",
-      "name": "ádsdsdasda",
+      "name": "Linh",
       "color": "#fd6161"
     }
   ],
@@ -93,12 +93,12 @@
     }
   ],
   "roundDeltas": {},
-  "updatedAt": 1790236267315,
+  "updatedAt": 1790236961715,
   "dailyLedger": [
     {
-      "id": "ledger-1790236244941",
+      "id": "ledger-1790236940274",
       "dateStr": "24/9",
-      "timestamp": 1790236244941,
+      "timestamp": 1790236940274,
       "scores": {
         "p1": 59,
         "p2": -11,
