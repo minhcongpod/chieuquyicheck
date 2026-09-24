@@ -189,14 +189,28 @@ export default function App() {
     const dateStr = `${now.getDate()}/${now.getMonth() + 1}`;
 
     const todayScores = {};
-    players.forEach(p => {
-      todayScores[p.id] = cumulativeScores[p.id] || 0;
+    const playersInfo = [];
+
+    players.forEach((p, idx) => {
+      const score = cumulativeScores[p.id] || 0;
+      todayScores[p.id] = score;
+
+      const pName = p.name?.trim();
+      const displayName = pName ? pName.toUpperCase() : `P${idx + 1}`;
+      todayScores[displayName] = score;
+
+      playersInfo.push({
+        id: displayName,
+        name: displayName,
+        color: p.color
+      });
     });
 
     const newEntry = {
       id: `ledger-${Date.now()}`,
       dateStr,
       timestamp: Date.now(),
+      playersInfo,
       scores: todayScores
     };
 
@@ -214,6 +228,7 @@ export default function App() {
         players={players}
         cumulativeScores={cumulativeScores}
         roundDeltas={roundDeltas}
+        dailyLedger={dailyLedger}
         onUpdatePlayerName={handleUpdatePlayerName}
         onOpenKeyboard={handleOpenKeyboard}
       />

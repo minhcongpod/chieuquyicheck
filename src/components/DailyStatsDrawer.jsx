@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { PLAYER_COLORS_10 } from '../constants/sampleLedger';
 
 /**
  * Bảng Thống Kê Điểm Theo Ngày (Daily Stats Ledger)
@@ -7,7 +8,8 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
  * - Nền mờ blur và tối:
  *     background-color: rgba(0, 0, 0, 0.85);
  *     backdrop-filter: blur(5px);
- * - Có thể có rất nhiều người chơi: Trượt trái/phải xem từng người
+ * - Có thể có nhiều hơn 5 người chơi (Tối đa 10 người)
+ * - Cho phép xem người thứ 6, 7, 8 bằng cách trượt ngang sang phải
  * - Cột ngày tháng và nút Close được ghim cố định bên trái (Sticky left)
  * - Toàn bộ chữ font-weight: 800 đồng nhất
  */
@@ -122,44 +124,83 @@ export default function DailyStatsDrawer({
     currentDragYRef.current = 0;
   };
 
-  // Tập hợp danh sách tất cả người chơi từng tham gia (kết hợp người chơi hiện tại và các ngày cũ)
+  // Tập hợp danh sách tất cả người chơi từng tham gia (tối đa 10 người chơi)
   const allPlayers = useMemo(() => {
     const playerMap = new Map();
-    // 1. Thêm người chơi hiện tại
+
+    // 1. Thêm từ danh sách người chơi hiện tại đang ngồi tại bàn
     players.forEach((p, idx) => {
-      playerMap.set(p.id, {
-        id: p.id,
-        name: p.name?.trim() ? p.name.trim().toUpperCase() : String.fromCharCode(65 + idx), // A, B, C, D, E...
-        color: p.color
+      const rawName = p.name?.trim();
+      const displayName = rawName ? rawName.toUpperCase() : String.fromCharCode(65 + idx);
+      const key = rawName ? rawName.toUpperCase() : p.id;
+      playerMap.set(key, {
+        id: key,
+        originalId: p.id,
+        name: displayName,
+        color: p.color || PLAYER_COLORS_10[idx % PLAYER_COLORS_10.length]
       });
     });
-    // 2. Tìm thêm người chơi từ các ngày cũ (nếu có)
+
+    // 2. Tìm thêm người chơi từ các ngày cũ trong dailyLedger (nếu có người thay thế)
     dailyLedger.forEach((entry) => {
+      if (entry.playersInfo && Array.isArray(entry.playersInfo)) {
+        entry.playersInfo.forEach((pInfo) => {
+          const rawName = pInfo.name?.trim();
+          const key = rawName ? rawName.toUpperCase() : pInfo.id;
+          if (!playerMap.has(key)) {
+            playerMap.set(key, {
+              id: key,
+              originalId: pInfo.id,
+              name: rawName ? rawName.toUpperCase() : key,
+              color: pInfo.color || PLAYER_COLORS_10[playerMap.size % PLAYER_COLORS_10.length]
+            });
+          }
+        });
+      }
+
       if (entry.scores) {
-        Object.keys(entry.scores).forEach((pId) => {
-          if (!playerMap.has(pId)) {
-            playerMap.set(pId, {
-              id: pId,
-              name: pId.toUpperCase(),
-              color: '#ffffff'
+        Object.keys(entry.scores).forEach((sKey) => {
+          const keyUpper = sKey.toUpperCase();
+          if (!playerMap.has(sKey) && !playerMap.has(keyUpper)) {
+            const matchedP = players.find(p => p.id === sKey);
+            const name = matchedP?.name?.trim()?.toUpperCase() || keyUpper;
+            playerMap.set(keyUpper, {
+              id: keyUpper,
+              originalId: sKey,
+              name: name,
+              color: matchedP?.color || PLAYER_COLORS_10[playerMap.size % PLAYER_COLORS_10.length]
             });
           }
         });
       }
     });
-    return Array.from(playerMap.values());
+
+    // Giới hạn tối đa 10 người chơi theo yêu cầu
+    return Array.from(playerMap.values()).slice(0, 10);
   }, [players, dailyLedger]);
+
+  // Hàm lấy điểm của 1 người chơi trong 1 ngày cụ thể
+  const getPlayerScore = (entry, player) => {
+    if (!entry.scores) return undefined;
+    if (entry.scores[player.id] !== undefined) return entry.scores[player.id];
+    if (entry.scores[player.name] !== undefined) return entry.scores[player.name];
+    if (player.originalId && entry.scores[player.originalId] !== undefined) {
+      return entry.scores[player.originalId];
+    }
+    return undefined;
+  };
 
   // Tính tổng số điểm tích luỹ của từng người chơi qua các ngày đã chốt sổ
   const totalScoresByPlayer = useMemo(() => {
     const totals = {};
     allPlayers.forEach(p => { totals[p.id] = 0; });
     dailyLedger.forEach(entry => {
-      if (entry.scores) {
-        Object.entries(entry.scores).forEach(([pId, score]) => {
-          totals[pId] = (totals[pId] || 0) + (score || 0);
-        });
-      }
+      allPlayers.forEach(p => {
+        const score = getPlayerScore(entry, p);
+        if (score !== undefined && score !== null) {
+          totals[p.id] = (totals[p.id] || 0) + score;
+        }
+      });
     });
     return totals;
   }, [allPlayers, dailyLedger]);
@@ -209,7 +250,7 @@ export default function DailyStatsDrawer({
                 </button>
               </th>
 
-              {/* Các cột người chơi: Tên người chơi và Tổng điểm tích luỹ */}
+              {/* Các cột người chơi: Tên người chơi và Tổng điểm tích luỹ (Tối đa 10 người, trượt ngang để xem) */}
               {allPlayers.map((player) => {
                 const total = totalScoresByPlayer[player.id] || 0;
                 return (
@@ -251,7 +292,7 @@ export default function DailyStatsDrawer({
 
                     {/* Các cột điểm tương ứng của từng người chơi theo ngày */}
                     {allPlayers.map((player) => {
-                      const score = entry.scores?.[player.id];
+                      const score = getPlayerScore(entry, player);
                       const isScoreDefined = score !== undefined && score !== null;
 
                       return (
