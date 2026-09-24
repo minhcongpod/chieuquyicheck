@@ -4,37 +4,30 @@ import { ExpandIcon, CompressIcon } from './Icons';
 /**
  * Quy tắc bôi màu nền tự động tại Bảng lịch sử điểm:
  *
- * Trường hợp 1: Chặn 2 (Chặt heo)
- * - Người chơi chiến thắng (người đi chặt) nhận +20 điểm -> bôi nền xanh lá cây.
- * - Người chơi bị phạt (người bị chặt) nhận -20 điểm -> bôi nền đỏ sẫm.
+ * 1. Bàn 3 người:
+ * - Ô điểm +40: Bôi nền xanh. Hệ thống tự động cộng 1 Sâm vào thống kê của người chơi này.
+ * - Ô điểm -40: Bôi nền đỏ.
  *
- * Trường hợp 2: Đánh Sâm (Xin làng thành công / Tới trắng)
- * - Người chơi chiến thắng nhận +40/+60/+80 điểm (tùy số người thua) -> bôi nền xanh lá.
- * - Tất cả những người chơi còn lại bị phạt (-20 điểm/người) -> bôi nền đỏ sẫm:
- *   + 3 người chơi (2 người thua): Người thắng +40 (xanh), 2 người còn lại -20 (đỏ).
- *   + 4 người chơi (3 người thua): Người thắng +60 (xanh), 3 người còn lại -20 (đỏ).
- *   + 5 người chơi (4 người thua): Người thắng +80 (xanh), 4 người còn lại -20 (đỏ).
+ * 2. Bàn 4 người:
+ * - Ô điểm +60: Bôi nền xanh. Hệ thống tự động cộng 1 Sâm vào thống kê của người chơi này.
+ * - Ô điểm -60: Bôi nền đỏ.
+ *
+ * 3. Bàn 5 người:
+ * - Ô điểm +80: Bôi nền xanh. Hệ thống tự động cộng 1 Sâm vào thống kê của người chơi này.
+ * - Ô điểm -80: Bôi nền đỏ.
+ *
+ * 4. Chặn 2 / Bàn 2 người / Cháy:
+ * - Ô điểm +20: Bôi nền xanh.
+ * - Ô điểm -20: Bôi nền đỏ (Hệ thống tự động cộng 1 Cháy).
  */
-function getScoreCellClass(score, roundScores) {
-  const scoresArray = Object.values(roundScores || {});
-  const losersCount = scoresArray.filter((s) => s === -20).length;
-
-  // Trường hợp 2: Đánh Sâm (Xin làng thành công / Tới trắng)
-  if (losersCount >= 2) {
-    const expectedWin = losersCount * 20; // +40, +60, hoặc +80
-    const hasSamWinner = scoresArray.some((s) => s === expectedWin);
-    if (hasSamWinner) {
-      if (score === expectedWin) return 'history-score-win';
-      if (score === -20) return 'history-score-lose';
-      return '';
-    }
-  }
-
-  // Trường hợp 1: Chặn 2 (Chặt heo)
-  if (score === 20) {
+function getScoreCellClass(score) {
+  // Điểm thắng (+20, +40, +60, +80): Bôi nền xanh
+  if (score === 20 || score === 40 || score === 60 || score === 80) {
     return 'history-score-win';
   }
-  if (score === -20) {
+
+  // Điểm thua / đền sâm / cháy (-20, -40, -60, -80): Bôi nền đỏ
+  if (score === -20 || score === -40 || score === -60 || score === -80) {
     return 'history-score-lose';
   }
 
@@ -46,10 +39,10 @@ function getScoreCellClass(score, roundScores) {
  * Tính số lần SÂM và CHÁY của từng người chơi dựa trên lịch sử ván đấu:
  * 
  * 1. Luật tính SÂM (Dành cho người thắng):
- * - Bàn 2 người: Người thắng được +20 điểm; 1 người thua bị -20 điểm.
- * - Bàn 3 người: Người thắng được +40 điểm; 2 người thua đều bị -20 điểm/người.
- * - Bàn 4 người: Người thắng được +60 điểm; 3 người thua đều bị -20 điểm/người.
- * - Bàn 5 người: Người thắng được +80 điểm; 4 người thua đều bị -20 điểm/người.
+ * - Bàn 3 người: Ô điểm +40 -> Tự động cộng 1 Sâm vào thống kê của người chơi này.
+ * - Bàn 4 người: Ô điểm +60 -> Tự động cộng 1 Sâm vào thống kê của người chơi này.
+ * - Bàn 5 người: Ô điểm +80 -> Tự động cộng 1 Sâm vào thống kê của người chơi này.
+ * - Bàn 2 người: Người thắng được +20 điểm (khi 1 người +20 và 1 người -20).
  *
  * 2. Luật tính CHÁY (Dành cho người thua):
  * - Bất kỳ người chơi nào kết thúc ván đấu với số điểm là -20 điểm sẽ bị hệ thống ghi nhận là "1 Cháy".
@@ -70,33 +63,31 @@ export function calculateSamAndChay(history, players) {
   history.forEach((round) => {
     const scores = round.scores || {};
 
-    // 1. TÍNH CHÁY: Bất kỳ người chơi nào có điểm kết thúc ván là -20
     players.forEach((p) => {
-      if (scores[p.id] === -20) {
+      const score = scores[p.id] || 0;
+
+      // 1. TÍNH CHÁY: Bất kỳ người chơi nào có điểm kết thúc ván là -20
+      if (score === -20) {
         chayCount[p.id] = (chayCount[p.id] || 0) + 1;
       }
-    });
 
-    // 2. TÍNH SÂM:
-    const losersMinus20 = players.filter((p) => scores[p.id] === -20);
-    const loserCount = losersMinus20.length;
+      // 2. TÍNH SÂM:
+      // - Ô điểm +40 (Bàn 3 người): tự động cộng 1 Sâm
+      // - Ô điểm +60 (Bàn 4 người): tự động cộng 1 Sâm
+      // - Ô điểm +80 (Bàn 5 người): tự động cộng 1 Sâm
+      if (score === 40 || score === 60 || score === 80) {
+        samCount[p.id] = (samCount[p.id] || 0) + 1;
+      }
 
-    // Quy mô bàn chơi từ 2 đến 5 người tương ứng 1 đến 4 người thua bị -20
-    if (loserCount >= 1 && loserCount <= 4) {
-      const expectedWinScore = loserCount * 20; // 1->+20, 2->+40, 3->+60, 4->+80
-      const winners = players.filter((p) => scores[p.id] === expectedWinScore);
-
-      if (winners.length === 1) {
-        const winner = winners[0];
-        // Đảm bảo những người còn lại (không thắng và không bị -20) đều có điểm bằng 0
-        const others = players.filter((p) => p.id !== winner.id && scores[p.id] !== -20);
-        const allOthersZero = others.every((p) => (scores[p.id] || 0) === 0);
-
-        if (allOthersZero) {
-          samCount[winner.id] = (samCount[winner.id] || 0) + 1;
+      // - Bàn 2 người: người thắng +20 khi có 1 người thua -20 (và các ghế còn lại = 0)
+      if (score === 20) {
+        const losersMinus20 = players.filter((other) => (scores[other.id] || 0) === -20);
+        const nonZeroPlayers = players.filter((other) => (scores[other.id] || 0) !== 0);
+        if (losersMinus20.length === 1 && nonZeroPlayers.length === 2) {
+          samCount[p.id] = (samCount[p.id] || 0) + 1;
         }
       }
-    }
+    });
   });
 
   return { samCount, chayCount };

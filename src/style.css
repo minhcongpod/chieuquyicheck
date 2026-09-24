@@ -1381,9 +1381,6 @@ td {
   min-width: 52px;
   max-width: 52px;
   text-align: -webkit-center;
-  background-color: rgba(14, 14, 14, 0.98);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 
@@ -1465,9 +1462,6 @@ td {
   font-weight: 800;
   color: rgba(255, 255, 255, 0.7);
   white-space: nowrap;
-  background-color: rgba(14, 14, 14, 0.98);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border-right: 1px solid rgba(255, 255, 255, 0.15);
 }
 

@@ -95,6 +95,8 @@ export function QrCodeIcon({ className = "w-[28px] h-[28px]", width = 28, height
 export function LedgerCalendarIcon({ className = "w-[26px] h-[26px]", width = 26, height = 26, color = "black" }) {
   return (
     <svg
+      id="Layer_1"
+      data-name="Layer 1"
       className={className}
       width={width}
       height={height}
@@ -103,7 +105,7 @@ export function LedgerCalendarIcon({ className = "w-[26px] h-[26px]", width = 26
       xmlns="http://www.w3.org/2000/svg"
     >
       <path
-        d="M0,5.31v10.69h16V5.31H0ZM11.28,9.44l-4.55,4.54h-2.05v-2.05l4.54-4.55s.13-.05.17,0h0s1.89,1.89,1.89,1.89c.05.05.05.13,0,.17Z"
+        d="M0,5.32v10.68h16V5.32H0ZM7.25,14.14h-2.74v-4.41h2.74v4.41ZM11.48,14.14h-2.74v-6.96h2.74v6.96Z"
         fill={color}
       />
       <polygon
