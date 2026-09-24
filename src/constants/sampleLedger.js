@@ -12,38 +12,20 @@ export const PLAYER_COLORS_10 = [
   '#feca57'  // Vàng nghệ (P10)
 ];
 
-// Dữ liệu mẫu ban đầu cho Sổ thống kê điểm theo ngày
+// Dữ liệu mẫu ban đầu cho Sổ thống kê điểm theo từng lần chốt sổ (#1, #2, #3...)
 // Hỗ trợ hiển thị nhiều người chơi (tối đa 10 người), trượt ngang để xem người thứ 6, 7, 8
 export const SAMPLE_DAILY_LEDGER = [
   {
-    id: 'ledger-24-9',
-    dateStr: '24/9',
-    timestamp: Date.now(),
+    id: 'ledger-1',
+    roundIndex: 1,
+    label: '#1',
+    timestamp: Date.now() - 86400000 * 2,
     playersInfo: [
       { id: 'LINH', name: 'LINH', color: '#f4e950' },
       { id: 'CÔNG', name: 'CÔNG', color: '#66ff33' },
       { id: 'MINH', name: 'MINH', color: '#16e4ff' },
       { id: 'HẢI', name: 'HẢI', color: '#c073ff' },
-      { id: 'CHIẾN', name: 'CHIẾN', color: '#ff9f43' } // Người thứ 6 thay Tuấn hôm nay
-    ],
-    scores: {
-      p1: 20, LINH: 20,
-      p2: 0, CÔNG: 0,
-      p3: -20, MINH: -20,
-      p4: 0, HẢI: 0,
-      p5: 0, CHIẾN: 0
-    }
-  },
-  {
-    id: 'ledger-23-9',
-    dateStr: '23/9',
-    timestamp: Date.now() - 86400000,
-    playersInfo: [
-      { id: 'LINH', name: 'LINH', color: '#f4e950' },
-      { id: 'CÔNG', name: 'CÔNG', color: '#66ff33' },
-      { id: 'MINH', name: 'MINH', color: '#16e4ff' },
-      { id: 'HẢI', name: 'HẢI', color: '#c073ff' },
-      { id: 'TUẤN', name: 'TUẤN', color: '#fd6161' } // Tuấn chơi hôm qua
+      { id: 'TUẤN', name: 'TUẤN', color: '#fd6161' } // Tuấn chơi ở lần 1
     ],
     scores: {
       p1: 80, LINH: 80,
@@ -54,9 +36,30 @@ export const SAMPLE_DAILY_LEDGER = [
     }
   },
   {
-    id: 'ledger-22-9',
-    dateStr: '22/9',
-    timestamp: Date.now() - 86400000 * 2,
+    id: 'ledger-2',
+    roundIndex: 2,
+    label: '#2',
+    timestamp: Date.now() - 86400000,
+    playersInfo: [
+      { id: 'LINH', name: 'LINH', color: '#f4e950' },
+      { id: 'CÔNG', name: 'CÔNG', color: '#66ff33' },
+      { id: 'MINH', name: 'MINH', color: '#16e4ff' },
+      { id: 'HẢI', name: 'HẢI', color: '#c073ff' },
+      { id: 'CHIẾN', name: 'CHIẾN', color: '#ff9f43' } // Người thứ 6 thay Tuấn ở lần 2
+    ],
+    scores: {
+      p1: 20, LINH: 20,
+      p2: 0, CÔNG: 0,
+      p3: -20, MINH: -20,
+      p4: 0, HẢI: 0,
+      p5: 0, CHIẾN: 0
+    }
+  },
+  {
+    id: 'ledger-3',
+    roundIndex: 3,
+    label: '#3',
+    timestamp: Date.now(),
     playersInfo: [
       { id: 'LINH', name: 'LINH', color: '#f4e950' },
       { id: 'CÔNG', name: 'CÔNG', color: '#66ff33' },

@@ -181,23 +181,23 @@ export default function App() {
   };
 
   // Xử lý khi bấm nút "CHỐT SỔ" tại Bảng lịch sử điểm:
-  // - Không chuyển sang trang Thống kê điểm theo ngày mà chỉ đóng bottom sheet Lịch sử điểm lại
-  // - Không cộng vào số điểm hiện tại ở trang Thống kê điểm theo ngày mà ghi mới
-  // - Chỉ giữ ngày hôm nay 24/9. Xóa hết điểm ở các ngày trước đó
+  // - Thống kê theo mỗi lần bấm chốt sổ (#1, #2, #3...) thay vì theo ngày
+  // - Những người đã có tên trong sổ sẽ được cộng dồn điểm qua các lần chốt sổ
+  // - Những người chưa có tên trong sổ sẽ hiện lần lượt sang bên phải của bảng
   const handleChotSo = () => {
-    const now = new Date();
-    const dateStr = `${now.getDate()}/${now.getMonth() + 1}`;
+    const nextRoundIndex = (dailyLedger?.length || 0) + 1;
+    const label = `#${nextRoundIndex}`;
 
-    const todayScores = {};
+    const sessionScores = {};
     const playersInfo = [];
 
     players.forEach((p, idx) => {
       const score = cumulativeScores[p.id] || 0;
-      todayScores[p.id] = score;
+      sessionScores[p.id] = score;
 
       const pName = p.name?.trim();
       const displayName = pName ? pName.toUpperCase() : `P${idx + 1}`;
-      todayScores[displayName] = score;
+      sessionScores[displayName] = score;
 
       playersInfo.push({
         id: displayName,
@@ -208,14 +208,16 @@ export default function App() {
 
     const newEntry = {
       id: `ledger-${Date.now()}`,
-      dateStr,
+      roundIndex: nextRoundIndex,
+      label,
       timestamp: Date.now(),
       playersInfo,
-      scores: todayScores
+      scores: sessionScores
     };
 
-    // Ghi mới và chỉ giữ ngày hôm nay, xóa toàn bộ ngày cũ
-    setDailyLedgerData([newEntry]);
+    // Thêm lần chốt sổ mới vào sổ (không xoá lần cũ, điểm tự động cộng dồn ở tổng kết)
+    const updatedLedger = [...(dailyLedger || []), newEntry];
+    setDailyLedgerData(updatedLedger);
   };
 
   // Tính tổng điểm ván hiện tại để kiểm tra cân bằng

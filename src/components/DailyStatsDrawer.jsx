@@ -125,23 +125,12 @@ export default function DailyStatsDrawer({
   };
 
   // Tập hợp danh sách tất cả người chơi từng tham gia (tối đa 10 người chơi)
+  // Quy tắc: Những người đã có tên trong sổ từ các lần chốt trước sẽ giữ nguyên thứ tự cột bên trái.
+  // Những người mới vào sau / chưa có tên trong sổ sẽ lần lượt xuất hiện tiếp sang bên phải.
   const allPlayers = useMemo(() => {
     const playerMap = new Map();
 
-    // 1. Thêm từ danh sách người chơi hiện tại đang ngồi tại bàn
-    players.forEach((p, idx) => {
-      const rawName = p.name?.trim();
-      const displayName = rawName ? rawName.toUpperCase() : String.fromCharCode(65 + idx);
-      const key = rawName ? rawName.toUpperCase() : p.id;
-      playerMap.set(key, {
-        id: key,
-        originalId: p.id,
-        name: displayName,
-        color: p.color || PLAYER_COLORS_10[idx % PLAYER_COLORS_10.length]
-      });
-    });
-
-    // 2. Tìm thêm người chơi từ các ngày cũ trong dailyLedger (nếu có người thay thế)
+    // 1. Quét qua toàn bộ lịch sử dailyLedger theo thứ tự xuất hiện (#1, #2, #3...)
     dailyLedger.forEach((entry) => {
       if (entry.playersInfo && Array.isArray(entry.playersInfo)) {
         entry.playersInfo.forEach((pInfo) => {
@@ -162,7 +151,7 @@ export default function DailyStatsDrawer({
         Object.keys(entry.scores).forEach((sKey) => {
           const keyUpper = sKey.toUpperCase();
           if (!playerMap.has(sKey) && !playerMap.has(keyUpper)) {
-            const matchedP = players.find(p => p.id === sKey);
+            const matchedP = players.find((p) => p.id === sKey);
             const name = matchedP?.name?.trim()?.toUpperCase() || keyUpper;
             playerMap.set(keyUpper, {
               id: keyUpper,
@@ -175,11 +164,26 @@ export default function DailyStatsDrawer({
       }
     });
 
+    // 2. Thêm những người chơi hiện đang ngồi tại bàn nếu họ chưa từng xuất hiện trong bất kỳ lần chốt sổ nào
+    players.forEach((p, idx) => {
+      const rawName = p.name?.trim();
+      const displayName = rawName ? rawName.toUpperCase() : String.fromCharCode(65 + idx);
+      const key = rawName ? rawName.toUpperCase() : p.id;
+      if (!playerMap.has(key)) {
+        playerMap.set(key, {
+          id: key,
+          originalId: p.id,
+          name: displayName,
+          color: p.color || PLAYER_COLORS_10[playerMap.size % PLAYER_COLORS_10.length]
+        });
+      }
+    });
+
     // Giới hạn tối đa 10 người chơi theo yêu cầu
     return Array.from(playerMap.values()).slice(0, 10);
   }, [players, dailyLedger]);
 
-  // Hàm lấy điểm của 1 người chơi trong 1 ngày cụ thể
+  // Hàm lấy điểm của 1 người chơi trong 1 lần chốt sổ cụ thể
   const getPlayerScore = (entry, player) => {
     if (!entry.scores) return undefined;
     if (entry.scores[player.id] !== undefined) return entry.scores[player.id];
@@ -274,20 +278,21 @@ export default function DailyStatsDrawer({
               <tr>
                 <td colSpan={allPlayers.length + 1} className="stats-empty-cell">
                   <div className="stats-empty-state">
-                    <p className="stats-empty-title">Chưa có ngày chốt sổ nào</p>
+                    <p className="stats-empty-title">Chưa có lần chốt sổ nào</p>
                     <p className="stats-empty-sub">
-                      Hãy hoàn thành các ván đấu và bấm nút <strong>CHỐT SỔ</strong> ở Bảng lịch sử điểm để lưu số liệu theo ngày!
+                      Hãy hoàn thành các ván đấu và bấm nút <strong>CHỐT SỔ</strong> ở Bảng lịch sử điểm để lưu số liệu!
                     </p>
                   </div>
                 </td>
               </tr>
             ) : (
-              dailyLedger.map((entry) => {
+              dailyLedger.map((entry, idx) => {
+                const roundLabel = entry.label || (entry.roundIndex ? `#${entry.roundIndex}` : (entry.dateStr || `#${idx + 1}`));
                 return (
                   <tr key={entry.id} className="stats-data-row">
-                    {/* Cột Ngày/Tháng (Ghim cố định bên trái khi lướt ngang) */}
+                    {/* Cột Lần Chốt Sổ (Ghim cố định bên trái khi lướt ngang) */}
                     <td className="stats-td-sticky stats-td-date">
-                      {entry.dateStr}
+                      {roundLabel}
                     </td>
 
                     {/* Các cột điểm tương ứng của từng người chơi theo ngày */}
