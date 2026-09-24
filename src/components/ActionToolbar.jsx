@@ -13,6 +13,7 @@ export default function ActionToolbar({
   onQrClick,
   onInfoClick,
   canUndo = false,
+  hasLedger = false,
   isError = false
 }) {
   // Trạng thái trượt xác nhận inline: null | 'reset' | 'undo'
@@ -147,13 +148,14 @@ export default function ActionToolbar({
             <UndoIcon width={28} height={28} />
           </button>
 
-          {/* Nút Sổ Thống Kê Điểm Theo Ngày (Cột 4) */}
+          {/* Nút Sổ Thống Kê Điểm (Cột 4) - Disable khi chưa có lần chốt sổ nào giống nút Back */}
           <button
             type="button"
             className="toolbar-btn toolbar-btn-ledger toolbar-btn-info"
-            onClick={confirmMode || isError ? undefined : (onStatsClick || onLedgerClick || onQrClick || onInfoClick)}
-            title="Sổ thống kê điểm theo ngày"
-            tabIndex={confirmMode || isError ? -1 : 0}
+            onClick={() => hasLedger && !confirmMode && !isError && (onStatsClick || onLedgerClick || onQrClick || onInfoClick)()}
+            disabled={!hasLedger}
+            title={hasLedger ? "Sổ thống kê điểm" : "Chưa có lần chốt sổ nào"}
+            tabIndex={confirmMode || isError || !hasLedger ? -1 : 0}
           >
             <LedgerCalendarIcon width={24} height={24} color="#000000" />
           </button>

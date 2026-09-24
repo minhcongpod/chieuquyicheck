@@ -124,15 +124,17 @@ function HistoryTableContent({
         {/* 5 Cột Tên Người Chơi (và Điểm tích luỹ hiện ngay dưới tên khi phóng to) */}
         <div className="history-names-group">
           {players.map((player, index) => {
+            const defaultName = String.fromCharCode(65 + index);
+            const displayName = (player.name && player.name.trim()) ? player.name.trim().toUpperCase() : defaultName;
             const totalScore = cumulativeScores[player.id] !== undefined ? cumulativeScores[player.id] : 0;
             return (
               <div
                 key={player.id}
                 className={`history-name-col text-p${index + 1}`}
-                title={player.name}
+                title={displayName}
               >
                 <span className="history-name-text">
-                  {player.name ? player.name.toUpperCase() : ''}
+                  {displayName}
                 </span>
                 {isExpanded && (
                   <span className="history-cumulative-score">

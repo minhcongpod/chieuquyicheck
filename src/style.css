@@ -507,7 +507,8 @@ td {
   opacity: 0.8;
 }
 
-.toolbar-btn-undo:disabled {
+.toolbar-btn-undo:disabled,
+.toolbar-btn-ledger:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -1367,7 +1368,6 @@ td {
   max-width: 54px;
   overflow-x: hidden;
   background: transparent;
-  border-right: 1px solid rgba(255, 255, 255, 0.2);
   box-sizing: border-box;
   display: flex;
   flex-direction: column;

@@ -29,6 +29,97 @@
   ],
   "history": [],
   "roundDeltas": {},
-  "updatedAt": 1790240228004,
-  "dailyLedger": []
+  "updatedAt": 1790242681695,
+  "dailyLedger": [
+    {
+      "id": "ledger-1790242390992",
+      "roundIndex": 1,
+      "label": "#1",
+      "timestamp": 1790242390992,
+      "playersInfo": [
+        {
+          "id": "P1",
+          "name": "P1",
+          "color": "#f4e950"
+        },
+        {
+          "id": "P2",
+          "name": "P2",
+          "color": "#66ff33"
+        },
+        {
+          "id": "P3",
+          "name": "P3",
+          "color": "#16e4ff"
+        },
+        {
+          "id": "P4",
+          "name": "P4",
+          "color": "#c073ff"
+        },
+        {
+          "id": "P5",
+          "name": "P5",
+          "color": "#fd6161"
+        }
+      ],
+      "scores": {
+        "p1": 0,
+        "P1": 0,
+        "p2": 0,
+        "P2": 0,
+        "p3": 0,
+        "P3": 0,
+        "p4": 0,
+        "P4": 0,
+        "p5": 0,
+        "P5": 0
+      }
+    },
+    {
+      "id": "ledger-1790242526111",
+      "roundIndex": 2,
+      "label": "#2",
+      "timestamp": 1790242526111,
+      "playersInfo": [
+        {
+          "id": "CÔNG",
+          "name": "CÔNG",
+          "color": "#f4e950"
+        },
+        {
+          "id": "KIÊN",
+          "name": "KIÊN",
+          "color": "#66ff33"
+        },
+        {
+          "id": "P3",
+          "name": "P3",
+          "color": "#16e4ff"
+        },
+        {
+          "id": "P4",
+          "name": "P4",
+          "color": "#c073ff"
+        },
+        {
+          "id": "P5",
+          "name": "P5",
+          "color": "#fd6161"
+        }
+      ],
+      "scores": {
+        "p1": 20,
+        "CÔNG": 20,
+        "p2": -20,
+        "KIÊN": -20,
+        "p3": 0,
+        "P3": 0,
+        "p4": 0,
+        "P4": 0,
+        "p5": 0,
+        "P5": 0
+      }
+    }
+  ]
 }

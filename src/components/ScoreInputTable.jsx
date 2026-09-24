@@ -401,7 +401,7 @@ export default function ScoreInputTable({
                   </div>
                 ) : (
                   <span className="player-name-text">
-                    {player.name || ''}
+                    {(player.name && player.name.trim()) ? player.name.trim().toUpperCase() : String.fromCharCode(65 + index)}
                   </span>
                 )}
               </div>

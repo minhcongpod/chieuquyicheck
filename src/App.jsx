@@ -197,7 +197,7 @@ export default function App() {
       sessionScores[p.id] = score;
 
       const pName = p.name?.trim();
-      const displayName = pName ? pName.toUpperCase() : `P${idx + 1}`;
+      const displayName = pName ? pName.toUpperCase() : String.fromCharCode(65 + idx);
       sessionScores[displayName] = score;
 
       playersInfo.push({
@@ -246,6 +246,7 @@ export default function App() {
         onLedgerClick={() => setIsDailyStatsOpen(true)}
         onQrClick={() => setIsQrModalOpen(true)}
         canUndo={history.length > 0}
+        hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
         isError={isErrorBanner}
       />
 
