@@ -393,12 +393,12 @@ td {
 .player-btn-plus.small-text,
 .player-btn-minus.size-2digits,
 .player-btn-plus.size-2digits {
-  font-size: 24px;
+  font-size: 30px;
 }
 
 .player-btn-minus.size-3digits,
 .player-btn-plus.size-3digits {
-  font-size: 18px;
+  font-size: 25px;
   letter-spacing: -0.5px;
 }
 
@@ -415,7 +415,7 @@ td {
   box-shadow: inset 0 0 0 2px var(--row-color, #000000);
   /* 2. Dịch chuyển ký hiệu sang bên trái */
   justify-content: flex-start;
-  padding-left: 6px;
+  padding-left: 8px;
 }
 
 .player-btn-minus.size-3digits.is-active,
@@ -1253,7 +1253,7 @@ td {
   bottom: 0;
   left: 0;
   width: var(--screen-width);
-  height: 245px;
+  height: 240px;
   background: linear-gradient(180deg, #337C20 5%, #091209 95%, rgba(0, 0, 0, 0.00) 100%);
   z-index: 100;
   display: flex;
@@ -1271,7 +1271,7 @@ td {
   }
 }
 
-/* Các hàng phím 1-4 (Chiều cao mỗi hàng 70px) */
+/* Các hàng phím 1-4 (Chiều cao mỗi hàng 60px) */
 .keyboard-row {
   width: 390px;
   height: 60px;
@@ -1279,7 +1279,7 @@ td {
   flex-direction: row;
 }
 
-/* Phím bấm số (130x70px) */
+/* Phím bấm số (130x60px) */
 .keyboard-key {
   width: 130px;
   height: 60px;
@@ -1301,25 +1301,6 @@ td {
 
 .keyboard-key-cancel:active {
   background-color: rgba(253, 97, 97, 0.2);
-}
-
-/* Hàng thứ 5 dưới cùng: Tên người chơi căn giữa (390x70px) */
-.keyboard-row-bottom {
-  width: 390px;
-  height: 30px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.keyboard-player-name-text {
-  font-size: 16px;
-  font-weight: 800;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  text-align: center;
 }
 
 /* ==========================================================================

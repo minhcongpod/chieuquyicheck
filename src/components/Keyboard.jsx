@@ -40,17 +40,6 @@ export default function Keyboard({
           <BackspaceIcon />
         </button>
       </div>
-
-      {/* Row 5: Tên người chơi căn giữa toàn bộ hàng (390x70px) */}
-      <div className="keyboard-row-bottom">
-        <span
-          className="keyboard-player-name-text"
-          style={{ color: activePlayer?.color }}
-          title={activePlayer?.name}
-        >
-          {activePlayer?.name ? activePlayer.name.toUpperCase() : ''}
-        </span>
-      </div>
     </div>
   );
 }
