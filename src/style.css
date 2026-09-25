@@ -126,19 +126,26 @@ td {
 .players-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
+  border: 2.5px solid #000000;
+  box-sizing: border-box;
 }
 
 /* Từng hàng người chơi */
 .player-row {
   width: 100%;
-  height: 60px;
+  height: 64px;
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 1px;
   position: relative;
+  border-bottom: 2.5px solid #000000;
+  box-sizing: border-box;
   will-change: transform;
+}
+
+.player-row:last-child {
+  border-bottom: none;
 }
 
 .player-row.player-row-animating {
@@ -171,27 +178,40 @@ td {
   background-color: var(--color-player-5);
 }
 
-/* Ô tên người chơi (Kích thước: 127px) */
+/* Khối Trái: Tên người chơi và Tổng điểm tích luỹ */
+.player-left-group {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border-right: 2.5px solid #000000;
+  box-sizing: border-box;
+  cursor: pointer;
+  padding: 0 24px 0 20px;
+}
+
+/* Ô tên người chơi */
 .player-name-box {
-  width: 127px;
-  height: 60px;
-  flex-grow: 1;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
   display: flex;
   align-items: center;
-  padding: 0 10px;
-  cursor: pointer;
   position: relative;
 }
 
 .player-name-text {
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
-  /* Extra Bold */
-  color: var(--color-text-dark);
+  color: #000000;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   text-transform: uppercase;
+  line-height: 1;
 }
 
 .player-name-input-wrapper {
@@ -214,12 +234,12 @@ td {
   padding: 0;
   margin: 0;
   font-family: inherit;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: normal;
-  color: var(--color-text-dark);
-  caret-color: var(--color-text-dark);
+  color: #000000;
+  caret-color: #000000;
   text-transform: uppercase;
 }
 
@@ -235,7 +255,7 @@ td {
   pointer-events: none;
   z-index: 1;
   font-family: inherit;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: normal;
@@ -248,7 +268,7 @@ td {
   visibility: hidden;
   white-space: pre;
   font-family: inherit;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: normal;
@@ -257,9 +277,9 @@ td {
 
 .ghost-suffix {
   opacity: 0.35;
-  color: var(--color-text-dark);
+  color: #000000;
   font-family: inherit;
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: normal;
@@ -314,52 +334,59 @@ td {
   color: #121212;
 }
 
-/* Ô điểm tổng tích luỹ (Cột 2: Thẳng hàng với nút Reset) */
+/* Ô điểm tổng tích luỹ (ở bên phải của Khối Trái) */
 .player-score-box {
-  width: 68px;
-  height: 60px;
   flex-shrink: 0;
+  min-width: 40px;
+  height: 100%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  padding: 0 4px;
+  justify-content: flex-end;
+  padding-left: 8px;
 }
 
 .player-score-text {
-  font-size: 26px;
+  font-size: 32px;
   font-weight: 800;
-  color: var(--color-text-dark);
-  text-align: center;
+  color: #000000;
+  line-height: 1;
+  text-align: right;
 }
 
-/* Nút Trừ (-) và Nút Cộng (+) (Cột 3 & 4: Thẳng hàng với nút Undo và Info) */
+/* Nút Trừ (-) và Nút Cộng (+) (Cột 2 & Cột 3) */
 .player-btn-minus,
 .player-btn-plus {
-  width: 68px;
-  height: 60px;
-  flex-shrink: 0;
+  flex: 0 0 21%;
+  min-width: 72px;
+  height: 100%;
   border: none;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: 34px;
   font-weight: 800;
-  color: var(--color-text-dark);
+  color: #000000;
   cursor: pointer;
-  transition: background-color 0.1s ease, transform 0.1s ease;
+  transition: background-color 0.1s ease, transform 0.08s ease;
   white-space: nowrap;
+  box-sizing: border-box;
+  line-height: 1;
+}
+
+.player-btn-minus {
+  border-right: 2.5px solid #000000;
 }
 
 .player-btn-minus.small-text,
 .player-btn-plus.small-text {
-  font-size: 20px;
+  font-size: 24px;
 }
 
 .player-btn-minus:active,
 .player-btn-plus:active {
   background-color: rgba(0, 0, 0, 0.15);
-  transform: scale(0.95);
+  transform: scale(0.96);
 }
 
 /* ==========================================================================

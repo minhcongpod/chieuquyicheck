@@ -301,122 +301,125 @@ export default function ScoreInputTable({
               className={`player-row player-row-${player.id}`}
               style={{ backgroundColor: player.color }}
             >
-              {/* Cột Tên Người Chơi - Bấm trực tiếp để đổi tên kèm gợi ý tự động */}
+              {/* Khối Trái: Tên người chơi và Điểm tích luỹ trong cùng 1 ô liền mạch */}
               <div
-                className="player-name-box"
+                className="player-left-group"
                 onClick={() => {
                   if (editingPlayerId !== player.id) handleNameClick(player);
                 }}
               >
-                {editingPlayerId === player.id ? (
-                  <div className="player-name-input-wrapper">
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      autoFocus
-                      value={tempName}
-                      onChange={(e) => setTempName(e.target.value)}
-                      onBlur={() => {
-                        blurTimerRef.current = setTimeout(() => {
-                          handleNameSave(player.id, tempName);
-                        }, 160);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          const toSave = activeSuggestion ? activeSuggestion.fullName : tempName;
-                          handleNameSave(player.id, toSave);
-                        } else if (e.key === 'Tab') {
-                          if (activeSuggestion) {
+                {/* Tên Người Chơi */}
+                <div className="player-name-box">
+                  {editingPlayerId === player.id ? (
+                    <div className="player-name-input-wrapper">
+                      <input
+                        ref={inputRef}
+                        type="text"
+                        autoFocus
+                        value={tempName}
+                        onChange={(e) => setTempName(e.target.value)}
+                        onBlur={() => {
+                          blurTimerRef.current = setTimeout(() => {
+                            handleNameSave(player.id, tempName);
+                          }, 160);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
                             e.preventDefault();
-                            handleAcceptSuggestion(activeSuggestion.fullName);
+                            const toSave = activeSuggestion ? activeSuggestion.fullName : tempName;
+                            handleNameSave(player.id, toSave);
+                          } else if (e.key === 'Tab') {
+                            if (activeSuggestion) {
+                              e.preventDefault();
+                              handleAcceptSuggestion(activeSuggestion.fullName);
+                            }
+                          } else if (e.key === 'ArrowRight') {
+                            if (
+                              activeSuggestion &&
+                              inputRef.current &&
+                              inputRef.current.selectionStart === tempName.length
+                            ) {
+                              e.preventDefault();
+                              handleAcceptSuggestion(activeSuggestion.fullName);
+                            }
+                          } else if (e.key === 'Escape') {
+                            setEditingPlayerId(null);
                           }
-                        } else if (e.key === 'ArrowRight') {
-                          if (
-                            activeSuggestion &&
-                            inputRef.current &&
-                            inputRef.current.selectionStart === tempName.length
-                          ) {
-                            e.preventDefault();
-                            handleAcceptSuggestion(activeSuggestion.fullName);
-                          }
-                        } else if (e.key === 'Escape') {
-                          setEditingPlayerId(null);
-                        }
-                      }}
-                      className="player-name-input"
-                      autoComplete="off"
-                      autoCorrect="off"
-                      autoCapitalize="characters"
-                      spellCheck={false}
-                    />
+                        }}
+                        className="player-name-input"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        autoCapitalize="characters"
+                        spellCheck={false}
+                      />
 
-                    {/* Gợi ý inline: Các ký tự tiếp theo mờ hơn nối tiếp sau ký tự đã gõ */}
-                    {activeSuggestion && activeSuggestion.suffix && (
-                      <div className="player-name-ghost-overlay" aria-hidden="true">
-                        <span className="ghost-prefix">{tempName}</span>
-                        <span
-                          className="ghost-suffix"
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                            handleAcceptSuggestion(activeSuggestion.fullName);
-                          }}
-                          onTouchStart={(e) => {
-                            e.preventDefault();
-                            if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                            handleAcceptSuggestion(activeSuggestion.fullName);
-                          }}
-                          title="Chạm để điền nhanh"
-                        >
-                          {activeSuggestion.suffix}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Chip gợi ý nổi bên dưới cho thao tác chạm nhanh trên mobile */}
-                    {candidateMatches.length > 0 && (
-                      <div className="player-name-suggestions-popup">
-                        {candidateMatches.slice(0, 3).map((name) => (
-                          <button
-                            key={name}
-                            type="button"
-                            className="name-suggestion-chip"
+                      {/* Gợi ý inline: Các ký tự tiếp theo mờ hơn nối tiếp sau ký tự đã gõ */}
+                      {activeSuggestion && activeSuggestion.suffix && (
+                        <div className="player-name-ghost-overlay" aria-hidden="true">
+                          <span className="ghost-prefix">{tempName}</span>
+                          <span
+                            className="ghost-suffix"
                             onMouseDown={(e) => {
                               e.preventDefault();
                               if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                              handleNameSave(player.id, name);
+                              handleAcceptSuggestion(activeSuggestion.fullName);
                             }}
                             onTouchStart={(e) => {
                               e.preventDefault();
                               if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                              handleNameSave(player.id, name);
+                              handleAcceptSuggestion(activeSuggestion.fullName);
                             }}
+                            title="Chạm để điền nhanh"
                           >
-                            {name}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <span className="player-name-text">
-                    {(player.name && player.name.trim()) ? player.name.trim().toUpperCase() : String.fromCharCode(65 + index)}
-                  </span>
-                )}
-              </div>
+                            {activeSuggestion.suffix}
+                          </span>
+                        </div>
+                      )}
 
-              {/* Cột Điểm Tổng Tích Luỹ */}
-              <div className="player-score-box">
-                <span className="player-score-text">
-                  {displayScore}
-                </span>
+                      {/* Chip gợi ý nổi bên dưới cho thao tác chạm nhanh trên mobile */}
+                      {candidateMatches.length > 0 && (
+                        <div className="player-name-suggestions-popup">
+                          {candidateMatches.slice(0, 3).map((name) => (
+                            <button
+                              key={name}
+                              type="button"
+                              className="name-suggestion-chip"
+                              onMouseDown={(e) => {
+                                e.preventDefault();
+                                if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+                                handleNameSave(player.id, name);
+                              }}
+                              onTouchStart={(e) => {
+                                e.preventDefault();
+                                if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+                                handleNameSave(player.id, name);
+                              }}
+                            >
+                              {name}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="player-name-text">
+                      {(player.name && player.name.trim()) ? player.name.trim().toUpperCase() : String.fromCharCode(65 + index)}
+                    </span>
+                  )}
+                </div>
+
+                {/* Điểm Tổng Tích Luỹ */}
+                <div className="player-score-box">
+                  <span className="player-score-text">
+                    {displayScore}
+                  </span>
+                </div>
               </div>
 
               {/* Nút Trừ (-) - Bấm mở bàn phím phép trừ */}
               <button
                 type="button"
-                className={`player-btn-minus ${minusText.length > 2 ? 'small-text' : ''}`}
+                className={`player-btn-minus ${minusText.length > 3 ? 'small-text' : ''}`}
                 onClick={() => onOpenKeyboard(player, '-')}
                 title="Trừ điểm"
               >
@@ -426,7 +429,7 @@ export default function ScoreInputTable({
               {/* Nút Cộng (+) - Bấm mở bàn phím phép cộng */}
               <button
                 type="button"
-                className={`player-btn-plus ${plusText.length > 2 ? 'small-text' : ''}`}
+                className={`player-btn-plus ${plusText.length > 3 ? 'small-text' : ''}`}
                 onClick={() => onOpenKeyboard(player, '+')}
                 title="Cộng điểm"
               >
