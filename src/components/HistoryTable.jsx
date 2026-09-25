@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { ExpandIcon, SortScoreIcon, SortNameIcon, ResetIcon } from './Icons';
-import { ResetConfirmModal } from './Modals';
+import { ExpandIcon, SortScoreIcon, SortNameIcon, ResetIcon, CheckmarkIcon, CrossIcon } from './Icons';
 
 /**
  * Quy tắc bôi màu nền tự động tại Bảng lịch sử điểm:
@@ -97,10 +96,52 @@ function HistoryTableContent({
   chayCount = {},
   onChotSo,
   canReset = false,
-  onResetClick,
+  onResetConfirm,
   sortMode = 'score',
   onToggleSort
 }) {
+  // Trạng thái trượt xác nhận Reset inline trong footer
+  const [isResetConfirming, setIsResetConfirming] = useState(false);
+  const footerActionsRef = useRef(null);
+
+  // Tự động đóng trạng thái xác nhận khi click ra ngoài footer actions
+  useEffect(() => {
+    if (!isResetConfirming) return;
+    const handleOutsideClick = (e) => {
+      if (footerActionsRef.current && !footerActionsRef.current.contains(e.target)) {
+        setIsResetConfirming(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleOutsideClick);
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsideClick);
+    };
+  }, [isResetConfirming]);
+
+  // Reset trạng thái xác nhận khi đóng bảng lịch sử
+  useEffect(() => {
+    if (!isExpanded) {
+      setIsResetConfirming(false);
+    }
+  }, [isExpanded]);
+
+  // Xử lý bấm nút Reset (Đổi icon xoay tròn thành chữ RESET và trượt nút xác nhận)
+  const handleResetButtonClick = () => {
+    if (!canReset) return;
+    setIsResetConfirming((prev) => !prev);
+  };
+
+  // Xác nhận Reset toàn bộ điểm
+  const handleExecuteReset = () => {
+    if (onResetConfirm) onResetConfirm();
+    setIsResetConfirming(false);
+  };
+
+  // Hủy bỏ thao tác Reset
+  const handleCancelReset = () => {
+    setIsResetConfirming(false);
+  };
+
   return (
     <>
       {/* Header Bảng Lịch Sử (Icon Phóng to / Sắp xếp + 5 tên người chơi và điểm tích luỹ) */}
@@ -141,26 +182,16 @@ function HistoryTableContent({
         {/* 5 Cột Tên Người Chơi (và Điểm tích luỹ hiện ngay dưới tên khi phóng to) theo thứ tự sortedPlayers */}
         <div className="history-names-group">
           {sortedPlayers.map((player) => {
-            const originalIndex = players.findIndex(p => p.id === player.id);
+            const originalIndex = players.findIndex((p) => p.id === player.id);
             const defaultName = String.fromCharCode(65 + (originalIndex >= 0 ? originalIndex : 0));
-            const displayName = (player.name && player.name.trim()) ? player.name.trim().toUpperCase() : defaultName;
+            const displayName = player.name && player.name.trim() ? player.name.trim().toUpperCase() : defaultName;
             const totalScore = cumulativeScores[player.id] !== undefined ? cumulativeScores[player.id] : 0;
             const colorClass = originalIndex >= 0 ? `text-p${originalIndex + 1}` : 'text-p1';
 
             return (
-              <div
-                key={player.id}
-                className={`history-name-col ${colorClass}`}
-                title={displayName}
-              >
-                <span className="history-name-text">
-                  {displayName}
-                </span>
-                {isExpanded && (
-                  <span className="history-cumulative-score">
-                    {totalScore}
-                  </span>
-                )}
+              <div key={player.id} className={`history-name-col ${colorClass}`} title={displayName}>
+                <span className="history-name-text">{displayName}</span>
+                {isExpanded && <span className="history-cumulative-score">{totalScore}</span>}
               </div>
             );
           })}
@@ -187,9 +218,7 @@ function HistoryTableContent({
             return (
               <div key={round.id || roundNum} className="history-row">
                 {/* Cột Số Thứ Tự Ván */}
-                <div className="history-round-num">
-                  #{roundNum}
-                </div>
+                <div className="history-round-num">#{roundNum}</div>
 
                 {/* 5 Cột Điểm của từng người chơi theo thứ tự sortedPlayers */}
                 {sortedPlayers.map((player) => {
@@ -197,10 +226,7 @@ function HistoryTableContent({
                   const highlightClass = getScoreCellClass(score);
 
                   return (
-                    <div
-                      key={player.id}
-                      className={`history-score-cell ${highlightClass}`}
-                    >
+                    <div key={player.id} className={`history-score-cell ${highlightClass}`}>
                       {score}
                     </div>
                   );
@@ -252,32 +278,75 @@ function HistoryTableContent({
             </div>
           </div>
 
-          {/* 3. Nhóm nút điều khiển: RESET (bé, vuông theo ảnh) và SAVE (dài) */}
-          <div className="history-footer-actions">
-            <button
-              type="button"
-              className="btn-history-reset"
-              onClick={onResetClick}
-              disabled={!canReset}
-              title={canReset ? "Reset toàn bộ điểm về 0" : "Chưa có thay đổi nào để reset"}
-              aria-label="Reset toàn bộ điểm về 0"
-            >
-              <ResetIcon width={26} height={26} color="#000000" />
-            </button>
+          {/* 3. Nhóm nút điều khiển: RESET (dài hơn, trượt xác nhận) và SAVE */}
+          <div className="history-footer-actions" ref={footerActionsRef}>
+            {/* Cột Trái: Nút Reset (rộng 120px) */}
+            <div className="history-reset-slot">
+              <button
+                type="button"
+                className={`btn-history-reset ${isResetConfirming ? 'is-confirming' : ''}`}
+                onClick={handleResetButtonClick}
+                disabled={!canReset}
+                title={
+                  canReset
+                    ? isResetConfirming
+                      ? 'Bấm để hủy thao tác reset'
+                      : 'Reset toàn bộ điểm về 0'
+                    : 'Chưa có thay đổi nào để reset'
+                }
+                aria-label={isResetConfirming ? 'Hủy reset' : 'Reset toàn bộ điểm về 0'}
+              >
+                {isResetConfirming ? (
+                  <span className="btn-reset-text">RESET</span>
+                ) : (
+                  <ResetIcon width={28} height={28} color="#000000" />
+                )}
+              </button>
+            </div>
 
-            <button
-              type="button"
-              className="btn-chot-so btn-history-save"
-              onClick={() => {
-                if (reversedHistory.length === 0) return;
-                if (onChotSo) onChotSo();
-                if (onToggle) onToggle(); // Đóng bottom sheet lịch sử điểm lại
-              }}
-              disabled={reversedHistory.length === 0}
-              title={reversedHistory.length > 0 ? "Lưu sổ các ván đấu đã chơi" : "Chưa có dữ liệu nào để lưu"}
-            >
-              SAVE
-            </button>
+            {/* Cột Phải: Nút SAVE hoặc Bộ 2 nút [Xác nhận ✔] [Hủy ✖] trượt ra */}
+            <div className="history-save-slot">
+              {/* Nút SAVE mặc định */}
+              <div className={`history-save-group ${isResetConfirming ? 'slide-left-out' : 'slide-in'}`}>
+                <button
+                  type="button"
+                  className="btn-chot-so btn-history-save"
+                  onClick={() => {
+                    if (reversedHistory.length === 0 || isResetConfirming) return;
+                    if (onChotSo) onChotSo();
+                    if (onToggle) onToggle(); // Đóng bottom sheet lịch sử điểm lại
+                  }}
+                  disabled={reversedHistory.length === 0 || isResetConfirming}
+                  title={reversedHistory.length > 0 ? 'Lưu sổ các ván đấu đã chơi' : 'Chưa có dữ liệu nào để lưu'}
+                  tabIndex={isResetConfirming ? -1 : 0}
+                >
+                  SAVE
+                </button>
+              </div>
+
+              {/* Bộ 2 nút xác nhận trượt ra: Xác nhận (Xanh ✔) và Hủy (Đỏ ✕) */}
+              <div className={`history-confirm-group ${isResetConfirming ? 'slide-in' : 'slide-right-out'}`}>
+                <button
+                  type="button"
+                  className="btn-history-confirm-yes"
+                  onClick={handleExecuteReset}
+                  title="Xác nhận Reset toàn bộ điểm"
+                  tabIndex={isResetConfirming ? 0 : -1}
+                >
+                  <CheckmarkIcon width={28} height={28} color="#000000" />
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-history-confirm-no"
+                  onClick={handleCancelReset}
+                  title="Hủy bỏ thao tác reset"
+                  tabIndex={isResetConfirming ? 0 : -1}
+                >
+                  <CrossIcon width={28} height={28} color="#000000" />
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -298,8 +367,6 @@ export default function HistoryTable({
   const [isDragging, setIsDragging] = useState(false);
   // Chế độ sắp xếp cột: 'score' (Cao bên trái - thấp dần bên phải) | 'name' (A đến Z)
   const [sortMode, setSortMode] = useState('score');
-  // Trạng thái modal xác nhận Reset
-  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const startYRef = useRef(0);
   const startXRef = useRef(0);
@@ -332,19 +399,19 @@ export default function HistoryTable({
           return scoreB - scoreA; // Cao bên trái - thấp dần bên phải
         }
         // Điểm bằng nhau thì giữ thứ tự người chơi ban đầu
-        const idxA = players.findIndex(p => p.id === a.id);
-        const idxB = players.findIndex(p => p.id === b.id);
+        const idxA = players.findIndex((p) => p.id === a.id);
+        const idxB = players.findIndex((p) => p.id === b.id);
         return idxA - idxB;
       });
     } else {
       // sortMode === 'name': A đến Z
       return list.sort((a, b) => {
-        const idxA = players.findIndex(p => p.id === a.id);
-        const idxB = players.findIndex(p => p.id === b.id);
+        const idxA = players.findIndex((p) => p.id === a.id);
+        const idxB = players.findIndex((p) => p.id === b.id);
         const defaultNameA = String.fromCharCode(65 + (idxA >= 0 ? idxA : 0));
         const defaultNameB = String.fromCharCode(65 + (idxB >= 0 ? idxB : 0));
-        const nameA = (a.name && a.name.trim()) ? a.name.trim().toUpperCase() : defaultNameA;
-        const nameB = (b.name && b.name.trim()) ? b.name.trim().toUpperCase() : defaultNameB;
+        const nameA = a.name && a.name.trim() ? a.name.trim().toUpperCase() : defaultNameA;
+        const nameB = b.name && b.name.trim() ? b.name.trim().toUpperCase() : defaultNameB;
         return nameA.localeCompare(nameB, 'vi');
       });
     }
@@ -352,7 +419,7 @@ export default function HistoryTable({
 
   // Chuyển đổi chế độ sắp xếp khi bấm vào icon
   const handleToggleSort = () => {
-    setSortMode(prev => (prev === 'score' ? 'name' : 'score'));
+    setSortMode((prev) => (prev === 'score' ? 'name' : 'score'));
   };
 
   // Nhấn Escape để đóng chế độ phóng to
@@ -510,21 +577,11 @@ export default function HistoryTable({
           chayCount={chayCount}
           onChotSo={onChotSo}
           canReset={canReset}
-          onResetClick={() => canReset && setIsResetModalOpen(true)}
+          onResetConfirm={onResetConfirm}
           sortMode={sortMode}
           onToggleSort={handleToggleSort}
         />
       </div>
-
-      {/* 3. Popup Cảnh Báo Reset Trận Đấu */}
-      <ResetConfirmModal
-        isOpen={isResetModalOpen}
-        onClose={() => setIsResetModalOpen(false)}
-        onConfirm={() => {
-          if (onResetConfirm) onResetConfirm();
-          setIsResetModalOpen(false);
-        }}
-      />
     </>
   );
 }
