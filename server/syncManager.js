@@ -2,6 +2,7 @@ import { WebSocketServer } from 'ws';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import admin from 'firebase-admin';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,6 +11,21 @@ const DATA_DIR = path.resolve(__dirname, '../data/rooms');
 // Đảm bảo thư mục lưu dữ liệu tồn tại
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+// Khởi tạo Firebase nếu có cấu hình
+let db = null;
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  try {
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount)
+    });
+    db = admin.firestore();
+    console.log('[SyncServer] 🟢 Firebase Firestore đã được khởi tạo thành công.');
+  } catch (error) {
+    console.error('[SyncServer] 🔴 Lỗi khởi tạo Firebase:', error);
+  }
 }
 
 // 5 Người chơi mặc định (chuỗi rỗng ban đầu)
@@ -28,58 +44,89 @@ const roomClients = new Map(); // roomId -> Set<ws>
 import { SAMPLE_DAILY_LEDGER } from '../src/constants/sampleLedger.js';
 
 /**
- * Đọc trạng thái phòng từ file (nếu có) hoặc khởi tạo mới
+ * Đọc trạng thái phòng từ Firebase/File (nếu có) hoặc khởi tạo mới
  */
-function getOrCreateRoomState(roomId) {
+async function getOrCreateRoomState(roomId) {
   if (roomStates.has(roomId)) {
     return roomStates.get(roomId);
   }
 
-  const filePath = path.join(DATA_DIR, `${roomId}.json`);
-  if (fs.existsSync(filePath)) {
+  let data = null;
+
+  // 1. Cố gắng lấy từ Firebase trước
+  if (db) {
     try {
-      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      if (!data.dailyLedger || data.dailyLedger.length === 0) {
-        data.dailyLedger = JSON.parse(JSON.stringify(SAMPLE_DAILY_LEDGER));
+      const doc = await db.collection('rooms').doc(roomId).get();
+      if (doc.exists) {
+        data = doc.data();
       }
-      // Dọn dẹp tên mặc định cũ A, B, C, D, E nếu phòng chưa có lịch sử đấu
-      if (!data.history || data.history.length === 0) {
-        data.players = (data.players || []).map((p, idx) => {
-          const oldDefault = String.fromCharCode(65 + idx);
-          if (p.name === oldDefault) return { ...p, name: '' };
-          return p;
-        });
-      }
-      roomStates.set(roomId, data);
-      return data;
     } catch (e) {
-      console.error(`[SyncServer] Lỗi đọc file phòng ${roomId}:`, e);
+      console.error(`[SyncServer] Lỗi đọc Firebase phòng ${roomId}:`, e);
     }
   }
 
-  const newState = {
-    roomId,
-    players: JSON.parse(JSON.stringify(INITIAL_PLAYERS)),
-    history: [],
-    roundDeltas: {},
-    dailyLedger: JSON.parse(JSON.stringify(SAMPLE_DAILY_LEDGER)),
-    updatedAt: Date.now()
-  };
+  // 2. Nếu không có Firebase, thử đọc file local
+  if (!data) {
+    const filePath = path.join(DATA_DIR, `${roomId}.json`);
+    if (fs.existsSync(filePath)) {
+      try {
+        data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      } catch (e) {
+        console.error(`[SyncServer] Lỗi đọc file phòng ${roomId}:`, e);
+      }
+    }
+  }
 
-  roomStates.set(roomId, newState);
-  saveRoomState(roomId, newState);
-  return newState;
+  // 3. Nếu vẫn không có dữ liệu, tạo mới
+  if (!data) {
+    data = {
+      roomId,
+      players: JSON.parse(JSON.stringify(INITIAL_PLAYERS)),
+      history: [],
+      roundDeltas: {},
+      dailyLedger: JSON.parse(JSON.stringify(SAMPLE_DAILY_LEDGER)),
+      updatedAt: Date.now()
+    };
+  } else {
+    // 4. Chuẩn hóa dữ liệu cũ
+    if (!data.dailyLedger || data.dailyLedger.length === 0) {
+      data.dailyLedger = JSON.parse(JSON.stringify(SAMPLE_DAILY_LEDGER));
+    }
+    if (!data.history || data.history.length === 0) {
+      data.players = (data.players || []).map((p, idx) => {
+        const oldDefault = String.fromCharCode(65 + idx);
+        if (p.name === oldDefault) return { ...p, name: '' };
+        return p;
+      });
+    }
+  }
+
+  roomStates.set(roomId, data);
+  // Nếu là phòng mới tinh, lưu luôn để tạo file/doc
+  if (!data.updatedAt || data.history?.length === 0) {
+    saveRoomState(roomId, data);
+  }
+  
+  return data;
 }
 
 /**
- * Lưu trạng thái phòng ra đĩa
+ * Lưu trạng thái phòng ra đĩa & Firebase (chạy ngầm không block)
  */
 function saveRoomState(roomId, state) {
+  // Ghi ra file local làm backup
   try {
     const filePath = path.join(DATA_DIR, `${roomId}.json`);
     fs.writeFileSync(filePath, JSON.stringify(state, null, 2), 'utf-8');
   } catch (e) {
     console.error(`[SyncServer] Lỗi ghi file phòng ${roomId}:`, e);
+  }
+
+  // Cập nhật Firebase
+  if (db) {
+    db.collection('rooms').doc(roomId).set(state).catch(err => {
+      console.error(`[SyncServer] Lỗi ghi Firebase phòng ${roomId}:`, err);
+    });
   }
 }
 
@@ -117,7 +164,7 @@ export function setupWebSocketServer(httpServer) {
     }
   });
 
-  wss.on('connection', (ws, request) => {
+  wss.on('connection', async (ws, request) => {
     const urlObj = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
     const roomId = urlObj.searchParams.get('room') || 'default';
 
@@ -127,26 +174,33 @@ export function setupWebSocketServer(httpServer) {
     }
     roomClients.get(roomId).add(ws);
 
-    // Gửi ngay trạng thái hiện tại của phòng cho client mới kết nối
-    const currentState = getOrCreateRoomState(roomId);
-    ws.send(JSON.stringify({
-      type: 'INIT_STATE',
-      payload: currentState,
-      serverTime: Date.now()
-    }));
-
     // Báo số người đang online trong phòng cho mọi người
     broadcastToRoom(roomId, {
       type: 'ROOM_USERS_COUNT',
       count: roomClients.get(roomId).size
     });
 
+    // Lấy state từ Firebase/Local (hàm async)
+    const currentState = await getOrCreateRoomState(roomId);
+    
+    // Gửi ngay trạng thái hiện tại của phòng cho client mới kết nối
+    if (ws.readyState === 1) {
+      ws.send(JSON.stringify({
+        type: 'INIT_STATE',
+        payload: currentState,
+        serverTime: Date.now()
+      }));
+    }
+
     // Lắng nghe các thay đổi từ client
     ws.on('message', (message) => {
       try {
         const data = JSON.parse(message.toString());
         const { type, payload } = data;
-        const state = getOrCreateRoomState(roomId);
+        
+        // Vì state đã load khi connection, chỉ cần lấy từ RAM (cực nhanh và đồng bộ)
+        const state = roomStates.get(roomId);
+        if (!state) return;
 
         switch (type) {
           case 'UPDATE_PLAYER_NAME': {
@@ -165,7 +219,6 @@ export function setupWebSocketServer(httpServer) {
           case 'UPDATE_DELTAS': {
             state.roundDeltas = payload.roundDeltas || {};
             state.updatedAt = Date.now();
-            // Cập nhật điểm đang nhập dở tức thì
             broadcastToRoom(roomId, {
               type: 'STATE_UPDATE',
               actionType: 'UPDATE_DELTAS',
