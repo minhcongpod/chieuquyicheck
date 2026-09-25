@@ -38,7 +38,7 @@ function getScoreCellClass(score) {
 /**
  * Tính số lần SÂM và CHÁY của từng người chơi dựa trên lịch sử ván đấu:
  */
-export function calculateSamAndChay(history, players) {
+function calculateSamAndChay(history, players) {
   const samCount = {};
   const chayCount = {};
 
@@ -368,10 +368,14 @@ export default function HistoryTable({
   // Chế độ sắp xếp cột: 'score' (Cao bên trái - thấp dần bên phải) | 'name' (A đến Z)
   const [sortMode, setSortMode] = useState('score');
 
+  const prevExpandedRef = useRef(isExpanded);
   // Thông báo trạng thái phóng to/thu nhỏ cho component cha (App.jsx)
   useEffect(() => {
-    if (onExpandChange) {
-      onExpandChange(isExpanded);
+    if (prevExpandedRef.current !== isExpanded) {
+      prevExpandedRef.current = isExpanded;
+      if (onExpandChange) {
+        onExpandChange(isExpanded);
+      }
     }
   }, [isExpanded, onExpandChange]);
 

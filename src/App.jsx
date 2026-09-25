@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import ScoreInputTable from './components/ScoreInputTable';
 import ActionToolbar from './components/ActionToolbar';
 import HistoryTable from './components/HistoryTable';
@@ -41,31 +41,31 @@ export default function App() {
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
 
   // Đóng bàn phím và làm sạch dữ liệu tạm khi xem Bảng thống kê hoặc Bảng lịch sử phóng to
-  const handleOpenDailyStats = () => {
+  const handleOpenDailyStats = useCallback(() => {
     setActiveKeypad(null);
     setCurrentKeypadValue('');
     setIsDailyStatsOpen(true);
-  };
+  }, []);
 
-  const handleOpenQrModal = () => {
+  const handleOpenQrModal = useCallback(() => {
     setActiveKeypad(null);
     setCurrentKeypadValue('');
     setIsQrModalOpen(true);
-  };
+  }, []);
 
-  const handleHistoryExpandChange = (expanded) => {
-    setIsHistoryExpanded(expanded);
+  const handleHistoryExpandChange = useCallback((expanded) => {
+    setIsHistoryExpanded(prev => (prev !== expanded ? expanded : prev));
     if (expanded) {
       setActiveKeypad(null);
       setCurrentKeypadValue('');
     }
-  };
+  }, []);
 
   // Tự động tắt bàn phím khi bất kỳ bảng nào (Thống kê, Lịch sử phóng to, QR) đang mở
   useEffect(() => {
     if (isDailyStatsOpen || isHistoryExpanded || isQrModalOpen) {
-      setActiveKeypad(null);
-      setCurrentKeypadValue('');
+      setActiveKeypad(prev => (prev !== null ? null : prev));
+      setCurrentKeypadValue(prev => (prev !== '' ? '' : prev));
     }
   }, [isDailyStatsOpen, isHistoryExpanded, isQrModalOpen]);
 
@@ -108,9 +108,7 @@ export default function App() {
 
   // Mở bàn phím số khi bấm nút - hoặc + ở hàng người chơi
   const handleOpenKeyboard = (player, mode) => {
-    setIsDailyStatsOpen(false);
-    setIsHistoryExpanded(false);
-    setIsQrModalOpen(false);
+    if (isDailyStatsOpen || isHistoryExpanded || isQrModalOpen) return;
     const playerIndex = players.findIndex(p => p.id === player.id);
     setActiveKeypad({
       player,
