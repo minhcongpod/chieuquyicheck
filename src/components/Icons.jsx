@@ -182,7 +182,7 @@ export function CrossIcon({ className = "w-[32px] h-[32px]", width = 32, height 
   );
 }
 
-// Icon Copy (Sao chép) theo ảnh đính kèm (media_1790305006150.png)
+// Icon Copy (Sao chép) theo SVG yêu cầu
 export function CopyIcon({ className = "w-[18px] h-[18px]", width = 18, height = 18, color = "#ffffff" }) {
   return (
     <svg
@@ -190,12 +190,13 @@ export function CopyIcon({ className = "w-[18px] h-[18px]", width = 18, height =
       width={width}
       height={height}
       viewBox="0 0 24 24"
-      fill={color}
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M16 1H4C2.9 1 2 1.9 2 3v14h2V3h12V1z" />
-      <path d="M13 5H8C6.9 5 6 5.9 6 7v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V12h-8V5z" />
-      <path d="M14.5 5H21v6.5L14.5 5z" />
+      <path
+        d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z"
+        fill={color}
+      />
     </svg>
   );
 }
