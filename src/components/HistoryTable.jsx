@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { ExpandIcon, SortScoreIcon, SortNameIcon } from './Icons';
+import { ExpandIcon, SortScoreIcon, SortNameIcon, ResetIcon } from './Icons';
 import { ResetConfirmModal } from './Modals';
 
 /**
@@ -252,7 +252,7 @@ function HistoryTableContent({
             </div>
           </div>
 
-          {/* 3. Nhóm nút điều khiển: RESET (bên cạnh) và SAVE (thay cho CHỐT SỔ) */}
+          {/* 3. Nhóm nút điều khiển: RESET (bé, vuông theo ảnh) và SAVE (dài) */}
           <div className="history-footer-actions">
             <button
               type="button"
@@ -260,8 +260,9 @@ function HistoryTableContent({
               onClick={onResetClick}
               disabled={!canReset}
               title={canReset ? "Reset toàn bộ điểm về 0" : "Chưa có thay đổi nào để reset"}
+              aria-label="Reset toàn bộ điểm về 0"
             >
-              RESET
+              <ResetIcon width={26} height={26} color="#000000" />
             </button>
 
             <button

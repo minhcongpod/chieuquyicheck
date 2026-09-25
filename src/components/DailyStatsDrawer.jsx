@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PLAYER_COLORS_10 } from '../constants/sampleLedger';
-import { TrashIcon } from './Icons';
+import { TrashIcon, SortScoreIcon, SortNameIcon } from './Icons';
 
 /**
  * Bảng Thống Kê Điểm Theo Lần Chốt Sổ (Daily Stats Ledger)
@@ -11,7 +11,7 @@ import { TrashIcon } from './Icons';
  *     backdrop-filter: blur(5px);
  * - Có thể có nhiều hơn 5 người chơi (Tối đa 10 người)
  * - Cho phép xem người thứ 6, 7, 8 bằng cách trượt ngang sang phải
- * - Cột thứ tự và nút Close được ghim cố định bên trái (Sticky left)
+ * - Cột thứ tự và nút Sắp xếp được ghim cố định bên trái (Sticky left)
  * - Toàn bộ chữ font-weight: 800 đồng nhất
  * - Bấm vào thứ tự (Vd: #6) để hiển thị icon thùng rác màu đỏ, nền đỏ rượu, cả dòng đỏ mờ 10% để xoá
  */
@@ -25,6 +25,12 @@ export default function DailyStatsDrawer({
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  // Chế độ sắp xếp cột: 'score' (Cao bên trái - thấp dần bên phải) | 'name' (A đến Z)
+  const [sortMode, setSortMode] = useState('score');
+
+  const handleToggleSort = () => {
+    setSortMode(prev => (prev === 'score' ? 'name' : 'score'));
+  };
 
   const startYRef = useRef(0);
   const startXRef = useRef(0);
@@ -257,6 +263,27 @@ export default function DailyStatsDrawer({
     return totals;
   }, [masterPlayers, dailyLedger]);
 
+  // Sắp xếp các cột người chơi theo sortMode:
+  // - 'score': Tổng điểm cao bên trái, thấp dần sang phải
+  // - 'name': Tên người chơi từ A đến Z
+  const displayPlayers = useMemo(() => {
+    const list = [...masterPlayers];
+    if (sortMode === 'score') {
+      return list.sort((a, b) => {
+        const scoreA = totalScoresByPlayer[a.name] ?? 0;
+        const scoreB = totalScoresByPlayer[b.name] ?? 0;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        return a.name.localeCompare(b.name, 'vi');
+      });
+    } else {
+      return list.sort((a, b) => {
+        return a.name.localeCompare(b.name, 'vi');
+      });
+    }
+  }, [masterPlayers, sortMode, totalScoresByPlayer]);
+
   // Sắp xếp các lần chốt sổ theo thứ tự mới nhất nằm trên cùng (#6 -> #5 -> #4 -> ... -> #1)
   const sortedLedger = useMemo(() => {
     const list = [...dailyLedger];
@@ -308,19 +335,24 @@ export default function DailyStatsDrawer({
               - Chiều rộng cố định 54px, không cho phép cuộn ngang (overflow-x: hidden).
               - Nền hoàn toàn trong suốt (transparent). */}
           <div className="daily-stats-fixed-panel">
-            {/* Header cell: Nút Close [✕] */}
+            {/* Header cell: Nút Sắp xếp (Thay thế icon Close) */}
             <div className="stats-fixed-header-cell">
               <button
                 type="button"
-                className="stats-close-btn"
-                onClick={onClose}
-                title="Đóng bảng thống kê"
-                aria-label="Đóng"
+                className="stats-sort-btn"
+                onClick={handleToggleSort}
+                title={
+                  sortMode === 'score'
+                    ? 'Đang sắp xếp: Điểm cao -> thấp. Bấm để sắp xếp theo tên (A -> Z)'
+                    : 'Đang sắp xếp: Tên A -> Z. Bấm để sắp xếp theo điểm (Cao -> Thấp)'
+                }
+                aria-label="Sắp xếp cột người chơi"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="3.2" strokeLinecap="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
+                {sortMode === 'score' ? (
+                  <SortScoreIcon width={24} height={24} />
+                ) : (
+                  <SortNameIcon width={24} height={24} />
+                )}
               </button>
             </div>
 
@@ -377,9 +409,9 @@ export default function DailyStatsDrawer({
               - Cuộn ngầm bên trong phạm vi Khối 2, biến mất khi chạm mép trái Khối 2, không trượt sang Khối 1. */}
           <div className="daily-stats-scrollable-panel">
             <div className="stats-scrollable-track">
-              {/* Header row: Tên người chơi và Tổng điểm tích luỹ theo Master List (Bỏ màu sắc) */}
+              {/* Header row: Tên người chơi và Tổng điểm tích luỹ theo displayPlayers (Bỏ màu sắc) */}
               <div className="stats-scrollable-header-row">
-                {masterPlayers.map((player) => {
+                {displayPlayers.map((player) => {
                   const total = totalScoresByPlayer[player.name] || 0;
                   return (
                     <div key={player.name} className="stats-player-head-cell">
@@ -394,7 +426,7 @@ export default function DailyStatsDrawer({
                 })}
               </div>
 
-              {/* Danh sách các dòng điểm số tương ứng khớp chính xác với Master List */}
+              {/* Danh sách các dòng điểm số tương ứng khớp chính xác với displayPlayers */}
               <div className="stats-scrollable-body">
                 {sortedLedger.map((entry) => {
                   const isDeleting = pendingDeleteId === entry.id;
@@ -404,7 +436,7 @@ export default function DailyStatsDrawer({
                       key={entry.id} 
                       className={`stats-scrollable-data-row ${isDeleting ? 'is-deleting' : ''}`}
                     >
-                      {masterPlayers.map((player) => {
+                      {displayPlayers.map((player) => {
                         const score = getPlayerScore(entry, player);
                         const isScoreDefined = score !== undefined && score !== null;
 
