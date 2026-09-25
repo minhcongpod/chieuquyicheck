@@ -46,7 +46,6 @@ html,
 body {
   width: 100%;
   height: 100%;
-  height: 100dvh;
   margin: 0;
   padding: 0;
   overflow: hidden !important;
@@ -55,13 +54,13 @@ body {
   overscroll-behavior: none;
   -webkit-overflow-scrolling: auto;
   touch-action: none;
-  background-color: #0c100c;
+  background-color: #000000;
   color: var(--color-text-light);
   font-family: var(--font-family);
   font-weight: 800;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
 }
 
 button,
@@ -84,10 +83,9 @@ td {
 #root {
   width: 100%;
   height: 100%;
-  height: 100dvh;
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: stretch;
   overflow: hidden !important;
   overscroll-behavior: none;
   touch-action: none;
@@ -100,8 +98,6 @@ td {
   width: 100%;
   min-width: 375px;
   height: 100%;
-  height: 100dvh;
-  max-height: 100dvh;
   margin: 0 auto;
   background: linear-gradient(180deg, #00000000 24%, #142D13 30%, #0E1F0E 70%, #00000000 100%);
   position: relative;
@@ -663,7 +659,8 @@ td {
 
 /* Drawer toàn màn hình phóng to bảng lịch sử (Hiệu ứng trượt lên / trượt xuống mượt mà) */
 .history-expanded-drawer {
-  position: absolute;
+  position: fixed;
+  inset: 0;
   top: 0;
   left: 0;
   right: 0;
@@ -674,7 +671,7 @@ td {
   background-color: rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-radius: inherit;
+  border-radius: 0;
   padding-top: max(env(safe-area-inset-top), 50px);
   padding-right: max(12px, env(safe-area-inset-right));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
@@ -1257,17 +1254,23 @@ td {
    7. POPUP / MODAL XÁC NHẬN (RESET, UNDO, QR CHUYỂN KHOẢN)
    ========================================================================== */
 .modal-overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-radius: inherit;
+  border-radius: 0;
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-top: max(env(safe-area-inset-top), 50px);
+  padding-top: max(16px, env(safe-area-inset-top));
   padding-right: max(16px, env(safe-area-inset-right));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
   padding-left: max(16px, env(safe-area-inset-left));
@@ -1510,18 +1513,22 @@ td {
    - Cột ngày tháng và nút Close được ghim cố định bên trái (Sticky left)
    ========================================================================== */
 .daily-stats-drawer {
-  position: absolute;
+  position: fixed;
   inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
   height: 100%;
   background-color: rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  border-radius: inherit;
+  border-radius: 0;
   z-index: 125;
   display: flex;
   flex-direction: column;
-  padding-top: max(env(safe-area-inset-top), 50px);
+  padding-top: max(env(safe-area-inset-top), 80px);
   padding-right: max(12px, env(safe-area-inset-right));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
   padding-left: max(12px, env(safe-area-inset-left));
@@ -1906,7 +1913,7 @@ td {
 /* Thiết bị màn hình hẹp (320px - 360px như iPhone SE 1, Galaxy A, màn hình gập đóng) */
 @media (max-width: 360px) {
   .app-screen {
-    padding-top: max(env(safe-area-inset-top), 100px);
+    padding-top: max(env(safe-area-inset-top), 80px);
     padding-right: max(8px, env(safe-area-inset-right));
     padding-bottom: max(8px, env(safe-area-inset-bottom));
     padding-left: max(8px, env(safe-area-inset-left));
