@@ -32,7 +32,7 @@ export default function Keyboard({
 
       {/* Row 4: Nút Hủy [✕] bên trái, Phím 0 ở giữa, Phím Xóa Backspace [←] bên phải */}
       <div className="keyboard-row">
-        <button type="button" className="keyboard-key keyboard-key-cancel" onClick={onCancel} title="Đóng bàn phím">
+        <button type="button" className="keyboard-key keyboard-key-cancel" onClick={onCancel} title="Hủy nhập">
           <CrossIcon />
         </button>
         <button type="button" className="keyboard-key" onClick={() => onNumberClick('0')}>0</button>

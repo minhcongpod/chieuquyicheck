@@ -146,8 +146,15 @@ export default function App() {
     });
   };
 
-  // Đóng bàn phím [✕] (giữ nguyên điểm đã nhập ở ô +/-)
+  // Hủy thao tác nhập [✕ màu đỏ]: Xóa dữ liệu tạm, hoàn nguyên ô về + hoặc -, thoát focus và đóng bàn phím
   const handleKeypadCancel = () => {
+    if (activeKeypad && activeKeypad.player) {
+      updateRoundDeltas(prevDeltas => {
+        const updated = { ...prevDeltas };
+        delete updated[activeKeypad.player.id];
+        return updated;
+      });
+    }
     setActiveKeypad(null);
     setCurrentKeypadValue('');
   };

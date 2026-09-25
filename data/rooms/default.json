@@ -54,12 +54,19 @@
         "p1": -100
       },
       "timestamp": 1790308596988
+    },
+    {
+      "id": "round-1790309079533",
+      "roundNumber": 4,
+      "scores": {
+        "p5": 333,
+        "p3": -333
+      },
+      "timestamp": 1790309079533
     }
   ],
-  "roundDeltas": {
-    "p5": 333
-  },
-  "updatedAt": 1790308906578,
+  "roundDeltas": {},
+  "updatedAt": 1790309079465,
   "dailyLedger": [
     {
       "id": "ledger-1",
