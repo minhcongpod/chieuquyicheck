@@ -1,0 +1,25 @@
+{
+  "name": "Chiếu Quỷ iCheck",
+  "short_name": "Chiếu Quỷ",
+  "description": "Ứng dụng tính điểm Sâm Lốc / Chiếu Quỷ đồng bộ thời gian thực",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a2e14",
+  "theme_color": "#0a2e14",
+  "orientation": "portrait",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
