@@ -1,55 +1,10 @@
 import React, { useState } from 'react';
 import { CopyIcon, CheckIcon, ExternalLinkIcon, DownloadQrIcon, LoadingSpinnerIcon } from './Icons';
 
-// Popup Cảnh Báo Reset Trận Đấu
-export function ResetConfirmModal({ isOpen, onClose, onConfirm }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <h3 className="modal-title">RESET</h3>
-        <p className="modal-message" >
-          Bơi lại từ đầu :)
-        </p>
-        <div className="modal-actions">
-          <button type="button" className="modal-btn modal-btn-cancel" onClick={onClose}>
-            HỦY
-          </button>
-          <button type="button" className="modal-btn modal-btn-confirm" onClick={onConfirm}>
-            RESET VỀ 0
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Popup Cảnh Báo Hoàn Tác (Undo) Ván Trước
-export function UndoConfirmModal({ isOpen, onClose, onConfirm, roundNumber }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <h3 className="modal-title">QUAY LẠI</h3>
-        <p className="modal-message">
-          Mày chắc chưa!!?
-        </p>
-        <div className="modal-actions">
-          <button type="button" className="modal-btn modal-btn-cancel" onClick={onClose}>
-            HỦY
-          </button>
-          <button type="button" className="modal-btn modal-btn-confirm undo" onClick={onConfirm}>
-            QUAY LẠI
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Popup Chuyển Khoản Quỹ Chiếu Quỷ (MoMo QR)
+/**
+ * Popup Chuyển Khoản Quỹ Chiếu Quỷ (MoMo QR)
+ * Cho phép xem mã QR, sao chép liên kết, mở trực tiếp hoặc tải ảnh về máy.
+ */
 export function QrTransferModal({ isOpen, onClose }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -162,33 +117,4 @@ export function QrTransferModal({ isOpen, onClose }) {
   );
 }
 
-// Giữ lại InfoModal trỏ tới QrTransferModal để tương thích ngược
 export const InfoModal = QrTransferModal;
-
-// Popup Cảnh Báo Lỗi Nhập Điểm Chưa Chính Xác (LỖI CMNR)
-export function ErrorConfirmModal({ isOpen, onClose }) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <h3 className="modal-title" style={{fontSize: '18px', fontWeight: '800' }}>
-          LỖI CMNR
-        </h3>
-        <p className="modal-message" >
-          Có làm được không!!?
-        </p>
-        <div className="modal-actions">
-          <button
-            type="button"
-            className="modal-btn modal-btn-confirm"
-            onClick={onClose}
-            style={{ width: '100%', height: '44px', fontSize: '15px', borderRadius: 0, color: '#000000' }}
-          >
-            OK
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}

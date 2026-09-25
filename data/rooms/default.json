@@ -3,22 +3,22 @@
   "players": [
     {
       "id": "p1",
-      "name": "VÂN",
+      "name": "",
       "color": "#f4e950"
     },
     {
       "id": "p2",
-      "name": "Công",
+      "name": "",
       "color": "#66ff33"
     },
     {
       "id": "p3",
-      "name": "CÔ BG",
+      "name": "",
       "color": "#16e4ff"
     },
     {
       "id": "p4",
-      "name": "aaaa",
+      "name": "",
       "color": "#c073ff"
     },
     {
@@ -29,44 +29,18 @@
   ],
   "history": [
     {
-      "id": "round-1790306952271",
+      "id": "round-1790310539775",
       "roundNumber": 1,
       "scores": {
-        "p2": 22,
-        "p5": -22
+        "p4": 33,
+        "p3": 33,
+        "p5": -66
       },
-      "timestamp": 1790306952271
-    },
-    {
-      "id": "round-1790306971610",
-      "roundNumber": 2,
-      "scores": {
-        "p1": 80,
-        "p2": -80
-      },
-      "timestamp": 1790306971610
-    },
-    {
-      "id": "round-1790308596988",
-      "roundNumber": 3,
-      "scores": {
-        "p2": 100,
-        "p1": -100
-      },
-      "timestamp": 1790308596988
-    },
-    {
-      "id": "round-1790309079533",
-      "roundNumber": 4,
-      "scores": {
-        "p5": 333,
-        "p3": -333
-      },
-      "timestamp": 1790309079533
+      "timestamp": 1790310539775
     }
   ],
   "roundDeltas": {},
-  "updatedAt": 1790309275536,
+  "updatedAt": 1790310539661,
   "dailyLedger": [
     {
       "id": "ledger-1",
@@ -261,6 +235,46 @@
         "CÔNG": 42,
         "AAAA": 0,
         "NGƯỜI CHƠI 5": -22
+      }
+    },
+    {
+      "id": "ledger-1790310404917",
+      "roundIndex": 6,
+      "label": "#6",
+      "timestamp": 1790310404917,
+      "playersInfo": [
+        {
+          "id": "VÂN",
+          "name": "VÂN",
+          "color": "#f4e950"
+        },
+        {
+          "id": "CÔNG",
+          "name": "CÔNG",
+          "color": "#66ff33"
+        },
+        {
+          "id": "CÔ BG",
+          "name": "CÔ BG",
+          "color": "#16e4ff"
+        },
+        {
+          "id": "AAAA",
+          "name": "AAAA",
+          "color": "#c073ff"
+        },
+        {
+          "id": "G",
+          "name": "G",
+          "color": "#fd6161"
+        }
+      ],
+      "scores": {
+        "VÂN": -4,
+        "CÔNG": 42,
+        "CÔ BG": -349,
+        "AAAA": 0,
+        "G": 311
       }
     }
   ]
