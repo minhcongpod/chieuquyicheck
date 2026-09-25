@@ -5,9 +5,9 @@
 
 /* 1. KHAI BÁO BIẾN MÀU SẮC & THÔNG SỐ (Dễ dàng thay đổi) */
 :root {
-  /* Kích thước màn hình */
-  --screen-width: 390px;
-  --screen-height: 680px;
+  /* Kích thước màn hình responsive */
+  --screen-width: 100%;
+  --screen-max-width: 440px;
   --screen-bg: #111511;
 
   /* Màu sắc 5 người chơi (Chuẩn theo Figma 100%) */
@@ -94,22 +94,34 @@ td {
 }
 
 /* ==========================================================================
-   2. KHUNG MÀN HÌNH CHÍNH (390x844px)
+   2. KHUNG MÀN HÌNH CHÍNH (RESPONSIVE CHO MỌI THIẾT BỊ)
    ========================================================================== */
 .app-screen {
-  width: var(--screen-width);
-  height: var(--screen-height);
-  max-width: 100vw;
+  width: 100%;
+  max-width: var(--screen-max-width, 440px);
+  height: 100%;
+  height: 100dvh;
   max-height: 100dvh;
+  margin: 0 auto;
   background: linear-gradient(180deg, #00000000 24%, #142D13 30%, #0E1F0E 70%, #00000000 100%);
   position: relative;
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
-  padding: 12px;
-  gap: 16px;
+  padding: max(10px, env(safe-area-inset-top, 10px)) max(10px, env(safe-area-inset-right, 10px)) max(10px, env(safe-area-inset-bottom, 10px)) max(10px, env(safe-area-inset-left, 10px));
+  gap: clamp(8px, 1.8vh, 16px);
+  box-sizing: border-box;
   overscroll-behavior: none;
   touch-action: manipulation;
+}
+
+/* Khung viền mô phỏng màn hình điện thoại cao cấp trên Tablet / Laptop / PC */
+@media (min-width: 541px) {
+  .app-screen {
+    height: min(920px, calc(100dvh - 24px));
+    border-radius: 28px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  }
 }
 
 /* ==========================================================================
@@ -133,7 +145,7 @@ td {
 /* Từng hàng người chơi */
 .player-row {
   width: 100%;
-  height: 64px;
+  height: clamp(52px, 7.2vh, 64px);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -366,7 +378,7 @@ td {
 .player-btn-minus,
 .player-btn-plus {
   flex: 0 0 21%;
-  min-width: 72px;
+  min-width: clamp(60px, 18vw, 76px);
   height: 100%;
   border: none;
   background: transparent;
@@ -480,20 +492,21 @@ td {
    ========================================================================== */
 .action-toolbar {
   width: 100%;
-  height: 60px;
+  height: clamp(52px, 6.8vh, 60px);
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 4px;
   position: relative;
   user-select: none;
+  flex-shrink: 0;
 }
 
 /* KHU VỰC TRÁI (flex: 1, độ rộng bằng nút tích xanh / tên người chơi) */
 .toolbar-left-slot {
   flex: 1;
   min-width: 0;
-  height: 60px;
+  height: 100%;
   position: relative;
   overflow: hidden;
 }
@@ -501,7 +514,7 @@ td {
 /* Nút chốt ván màu xanh lá góc trái (Cột 1, hiển thị mặc định) */
 .toolbar-btn-confirm {
   width: 100%;
-  height: 60px;
+  height: 100%;
   background-color: #66ff33;
   border: none;
   display: flex;
@@ -518,7 +531,7 @@ td {
 }
 
 .confirm-sum-text {
-  font-size: 26px;
+  font-size: clamp(20px, 3vh, 26px);
   font-weight: 800;
   color: #000000;
   line-height: 1;
@@ -542,7 +555,7 @@ td {
 /* Nút hành động đang kích hoạt (Reset hoặc Undo, cùng chiều ngang với nút tích xanh) */
 .toolbar-btn-active-action {
   width: 100%;
-  height: 60px;
+  height: 100%;
   background-color: var(--color-btn-gray);
   border: none;
   display: flex;
@@ -553,7 +566,7 @@ td {
   top: 0;
   left: 0;
   color: #000000;
-  font-size: 26px;
+  font-size: clamp(20px, 3vh, 26px);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -568,7 +581,7 @@ td {
 
 /* Chữ hiển thị khi xác nhận: RESET hoặc BACK */
 .action-confirm-label {
-  font-size: 26px;
+  font-size: clamp(20px, 3vh, 26px);
   font-weight: 800;
   color: #000000;
   text-transform: uppercase;
@@ -577,10 +590,10 @@ td {
   text-align: center;
 }
 
-/* KHU VỰC PHẢI (212px = 3 nút 68px + 2 khoảng cách 4px) */
+/* KHU VỰC PHẢI (co giãn linh hoạt theo tỷ lệ màn hình) */
 .toolbar-right-slot {
-  width: 212px;
-  height: 60px;
+  width: clamp(180px, 55%, 212px);
+  height: 100%;
   position: relative;
   overflow: hidden;
   flex-shrink: 0;
@@ -591,7 +604,7 @@ td {
   top: 0;
   left: 0;
   width: 100%;
-  height: 60px;
+  height: 100%;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -605,9 +618,12 @@ td {
 .toolbar-btn-info,
 .toolbar-btn-reset,
 .toolbar-btn-qr {
-  width: 68px;
-  height: 60px;
-  flex-shrink: 0;
+  flex: 1;
+  width: auto;
+  max-width: 68px;
+  height: 100%;
+  min-width: 0;
+  flex-shrink: 1;
   background-color: var(--color-btn-gray);
   border: none;
   display: flex;
@@ -742,7 +758,7 @@ td {
   background-color: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  padding: 16px 16px 16px 16px;
+  padding: max(16px, env(safe-area-inset-top, 16px)) max(12px, env(safe-area-inset-right, 12px)) max(16px, env(safe-area-inset-bottom, 16px)) max(12px, env(safe-area-inset-left, 12px));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1252,8 +1268,10 @@ td {
   position: absolute;
   bottom: 0;
   left: 0;
-  width: var(--screen-width);
-  height: 240px;
+  right: 0;
+  width: 100%;
+  height: auto;
+  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
   background: linear-gradient(180deg, #337C20 5%, #091209 95%, rgba(0, 0, 0, 0.00) 100%);
   z-index: 100;
   display: flex;
@@ -1271,24 +1289,25 @@ td {
   }
 }
 
-/* Các hàng phím 1-4 (Chiều cao mỗi hàng 60px) */
+/* Các hàng phím 1-4 (Chiều cao co giãn clamp 50-60px) */
 .keyboard-row {
-  width: 390px;
-  height: 60px;
+  width: 100%;
+  height: clamp(50px, 6.8vh, 60px);
   display: flex;
   flex-direction: row;
 }
 
-/* Phím bấm số (130x60px) */
+/* Phím bấm số (Chia đều 3 cột 33.333% trên mọi kích thước màn hình) */
 .keyboard-key {
-  width: 130px;
-  height: 60px;
+  flex: 1;
+  width: auto;
+  height: 100%;
   background: transparent;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 26px;
+  font-size: clamp(22px, 3.2vh, 26px);
   font-weight: 800;
   color: var(--color-text-light);
   cursor: pointer;
@@ -1311,15 +1330,21 @@ td {
   inset: 0;
   background-color: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: max(16px, env(safe-area-inset-top, 16px)) max(16px, env(safe-area-inset-right, 16px)) max(16px, env(safe-area-inset-bottom, 16px)) max(16px, env(safe-area-inset-left, 16px));
+  box-sizing: border-box;
 }
 
 .modal-card {
   width: 100%;
+  max-width: min(360px, 92vw);
+  max-height: min(85vh, 85dvh);
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
@@ -1405,16 +1430,18 @@ td {
 
 /* Khung hiển thị ảnh QR */
 .qr-image-container {
-  width: 280px;
-  height: 280px;
+  width: min(260px, 60vw);
+  height: min(260px, 60vw);
+  max-height: 32vh;
   margin: 0 auto;
   background-color: #ffffff;
-  padding: 10px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 2px solid #ffffff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-sizing: border-box;
 }
 
 .qr-image-display {
@@ -1552,19 +1579,16 @@ td {
    ========================================================================== */
 .daily-stats-drawer {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: var(--screen-width);
-  height: var(--screen-height);
-  max-width: 100vw;
-  max-height: 100dvh;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
   z-index: 95;
   display: flex;
   flex-direction: column;
-  padding: 16px 16px 16px 16px;
+  padding: max(16px, env(safe-area-inset-top, 16px)) max(12px, env(safe-area-inset-right, 12px)) max(16px, env(safe-area-inset-bottom, 16px)) max(12px, env(safe-area-inset-left, 12px));
   overflow: hidden;
   box-sizing: border-box;
   transform: translateY(100%);
@@ -1937,4 +1961,94 @@ td {
   font-weight: 800;
   line-height: 1.5;
   max-width: 280px;
+}
+
+/* ==========================================================================
+   10. RESPONSIVE BREAKPOINTS CHO CÁC DÒNG MÁY ĐẶC BIỆT
+   ========================================================================== */
+
+/* Thiết bị màn hình hẹp (320px - 360px như iPhone SE 1, Galaxy A, màn hình gập đóng) */
+@media (max-width: 360px) {
+  .app-screen {
+    padding: max(8px, env(safe-area-inset-top, 8px)) max(8px, env(safe-area-inset-right, 8px)) max(8px, env(safe-area-inset-bottom, 8px)) max(8px, env(safe-area-inset-left, 8px));
+    gap: 8px;
+  }
+
+  .player-name-text,
+  .player-name-input {
+    font-size: 24px;
+  }
+
+  .player-score-text {
+    font-size: 24px;
+  }
+
+  .player-btn-minus,
+  .player-btn-plus {
+    min-width: 58px;
+    font-size: 24px;
+  }
+
+  .player-btn-minus.size-3digits,
+  .player-btn-plus.size-3digits {
+    font-size: 20px;
+  }
+
+  .confirm-sum-text,
+  .toolbar-btn-active-action,
+  .action-confirm-label {
+    font-size: 22px;
+  }
+
+  .toolbar-right-slot {
+    width: 176px;
+  }
+
+  .toolbar-btn-undo,
+  .toolbar-btn-ledger,
+  .toolbar-btn-info,
+  .toolbar-btn-reset,
+  .toolbar-btn-qr {
+    max-width: 56px;
+  }
+}
+
+/* Thiết bị màn hình ngắn (chiều cao <= 670px như iPhone SE, điện thoại màn hình nhỏ, hoặc trình duyệt hiển thị thanh URL) */
+@media (max-height: 670px) {
+  .app-screen {
+    gap: 8px;
+    padding: max(8px, env(safe-area-inset-top, 8px)) max(10px, env(safe-area-inset-right, 10px)) max(8px, env(safe-area-inset-bottom, 8px)) max(10px, env(safe-area-inset-left, 10px));
+  }
+
+  .player-row {
+    height: 52px;
+  }
+
+  .player-name-text,
+  .player-name-input {
+    font-size: 24px;
+  }
+
+  .player-score-text {
+    font-size: 24px;
+  }
+
+  .player-btn-minus,
+  .player-btn-plus {
+    font-size: 24px;
+  }
+
+  .action-toolbar {
+    height: 52px;
+  }
+
+  .confirm-sum-text,
+  .toolbar-btn-active-action,
+  .action-confirm-label {
+    font-size: 22px;
+  }
+
+  .keyboard-row {
+    height: 50px;
+  }
 }
