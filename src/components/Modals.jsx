@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CopyIcon, CheckIcon } from './Icons';
+import { CopyIcon, CheckIcon, ExternalLinkIcon, DownloadQrIcon, LoadingSpinnerIcon } from './Icons';
 
 // Popup Cảnh Báo Reset Trận Đấu
 export function ResetConfirmModal({ isOpen, onClose, onConfirm }) {
@@ -98,10 +98,6 @@ export function QrTransferModal({ isOpen, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card modal-qr-card" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-qr-header">
-          <h3 className="modal-title qr-title">QUỸ CHIẾU QUỶ</h3>
-        </div>
-
         {/* Khung mã QR MoMo */}
         <div className="qr-image-container">
           <img
@@ -128,9 +124,9 @@ export function QrTransferModal({ isOpen, onClose }) {
             }}
           >
             {copied ? (
-              <CheckIcon width={18} height={18} color="#66ff33" />
+              <CheckIcon width={20} height={20} color="#66ff33" />
             ) : (
-              <CopyIcon width={18} height={18} color="#ffffff" />
+              <CopyIcon width={20} height={20} color="#ffffff" />
             )}
           </button>
         </div>
@@ -141,15 +137,24 @@ export function QrTransferModal({ isOpen, onClose }) {
             type="button"
             className="modal-btn modal-btn-open-link"
             onClick={handleOpenLink}
+            title="Mở đường link"
+            aria-label="Mở đường link"
           >
-            MỞ ĐƯỜNG LINK
+            <ExternalLinkIcon width={24} height={24} color="#000000" />
           </button>
           <button
             type="button"
             className="modal-btn modal-btn-save-qr"
             onClick={handleSaveQr}
+            title="Lưu QR"
+            aria-label="Lưu QR"
+            disabled={downloading}
           >
-            {downloading ? 'ĐANG TẢI...' : 'LƯU QR'}
+            {downloading ? (
+              <LoadingSpinnerIcon width={24} height={24} color="#000000" />
+            ) : (
+              <DownloadQrIcon width={24} height={24} color="#000000" />
+            )}
           </button>
         </div>
       </div>

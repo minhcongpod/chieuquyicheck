@@ -1388,8 +1388,8 @@ td {
 
 /* Khung hiển thị ảnh QR */
 .qr-image-container {
-  width: 220px;
-  height: 220px;
+  width: 280px;
+  height: 280px;
   margin: 0 auto;
   background-color: #ffffff;
   padding: 10px;
@@ -1472,8 +1472,11 @@ td {
 
 .modal-btn-open-link {
   background-color: #fd6161;
-  /* MoMo brand color */
   color: #000000;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-btn-open-link:active {
@@ -1483,10 +1486,34 @@ td {
 .modal-btn-save-qr {
   background-color: #66ff33;
   color: #000000;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .modal-btn-save-qr:active {
   background-color: #52cc29;
+}
+
+.modal-btn-save-qr:disabled {
+  opacity: 0.9;
+  cursor: wait;
+}
+
+/* Hiệu ứng xoay tròn loading */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 0.85s linear infinite;
+  display: inline-block;
 }
 
 .modal-btn-close-qr {
