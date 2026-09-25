@@ -745,6 +745,20 @@ td {
   overflow: hidden;
 }
 
+/* Ẩn hoàn toàn bảng lịch sử khi mở bàn phím để đỡ rối mắt */
+.history-section.is-hidden {
+  display: none !important;
+}
+
+/* Vùng đệm trống khi ẩn bảng lịch sử: Chạm vào khoảng trống để thoát bàn phím */
+.keyboard-dismiss-backdrop {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Drawer toàn màn hình phóng to bảng lịch sử (Hiệu ứng trượt lên / trượt xuống mượt mà) */
 .history-expanded-drawer {
   position: absolute;

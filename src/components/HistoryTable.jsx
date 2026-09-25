@@ -360,7 +360,8 @@ export default function HistoryTable({
   onChotSo,
   canReset = false,
   onResetConfirm,
-  onExpandChange
+  onExpandChange,
+  isHidden = false
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -554,8 +555,8 @@ export default function HistoryTable({
 
   return (
     <>
-      {/* 1. Bảng lịch sử thông thường ở đáy màn hình */}
-      <div className="history-section">
+      {/* 1. Bảng lịch sử thông thường ở đáy màn hình (Ẩn khi bàn phím mở) */}
+      <div className={`history-section ${isHidden ? 'is-hidden' : ''}`}>
         <HistoryTableContent
           players={players}
           sortedPlayers={sortedPlayers}

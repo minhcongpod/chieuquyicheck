@@ -298,6 +298,9 @@ export default function App() {
     setDailyLedgerData(updatedLedger);
   };
 
+  // Kiểm tra bàn phím số có đang mở hay không
+  const isKeyboardOpen = Boolean(activeKeypad && !isDailyStatsOpen && !isHistoryExpanded && !isQrModalOpen);
+
   return (
     <div className="app-screen">
       {/* 1. Phần bảng điểm nhập liệu 5 người chơi (Khu vực trên cùng) */}
@@ -306,7 +309,7 @@ export default function App() {
         cumulativeScores={cumulativeScores}
         roundDeltas={roundDeltas}
         dailyLedger={dailyLedger}
-        activeKeypad={(!isDailyStatsOpen && !isHistoryExpanded && !isQrModalOpen) ? activeKeypad : null}
+        activeKeypad={!isKeyboardOpen ? null : activeKeypad}
         onUpdatePlayerName={handleUpdatePlayerName}
         onOpenKeyboard={handleOpenKeyboard}
       />
@@ -323,7 +326,7 @@ export default function App() {
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
       />
 
-      {/* 3. Bảng lịch sử điểm mỗi ván đấu (Khu vực dưới cùng) */}
+      {/* 3. Bảng lịch sử điểm mỗi ván đấu (Ẩn hoàn toàn khi mở bàn phím để đỡ rối mắt) */}
       <HistoryTable
         players={players}
         history={history}
@@ -332,10 +335,20 @@ export default function App() {
         canReset={canReset}
         onResetConfirm={handleResetConfirm}
         onExpandChange={handleHistoryExpandChange}
+        isHidden={isKeyboardOpen}
       />
 
+      {/* Vùng trống khi ẩn bảng lịch sử: Chạm vào để đóng bàn phím */}
+      {isKeyboardOpen && (
+        <div
+          className="keyboard-dismiss-backdrop"
+          onClick={handleKeypadCancel}
+          title="Chạm vào vùng trống để tắt bàn phím"
+        />
+      )}
+
       {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 (Tắt hoàn toàn khi xem bảng thống kê hoặc bảng lịch sử phóng to) */}
-      {activeKeypad && !isDailyStatsOpen && !isHistoryExpanded && !isQrModalOpen && (
+      {isKeyboardOpen && (
         <Keyboard
           activePlayer={activeKeypad.player}
           onNumberClick={handleKeypadNumber}
