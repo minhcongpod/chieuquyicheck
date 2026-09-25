@@ -20,7 +20,8 @@ export default function DailyStatsDrawer({
   onClose,
   players = [],
   dailyLedger = [],
-  onDeleteLedgerEntry
+  onDeleteLedgerEntry,
+  isViewOnly = false
 }) {
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -360,14 +361,14 @@ export default function DailyStatsDrawer({
             <div className="stats-fixed-body">
               {sortedLedger.map((entry, idx) => {
                 const roundLabel = entry.label || (entry.roundIndex ? `#${entry.roundIndex}` : (entry.dateStr || `#${sortedLedger.length - idx}`));
-                const isDeleting = pendingDeleteId === entry.id;
+                const isDeleting = !isViewOnly && pendingDeleteId === entry.id;
 
                 return (
                   <div 
                     key={entry.id} 
                     className={`stats-fixed-row-cell ${isDeleting ? 'is-deleting' : ''}`}
                   >
-                    {isDeleting ? (
+                    {!isViewOnly && isDeleting ? (
                       <button
                         type="button"
                         className="stats-trash-btn"
@@ -389,10 +390,13 @@ export default function DailyStatsDrawer({
                         className="stats-round-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setPendingDeleteId(entry.id);
+                          if (!isViewOnly) {
+                            setPendingDeleteId(entry.id);
+                          }
                         }}
-                        title={`Bấm để xoá ${roundLabel}`}
-                        aria-label={`Xoá ${roundLabel}`}
+                        style={isViewOnly ? { cursor: 'default' } : undefined}
+                        title={isViewOnly ? roundLabel : `Bấm để xoá ${roundLabel}`}
+                        aria-label={roundLabel}
                       >
                         {roundLabel}
                       </button>
@@ -401,6 +405,7 @@ export default function DailyStatsDrawer({
                 );
               })}
             </div>
+
           </div>
 
           {/* Khối 2 (Scrollable Panel - Bên phải):
@@ -430,7 +435,7 @@ export default function DailyStatsDrawer({
               {/* Danh sách các dòng điểm số tương ứng khớp chính xác với displayPlayers */}
               <div className="stats-scrollable-body">
                 {sortedLedger.map((entry) => {
-                  const isDeleting = pendingDeleteId === entry.id;
+                  const isDeleting = !isViewOnly && pendingDeleteId === entry.id;
 
                   return (
                     <div 

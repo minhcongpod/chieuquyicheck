@@ -40,6 +40,77 @@ const INITIAL_PLAYERS = [
 // Lưu trữ trạng thái trong bộ nhớ RAM và danh sách kết nối
 const roomStates = new Map(); // roomId -> state
 const roomClients = new Map(); // roomId -> Set<ws>
+const roomActiveSlots = new Map(); // roomId -> Array<ws> (tối đa 2 người chơi Active)
+
+/**
+ * Phân bổ slot khi có client mới kết nối vào phòng:
+ * - 2 người đầu tiên được cấp quyền Active (Chủ phòng / Người chơi)
+ * - Từ người thứ 3 trở đi được cấp quyền View-Only (Chỉ xem)
+ */
+function assignSlotForConnection(roomId, ws) {
+  if (!roomActiveSlots.has(roomId)) {
+    roomActiveSlots.set(roomId, []);
+  }
+  let activeSlots = roomActiveSlots.get(roomId).filter((s) => s.readyState === 1);
+
+  if (activeSlots.length < 2) {
+    activeSlots.push(ws);
+    ws.role = 'active';
+    ws.slotIndex = activeSlots.length; // 1 hoặc 2
+    console.log(`[SyncServer] 🟢 Cấp quyền ACTIVE cho client mới tại phòng "${roomId}" (Slot #${ws.slotIndex})`);
+  } else {
+    ws.role = 'view_only';
+    ws.slotIndex = null;
+    console.log(`[SyncServer] 👁️ Cấp quyền VIEW-ONLY cho client mới tại phòng "${roomId}"`);
+  }
+
+  roomActiveSlots.set(roomId, activeSlots);
+  return { role: ws.role, slotIndex: ws.slotIndex, activeCount: activeSlots.length };
+}
+
+/**
+ * Cơ chế giải phóng slot (Release Slot):
+ * Khi 1 trong 2 người chơi đầu tiên thoát trang (đóng tab, mất kết nối),
+ * hệ thống tự động giải phóng slot và đôn người tiếp theo đang chờ ở chế độ view_only lên Active.
+ */
+function releaseSlotAndPromote(roomId, ws) {
+  if (!roomActiveSlots.has(roomId)) return 0;
+
+  let activeSlots = roomActiveSlots.get(roomId).filter((s) => s !== ws && s.readyState === 1);
+  const clients = roomClients.get(roomId);
+
+  // Nếu slot còn trống (< 2) và còn client khác đang kết nối trong phòng
+  if (activeSlots.length < 2 && clients && clients.size > 0) {
+    for (const candidate of clients) {
+      if (activeSlots.length >= 2) break;
+      if (!activeSlots.includes(candidate) && candidate.readyState === 1) {
+        candidate.role = 'active';
+        candidate.slotIndex = activeSlots.length + 1;
+        activeSlots.push(candidate);
+
+        console.log(`[SyncServer] 🚀 ĐÔN CLIENT LÊN ACTIVE tại phòng "${roomId}" (Slot #${candidate.slotIndex})`);
+
+        // Gửi thông báo cập nhật quyền Active ngay lập tức qua realtime
+        try {
+          candidate.send(JSON.stringify({
+            type: 'ROLE_ASSIGNMENT',
+            payload: {
+              role: 'active',
+              slotIndex: candidate.slotIndex,
+              totalUsers: clients.size,
+              activeCount: activeSlots.length
+            }
+          }));
+        } catch (e) {
+          console.error('[SyncServer] Lỗi gửi ROLE_ASSIGNMENT đôn quyền:', e);
+        }
+      }
+    }
+  }
+
+  roomActiveSlots.set(roomId, activeSlots);
+  return activeSlots.length;
+}
 
 import { SAMPLE_DAILY_LEDGER } from '../src/constants/sampleLedger.js';
 
@@ -167,6 +238,7 @@ export function setupWebSocketServer(httpServer) {
   wss.on('connection', async (ws, request) => {
     const urlObj = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
     const roomId = urlObj.searchParams.get('room') || 'default';
+    ws.roomId = roomId;
 
     // Đăng ký client vào phòng
     if (!roomClients.has(roomId)) {
@@ -174,21 +246,37 @@ export function setupWebSocketServer(httpServer) {
     }
     roomClients.get(roomId).add(ws);
 
-    // Báo số người đang online trong phòng cho mọi người
+    // Phân bổ slot theo cơ chế FIFO (2 người đầu tiên Active, từ người thứ 3 là View-only)
+    const { role, slotIndex, activeCount } = assignSlotForConnection(roomId, ws);
+
+    // Báo số người đang online và số slot Active trong phòng cho mọi người
     broadcastToRoom(roomId, {
       type: 'ROOM_USERS_COUNT',
-      count: roomClients.get(roomId).size
+      count: roomClients.get(roomId).size,
+      activeCount
     });
 
     // Lấy state từ Firebase/Local (hàm async)
     const currentState = await getOrCreateRoomState(roomId);
     
-    // Gửi ngay trạng thái hiện tại của phòng cho client mới kết nối
+    // Gửi ngay trạng thái hiện tại kèm quyền (role) và slot cho client mới kết nối
     if (ws.readyState === 1) {
       ws.send(JSON.stringify({
         type: 'INIT_STATE',
         payload: currentState,
+        role: ws.role,
+        slotIndex: ws.slotIndex,
         serverTime: Date.now()
+      }));
+
+      ws.send(JSON.stringify({
+        type: 'ROLE_ASSIGNMENT',
+        payload: {
+          role: ws.role,
+          slotIndex: ws.slotIndex,
+          totalUsers: roomClients.get(roomId).size,
+          activeCount
+        }
       }));
     }
 
@@ -198,6 +286,28 @@ export function setupWebSocketServer(httpServer) {
         const data = JSON.parse(message.toString());
         const { type, payload } = data;
         
+        // Kiểm tra quyền nghiêm ngặt: Client ở chế độ view_only không được phép thay đổi dữ liệu
+        const mutatingTypes = [
+          'UPDATE_PLAYER_NAME',
+          'UPDATE_DELTAS',
+          'CONFIRM_ROUND',
+          'UNDO_ROUND',
+          'RESET_GAME',
+          'ADD_LEDGER_ENTRY',
+          'SET_DAILY_LEDGER'
+        ];
+
+        if (mutatingTypes.includes(type)) {
+          if (ws.role === 'view_only') {
+            console.warn(`[SyncServer] ⚠️ Chặn thao tác ${type} từ client View-Only tại phòng "${roomId}"`);
+            ws.send(JSON.stringify({
+              type: 'ERROR_PERMISSION_DENIED',
+              message: 'Bạn đang ở chế độ View-only (Chỉ xem), không có quyền thao tác.'
+            }));
+            return;
+          }
+        }
+
         // Vì state đã load khi connection, chỉ cần lấy từ RAM (cực nhanh và đồng bộ)
         const state = roomStates.get(roomId);
         if (!state) return;
@@ -314,12 +424,16 @@ export function setupWebSocketServer(httpServer) {
       const clients = roomClients.get(roomId);
       if (clients) {
         clients.delete(ws);
+        const activeCount = releaseSlotAndPromote(roomId, ws);
+
         if (clients.size === 0) {
           roomClients.delete(roomId);
+          roomActiveSlots.delete(roomId);
         } else {
           broadcastToRoom(roomId, {
             type: 'ROOM_USERS_COUNT',
-            count: clients.size
+            count: clients.size,
+            activeCount: activeCount || 0
           });
         }
       }
@@ -329,6 +443,7 @@ export function setupWebSocketServer(httpServer) {
       console.error('[SyncServer] Lỗi socket client:', err);
     });
   });
+
 
   console.log('[SyncServer] WebSocket Realtime Server đã khởi động sẵn sàng tại /ws');
   return wss;

@@ -37,7 +37,8 @@ export default function ScoreInputTable({
   onUpdatePlayerName,
   onOpenKeyboard,
   dailyLedger = [],
-  activeKeypad = null
+  activeKeypad = null,
+  isViewOnly = false
 }) {
   const [editingPlayerId, setEditingPlayerId] = useState(null);
   const [tempName, setTempName] = useState('');
@@ -59,6 +60,7 @@ export default function ScoreInputTable({
   }, []);
 
   const handleNameClick = (player) => {
+    if (isViewOnly) return;
     if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
     if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
     // Khóa cố định thứ tự hiện tại của các hàng ngay khi mở ô nhập
@@ -325,14 +327,14 @@ export default function ScoreInputTable({
             >
               {/* Khối Trái: Tên người chơi và Điểm tích luỹ trong cùng 1 ô liền mạch */}
               <div
-                className="player-left-group"
+                className={`player-left-group ${isViewOnly ? 'is-view-only' : ''}`}
                 onClick={() => {
-                  if (editingPlayerId !== player.id) handleNameClick(player);
+                  if (!isViewOnly && editingPlayerId !== player.id) handleNameClick(player);
                 }}
               >
                 {/* Tên Người Chơi */}
                 <div className="player-name-box">
-                  {editingPlayerId === player.id ? (
+                  {!isViewOnly && editingPlayerId === player.id ? (
                     <div className="player-name-input-wrapper">
                       <input
                         ref={inputRef}
@@ -387,33 +389,38 @@ export default function ScoreInputTable({
                 </div>
               </div>
 
-              {/* Nút Trừ (-) - Bấm mở bàn phím phép trừ */}
-              <button
-                type="button"
-                className={`player-btn-minus ${isMinusActive ? 'is-active' : ''} ${getBtnSizeClass(minusText)}`}
-                onClick={() => onOpenKeyboard(player, '-')}
-                title="Trừ điểm"
-                style={isMinusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}
-              >
-                <span className="player-btn-content">
-                  <span className="player-btn-symbol">{minusText}</span>
-                  {isMinusActive && <span className="blinking-cursor" aria-hidden="true" />}
-                </span>
-              </button>
+              {/* Chỉ hiển thị nút Trừ (-) và Cộng (+) khi ở quyền Active (không phải View-Only) */}
+              {!isViewOnly && (
+                <>
+                  {/* Nút Trừ (-) - Bấm mở bàn phím phép trừ */}
+                  <button
+                    type="button"
+                    className={`player-btn-minus ${isMinusActive ? 'is-active' : ''} ${getBtnSizeClass(minusText)}`}
+                    onClick={() => onOpenKeyboard(player, '-')}
+                    title="Trừ điểm"
+                    style={isMinusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}
+                  >
+                    <span className="player-btn-content">
+                      <span className="player-btn-symbol">{minusText}</span>
+                      {isMinusActive && <span className="blinking-cursor" aria-hidden="true" />}
+                    </span>
+                  </button>
 
-              {/* Nút Cộng (+) - Bấm mở bàn phím phép cộng */}
-              <button
-                type="button"
-                className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${getBtnSizeClass(plusText)}`}
-                onClick={() => onOpenKeyboard(player, '+')}
-                title="Cộng điểm"
-                style={isPlusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}
-              >
-                <span className="player-btn-content">
-                  <span className="player-btn-symbol">{plusText}</span>
-                  {isPlusActive && <span className="blinking-cursor" aria-hidden="true" />}
-                </span>
-              </button>
+                  {/* Nút Cộng (+) - Bấm mở bàn phím phép cộng */}
+                  <button
+                    type="button"
+                    className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${getBtnSizeClass(plusText)}`}
+                    onClick={() => onOpenKeyboard(player, '+')}
+                    title="Cộng điểm"
+                    style={isPlusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}
+                  >
+                    <span className="player-btn-content">
+                      <span className="player-btn-symbol">{plusText}</span>
+                      {isPlusActive && <span className="blinking-cursor" aria-hidden="true" />}
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           );
         })}
@@ -421,3 +428,4 @@ export default function ScoreInputTable({
     </div>
   );
 }
+

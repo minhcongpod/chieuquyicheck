@@ -27,9 +27,28 @@
       "color": "#fd6161"
     }
   ],
-  "history": [],
+  "history": [
+    {
+      "id": "round-1790324129198",
+      "roundNumber": 1,
+      "scores": {
+        "p1": -332,
+        "p2": 332
+      },
+      "timestamp": 1790324129198
+    },
+    {
+      "id": "round-1790324423302",
+      "roundNumber": 2,
+      "scores": {
+        "p5": 30,
+        "p1": -30
+      },
+      "timestamp": 1790324423302
+    }
+  ],
   "roundDeltas": {},
-  "updatedAt": 1790322722106,
+  "updatedAt": 1790324626435,
   "dailyLedger": [
     {
       "id": "ledger-1",

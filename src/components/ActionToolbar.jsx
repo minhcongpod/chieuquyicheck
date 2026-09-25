@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UndoIcon, LedgerCalendarIcon, QrCodeIcon, CheckmarkIcon, CrossIcon } from './Icons';
+import { UndoIcon, LedgerCalendarIcon, QrCodeIcon, CheckmarkIcon, CrossIcon, EyeIcon } from './Icons';
 
 export default function ActionToolbar({
   sumTotal = 0,
@@ -11,11 +11,52 @@ export default function ActionToolbar({
   onQrClick,
   canUndo = false,
   hasLedger = false,
+  isViewOnly = false
 }) {
   // Trạng thái trượt xác nhận inline: null | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
 
   const toolbarRef = useRef(null);
+
+  // Nếu đang ở chế độ View-Only: Hiển thị nút VIEW ONLY bên trái và 2 nút Thống kê, QR bên phải
+  if (isViewOnly) {
+    return (
+      <div className="action-toolbar is-view-only" ref={toolbarRef}>
+        {/* KHU VỰC TRÁI: Nút VIEW ONLY */}
+        <div className="toolbar-left-slot">
+          <div className="toolbar-btn toolbar-btn-view-only" title="Chế độ chỉ xem (View-only)">
+            <EyeIcon width={24} height={24} color="#000000" />
+            <span className="view-only-text">VIEW ONLY</span>
+          </div>
+        </div>
+
+        {/* KHU VỰC PHẢI: 2 nút Thống kê và QR Code */}
+        <div className="toolbar-right-slot is-view-only">
+          <div className="toolbar-right-group toolbar-right-default">
+            {/* Nút 1: Thống kê */}
+            <button
+              type="button"
+              className="toolbar-btn toolbar-btn-ledger"
+              onClick={onLedgerClick}
+              title="Sổ thống kê điểm"
+            >
+              <LedgerCalendarIcon width={26} height={26} color="#000000" />
+            </button>
+
+            {/* Nút 2: QR Code Quỹ Chiếu Quỷ */}
+            <button
+              type="button"
+              className="toolbar-btn toolbar-btn-qr"
+              onClick={onQrClick}
+              title="Mã QR Quỹ Chiếu Quỷ"
+            >
+              <QrCodeIcon width={28} height={28} color="#000000" />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Kích hoạt chế độ trượt xác nhận hoàn tác
   const handleTriggerMode = (mode) => {

@@ -98,7 +98,8 @@ function HistoryTableContent({
   canReset = false,
   onResetConfirm,
   sortMode = 'score',
-  onToggleSort
+  onToggleSort,
+  isViewOnly = false
 }) {
   // Trạng thái trượt xác nhận Reset inline trong footer
   const [isResetConfirming, setIsResetConfirming] = useState(false);
@@ -277,8 +278,9 @@ function HistoryTableContent({
             </div>
           </div>
 
-          {/* 3. Nhóm nút điều khiển: RESET (dài hơn, trượt xác nhận) và SAVE */}
-          <div className="history-footer-actions" ref={footerActionsRef}>
+          {/* 3. Nhóm nút điều khiển: RESET và SAVE (Ẩn hoàn toàn khi ở quyền View-Only) */}
+          {!isViewOnly && (
+            <div className="history-footer-actions" ref={footerActionsRef}>
             {/* Cột Trái: Nút Reset (rộng 120px) */}
             <div className="history-reset-slot">
               <button
@@ -346,12 +348,14 @@ function HistoryTableContent({
                 </button>
               </div>
             </div>
-          </div>
+            </div>
+          )}
         </div>
       )}
     </>
   );
 }
+
 
 export default function HistoryTable({
   players,
@@ -361,7 +365,8 @@ export default function HistoryTable({
   canReset = false,
   onResetConfirm,
   onExpandChange,
-  isHidden = false
+  isHidden = false,
+  isViewOnly = false
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -568,6 +573,7 @@ export default function HistoryTable({
           chayCount={chayCount}
           sortMode={sortMode}
           onToggleSort={handleToggleSort}
+          isViewOnly={isViewOnly}
         />
       </div>
 
@@ -610,6 +616,7 @@ export default function HistoryTable({
           onResetConfirm={onResetConfirm}
           sortMode={sortMode}
           onToggleSort={handleToggleSort}
+          isViewOnly={isViewOnly}
         />
       </div>
     </>

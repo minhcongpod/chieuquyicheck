@@ -99,12 +99,12 @@ td {
   min-width: 375px;
   height: 100%;
   margin: 0 auto;
-  background: linear-gradient(180deg, #00000000 24%, #142D13 30%, #0E1F0E 70%, #00000000 100%);
+  background: linear-gradient(180deg, #000000 0%, #142d13 30%, #0E1F0E 70%, #000000 90%);
   position: relative;
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
-  padding-top: max(env(safe-area-inset-top), 100px);
+  padding-top: max(env(safe-area-inset-top), 80px);
   padding-right: max(10px, env(safe-area-inset-right));
   padding-bottom: max(10px, env(safe-area-inset-bottom));
   padding-left: max(10px, env(safe-area-inset-left));
@@ -192,6 +192,12 @@ td {
   box-sizing: border-box;
   cursor: pointer;
   padding: 0 8px 0 8px;
+}
+
+.player-left-group.is-view-only {
+  border-right: none;
+  cursor: default;
+  padding: 0 16px 0 12px;
 }
 
 /* Ô tên người chơi */
@@ -497,6 +503,35 @@ td {
   flex-shrink: 0;
 }
 
+.action-toolbar.is-view-only .toolbar-right-slot.is-view-only {
+  width: clamp(120px, 36%, 140px);
+}
+
+/* Nút VIEW ONLY tại thanh Toolbar dành cho người xem */
+.toolbar-btn-view-only {
+  width: 100%;
+  height: 100%;
+  background-color: #556055;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: default;
+  color: #000000;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.toolbar-btn-view-only .view-only-text {
+  font-size: clamp(16px, 2.5vh, 22px);
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  line-height: 1;
+  color: #000000;
+  text-transform: uppercase;
+}
+
 .toolbar-right-group {
   position: absolute;
   top: 0;
@@ -672,10 +707,10 @@ td {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border-radius: 0;
-  padding-top: max(env(safe-area-inset-top), 50px);
-  padding-right: max(12px, env(safe-area-inset-right));
+  padding-top: max(env(safe-area-inset-top), 80px);
+  padding-right: max(16px, env(safe-area-inset-right));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
-  padding-left: max(12px, env(safe-area-inset-left));
+  padding-left: max(16px, env(safe-area-inset-left));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -1529,9 +1564,9 @@ td {
   display: flex;
   flex-direction: column;
   padding-top: max(env(safe-area-inset-top), 80px);
-  padding-right: max(12px, env(safe-area-inset-right));
+  padding-right: max(16px, env(safe-area-inset-right));
   padding-bottom: max(16px, env(safe-area-inset-bottom));
-  padding-left: max(12px, env(safe-area-inset-left));
+  padding-left: max(16px, env(safe-area-inset-left));
   overflow: hidden;
   box-sizing: border-box;
   transform: translateY(100%);
@@ -1914,10 +1949,10 @@ td {
 @media (max-width: 360px) {
   .app-screen {
     padding-top: max(env(safe-area-inset-top), 80px);
-    padding-right: max(8px, env(safe-area-inset-right));
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
-    padding-left: max(8px, env(safe-area-inset-left));
-    gap: 8px;
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    padding-left: max(10px, env(safe-area-inset-left));
+    gap: 10px;
   }
 
   .player-name-text,
@@ -1962,10 +1997,10 @@ td {
 /* Thiết bị màn hình ngắn (chiều cao <= 670px như iPhone SE, điện thoại màn hình nhỏ, hoặc trình duyệt hiển thị thanh URL) */
 @media (max-height: 670px) {
   .app-screen {
-    gap: 8px;
-    padding-top: max(env(safe-area-inset-top), 50px);
+    gap: 10px;
+    padding-top: max(env(safe-area-inset-top), 80px);
     padding-right: max(10px, env(safe-area-inset-right));
-    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
     padding-left: max(10px, env(safe-area-inset-left));
   }
 

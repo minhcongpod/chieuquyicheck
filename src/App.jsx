@@ -17,6 +17,9 @@ export default function App() {
     dailyLedger,
     isConnected,
     userCount,
+    role,
+    isViewOnly,
+    slotIndex,
     updatePlayerName,
     updateRoundDeltas,
     confirmRound,
@@ -298,8 +301,8 @@ export default function App() {
     setDailyLedgerData(updatedLedger);
   };
 
-  // Kiểm tra bàn phím số có đang mở hay không
-  const isKeyboardOpen = Boolean(activeKeypad && !isDailyStatsOpen && !isHistoryExpanded && !isQrModalOpen);
+  // Kiểm tra bàn phím số có đang mở hay không (tắt nếu ở quyền View-Only)
+  const isKeyboardOpen = Boolean(activeKeypad && !isDailyStatsOpen && !isHistoryExpanded && !isQrModalOpen && !isViewOnly);
 
   return (
     <div className="app-screen">
@@ -312,9 +315,10 @@ export default function App() {
         activeKeypad={!isKeyboardOpen ? null : activeKeypad}
         onUpdatePlayerName={handleUpdatePlayerName}
         onOpenKeyboard={handleOpenKeyboard}
+        isViewOnly={isViewOnly}
       />
 
-      {/* 2. Hàng 4 nút chức năng: Tích xanh - Quay lại - Thống kê - QR code */}
+      {/* 2. Hàng 4 nút chức năng: Tích xanh - Quay lại - Thống kê - QR code (Hoặc nút VIEW ONLY nếu ở chế độ xem) */}
       <ActionToolbar
         sumTotal={currentSumTotal}
         canConfirm={canConfirmRound}
@@ -324,6 +328,7 @@ export default function App() {
         onQrClick={handleOpenQrModal}
         canUndo={history.length > 0}
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
+        isViewOnly={isViewOnly}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Ẩn hoàn toàn khi mở bàn phím để đỡ rối mắt) */}
@@ -336,6 +341,7 @@ export default function App() {
         onResetConfirm={handleResetConfirm}
         onExpandChange={handleHistoryExpandChange}
         isHidden={isKeyboardOpen}
+        isViewOnly={isViewOnly}
       />
 
       {/* Vùng trống khi ẩn bảng lịch sử: Chạm vào để đóng bàn phím */}
@@ -347,7 +353,7 @@ export default function App() {
         />
       )}
 
-      {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 (Tắt hoàn toàn khi xem bảng thống kê hoặc bảng lịch sử phóng to) */}
+      {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 (Tắt hoàn toàn khi xem bảng thống kê, bảng lịch sử phóng to hoặc View-Only) */}
       {isKeyboardOpen && (
         <Keyboard
           activePlayer={activeKeypad.player}
@@ -364,6 +370,7 @@ export default function App() {
         players={players}
         dailyLedger={dailyLedger}
         onDeleteLedgerEntry={deleteLedgerEntry}
+        isViewOnly={isViewOnly}
       />
 
       {/* 6. Cửa sổ Popup Mã QR Quỹ Chiếu Quỷ (dự phòng) */}

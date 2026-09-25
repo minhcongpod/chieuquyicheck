@@ -83,6 +83,12 @@ export function useRealtimeGame() {
   const [roundDeltas, setRoundDeltas] = useState({});
   const [isConnected, setIsConnected] = useState(false);
   const [userCount, setUserCount] = useState(1);
+  const [role, setRole] = useState('active'); // 'active' (2 người đầu) | 'view_only' (từ người thứ 3)
+  const [slotIndex, setSlotIndex] = useState(null); // 1, 2 hoặc null
+
+  const isViewOnly = role === 'view_only';
+  const roleRef = useRef(role);
+  roleRef.current = role;
 
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
@@ -124,10 +130,16 @@ export function useRealtimeGame() {
             if (payload.history) setHistory(payload.history);
             if (payload.roundDeltas) setRoundDeltas(payload.roundDeltas);
             if (payload.dailyLedger) setDailyLedger(payload.dailyLedger);
+            if (data.role) setRole(data.role);
+            if (data.slotIndex !== undefined) setSlotIndex(data.slotIndex);
             // Lưu cache offline
             localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(payload.players || []));
             localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(payload.history || []));
             if (payload.dailyLedger) localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(payload.dailyLedger));
+          } else if (type === 'ROLE_ASSIGNMENT') {
+            if (payload?.role) setRole(payload.role);
+            if (payload?.slotIndex !== undefined) setSlotIndex(payload.slotIndex);
+            console.log(`[ChieuQuy Sync] Phân quyền phòng: ${payload?.role} (Slot: ${payload?.slotIndex})`);
           } else if (type === 'STATE_UPDATE') {
             if (payload.players) setPlayers(payload.players);
             if (payload.history) setHistory(payload.history);
@@ -185,14 +197,16 @@ export function useRealtimeGame() {
     };
   }, [roomId]);
 
-  // Các hàm điều khiển đồng bộ
+  // Các hàm điều khiển đồng bộ (chặn nếu ở quyền View-Only)
   const updatePlayerName = useCallback((id, newName) => {
+    if (roleRef.current === 'view_only') return;
     // Cập nhật lạc quan trên máy mình ngay lập tức
     setPlayers(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
     sendMessage('UPDATE_PLAYER_NAME', { id, name: newName });
   }, [sendMessage]);
 
   const updateRoundDeltas = useCallback((newDeltasOrUpdater) => {
+    if (roleRef.current === 'view_only') return;
     setRoundDeltas(prev => {
       const next = typeof newDeltasOrUpdater === 'function' ? newDeltasOrUpdater(prev) : newDeltasOrUpdater;
       sendMessage('UPDATE_DELTAS', { roundDeltas: next });
@@ -201,6 +215,7 @@ export function useRealtimeGame() {
   }, [sendMessage]);
 
   const confirmRound = useCallback((newRound) => {
+    if (roleRef.current === 'view_only') return;
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       sendMessage('CONFIRM_ROUND', { newRound });
     } else {
@@ -216,10 +231,12 @@ export function useRealtimeGame() {
   }, [roomId, sendMessage]);
 
   const undoRound = useCallback(() => {
+    if (roleRef.current === 'view_only') return;
     sendMessage('UNDO_ROUND', {});
   }, [sendMessage]);
 
   const resetGame = useCallback(() => {
+    if (roleRef.current === 'view_only') return;
     sendMessage('RESET_GAME', {});
     // Cập nhật ngay lập tức tại máy này: reset toàn bộ tên người chơi về chuỗi rỗng "" và điểm về 0
     setPlayers(prev => {
@@ -235,6 +252,7 @@ export function useRealtimeGame() {
   }, [roomId, sendMessage]);
 
   const addLedgerEntry = useCallback((entry) => {
+    if (roleRef.current === 'view_only') return;
     sendMessage('ADD_LEDGER_ENTRY', { entry });
     setDailyLedger(prev => {
       const next = [entry, ...prev];
@@ -245,6 +263,7 @@ export function useRealtimeGame() {
   }, [roomId, sendMessage]);
 
   const setDailyLedgerData = useCallback((newLedger) => {
+    if (roleRef.current === 'view_only') return;
     sendMessage('SET_DAILY_LEDGER', { dailyLedger: newLedger });
     setDailyLedger(newLedger);
     localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(newLedger));
@@ -252,6 +271,7 @@ export function useRealtimeGame() {
   }, [roomId, sendMessage]);
 
   const deleteLedgerEntry = useCallback((entryId) => {
+    if (roleRef.current === 'view_only') return;
     setDailyLedger(prev => {
       const next = prev.filter(e => e.id !== entryId);
       sendMessage('SET_DAILY_LEDGER', { dailyLedger: next });
@@ -268,6 +288,9 @@ export function useRealtimeGame() {
     dailyLedger,
     isConnected,
     userCount,
+    role,
+    isViewOnly,
+    slotIndex,
     updatePlayerName,
     updateRoundDeltas,
     confirmRound,
@@ -278,3 +301,4 @@ export function useRealtimeGame() {
     deleteLedgerEntry
   };
 }
+
