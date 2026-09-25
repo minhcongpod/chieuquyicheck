@@ -267,6 +267,7 @@ export default function App() {
         cumulativeScores={cumulativeScores}
         roundDeltas={roundDeltas}
         dailyLedger={dailyLedger}
+        activeKeypad={activeKeypad}
         onUpdatePlayerName={handleUpdatePlayerName}
         onOpenKeyboard={handleOpenKeyboard}
       />

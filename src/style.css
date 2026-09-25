@@ -368,10 +368,11 @@ td {
   font-weight: 800;
   color: #000000;
   cursor: pointer;
-  transition: background-color 0.1s ease, transform 0.08s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease;
   white-space: nowrap;
   box-sizing: border-box;
   line-height: 1;
+  position: relative;
 }
 
 .player-btn-minus {
@@ -383,10 +384,58 @@ td {
   font-size: 24px;
 }
 
-.player-btn-minus:active,
-.player-btn-plus:active {
+.player-btn-minus:active:not(.is-active),
+.player-btn-plus:active:not(.is-active) {
   background-color: rgba(0, 0, 0, 0.15);
   transform: scale(0.96);
+}
+
+/* 1. Hiệu ứng nền (Background Overlay 30% black) & Đường viền (Inner Border 2px trùng màu hàng) */
+.player-btn-minus.is-active,
+.player-btn-plus.is-active {
+  background-color: rgba(0, 0, 0, 0.3) !important;
+  box-shadow: inset 0 0 0 2px var(--row-color, #000000);
+  /* 2. Dịch chuyển ký hiệu sang bên trái */
+  justify-content: flex-start;
+  padding-left: 14px;
+}
+
+.player-btn-content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+.player-btn-minus.is-active .player-btn-content,
+.player-btn-plus.is-active .player-btn-content {
+  justify-content: flex-start;
+}
+
+.player-btn-symbol {
+  display: inline-block;
+  line-height: 1;
+}
+
+/* 3. Con trỏ văn bản nhấp nháy (Blinking text caret |) */
+.blinking-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 24px;
+  background-color: #000000;
+  margin-left: 3px;
+  border-radius: 1px;
+  animation: cursorBlink 0.9s step-end infinite;
+  align-self: center;
+}
+
+@keyframes cursorBlink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* ==========================================================================
