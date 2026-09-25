@@ -1952,7 +1952,7 @@ td {
     padding-right: max(10px, env(safe-area-inset-right));
     padding-bottom: max(10px, env(safe-area-inset-bottom));
     padding-left: max(10px, env(safe-area-inset-left));
-    gap: 10px;
+    gap: clamp(8px, 1.8vh, 20px);
   }
 
   .player-name-text,
