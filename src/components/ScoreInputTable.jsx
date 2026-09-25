@@ -33,6 +33,16 @@ function saveKnownPlayer(name) {
   }
 }
 
+// Hàm xác định class kích thước font chữ dựa trên số lượng chữ số hiển thị để tránh tràn khung
+function getBtnSizeClass(text) {
+  if (!text) return '';
+  const digitsMatch = text.match(/\d/g);
+  const numDigits = digitsMatch ? digitsMatch.length : 0;
+  if (numDigits >= 3) return 'size-3digits small-text';
+  if (numDigits === 2) return 'size-2digits small-text';
+  return '';
+}
+
 export default function ScoreInputTable({
   players,
   cumulativeScores,
@@ -449,7 +459,15 @@ export default function ScoreInputTable({
 
                 {/* Điểm Tổng Tích Luỹ */}
                 <div className="player-score-box">
-                  <span className="player-score-text">
+                  <span
+                    className={`player-score-text ${
+                      Math.abs(displayScore) >= 1000
+                        ? 'score-4digits'
+                        : Math.abs(displayScore) >= 100
+                        ? 'score-3digits'
+                        : ''
+                    }`}
+                  >
                     {displayScore}
                   </span>
                 </div>
@@ -458,7 +476,7 @@ export default function ScoreInputTable({
               {/* Nút Trừ (-) - Bấm mở bàn phím phép trừ */}
               <button
                 type="button"
-                className={`player-btn-minus ${isMinusActive ? 'is-active' : ''} ${minusText.length > 3 ? 'small-text' : ''}`}
+                className={`player-btn-minus ${isMinusActive ? 'is-active' : ''} ${getBtnSizeClass(minusText)}`}
                 onClick={() => onOpenKeyboard(player, '-')}
                 title="Trừ điểm"
                 style={isMinusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}
@@ -472,7 +490,7 @@ export default function ScoreInputTable({
               {/* Nút Cộng (+) - Bấm mở bàn phím phép cộng */}
               <button
                 type="button"
-                className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${plusText.length > 3 ? 'small-text' : ''}`}
+                className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${getBtnSizeClass(plusText)}`}
                 onClick={() => onOpenKeyboard(player, '+')}
                 title="Cộng điểm"
                 style={isPlusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}

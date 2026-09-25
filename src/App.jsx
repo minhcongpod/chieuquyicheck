@@ -106,8 +106,8 @@ export default function App() {
       let nextVal;
       if (prev === '0' || prev === '') {
         nextVal = digit;
-      } else if (prev.length >= 2) {
-        return prev; // Giới hạn tối đa 2 chữ số (ví dụ: 12)
+      } else if (prev.length >= 3) {
+        return prev; // Giới hạn tối đa 3 chữ số (ví dụ: 100, 999)
       } else {
         nextVal = prev + digit;
       }
