@@ -108,7 +108,10 @@ td {
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
-  padding: max(10px, env(safe-area-inset-top, 10px)) max(10px, env(safe-area-inset-right, 10px)) max(10px, env(safe-area-inset-bottom, 10px)) max(10px, env(safe-area-inset-left, 10px));
+  padding-top: max(env(safe-area-inset-top), 20px);
+  padding-right: max(10px, env(safe-area-inset-right));
+  padding-bottom: max(10px, env(safe-area-inset-bottom));
+  padding-left: max(10px, env(safe-area-inset-left));
   gap: clamp(8px, 1.8vh, 20px);
   box-sizing: border-box;
   overscroll-behavior: none;
@@ -769,10 +772,14 @@ td {
   width: 100%;
   height: 100%;
   z-index: 120;
-  background-color: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
-  padding: max(16px, env(safe-area-inset-top, 16px)) max(12px, env(safe-area-inset-right, 12px)) max(16px, env(safe-area-inset-bottom, 16px)) max(12px, env(safe-area-inset-left, 12px));
+  background-color: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: inherit;
+  padding-top: max(env(safe-area-inset-top), 20px);
+  padding-right: max(12px, env(safe-area-inset-right));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(12px, env(safe-area-inset-left));
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -840,7 +847,7 @@ td {
 
 /* Header khi phóng to bảng lịch sử (Hiện tên và tổng điểm tích luỹ ngay dưới tên) */
 .history-header.expanded-header {
-  height: 60px;
+  height: clamp(48px, 6.8vh, 60px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -854,8 +861,8 @@ td {
 }
 
 .history-header.expanded-header .history-trophy-col {
-  width: 44px;
-  height: 60px;
+  width: clamp(36px, 10vw, 44px);
+  height: clamp(48px, 6.8vh, 60px);
 }
 
 /* Nút bấm chuyển đổi Phóng to / Thu nhỏ bảng lịch sử */
@@ -918,11 +925,11 @@ td {
 }
 
 .history-header.expanded-header .history-names-group {
-  height: 60px;
+  height: clamp(48px, 6.8vh, 60px);
 }
 
 .history-header.expanded-header .history-name-col {
-  height: 60px;
+  height: clamp(48px, 6.8vh, 60px);
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -930,15 +937,15 @@ td {
 }
 
 .history-header.expanded-header .history-name-text {
-  font-size: 13px;
+  font-size: clamp(10px, 2.8vw, 13px);
   font-weight: 800;
-  line-height: 1.6;
+  line-height: 1.4;
   text-align: center;
 }
 
 /* Số điểm tích luỹ của từng người chơi ngay dưới tên khi phóng to */
 .history-cumulative-score {
-  font-size: 16px;
+  font-size: clamp(13px, 3.8vw, 16px);
   font-weight: 800;
   line-height: 1;
   text-align: center;
@@ -1012,7 +1019,8 @@ td {
 }
 
 .history-expanded-drawer .history-round-num {
-  width: 44px;
+  width: clamp(36px, 10vw, 44px);
+  font-size: clamp(11px, 3vw, 13px);
 }
 
 /* Các cột điểm từng người chơi (Chia đều cho 5 người) */
@@ -1024,7 +1032,7 @@ td {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: clamp(13px, 3.8vw, 16px);
   font-weight: 800;
   color: var(--color-text-light);
   background-color: transparent;
@@ -1053,19 +1061,19 @@ td {
 
 .history-stat-row {
   width: 100%;
-  height: 36px;
+  height: clamp(30px, 4.5vh, 36px);
   display: flex;
   flex-direction: row;
   align-items: center;
 }
 
 .history-stat-label {
-  width: 44px;
-  height: 36px;
+  width: clamp(36px, 10vw, 44px);
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  font-size: 13px;
+  font-size: clamp(11px, 3vw, 13px);
   font-weight: 800;
   text-transform: uppercase;
   flex-shrink: 0;
@@ -1084,7 +1092,7 @@ td {
 
 .history-stat-cells {
   flex: 1;
-  height: 36px;
+  height: 100%;
   display: flex;
   flex-direction: row;
 }
@@ -1093,21 +1101,21 @@ td {
   flex: 1;
   width: 0;
   min-width: 0;
-  height: 36px;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .stat-num {
-  font-size: 13px;
+  font-size: clamp(11px, 3vw, 13px);
   font-weight: 800;
   line-height: 1;
 }
 
 .stat-dash {
   color: rgba(255, 255, 255, 0.45);
-  font-size: 16px;
+  font-size: clamp(13px, 3.5vw, 16px);
   font-weight: 800;
   line-height: 1;
 }
@@ -1117,26 +1125,26 @@ td {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   width: 100%;
-  height: 48px;
+  height: clamp(42px, 5.8vh, 48px);
   margin-top: 6px;
   margin-bottom: 2px;
   position: relative;
   user-select: none;
 }
 
-/* Cột Trái: Nút Reset (rộng 120px) */
+/* Cột Trái: Nút Reset (rộng linh hoạt 90px - 120px) */
 .history-reset-slot {
-  width: 120px;
-  height: 48px;
+  width: clamp(90px, 28vw, 120px);
+  height: 100%;
   flex-shrink: 0;
   position: relative;
 }
 
 .btn-history-reset {
   width: 100%;
-  height: 48px;
+  height: 100%;
   background-color: var(--color-btn-gray);
   color: #000000;
   border: none;
@@ -1342,14 +1350,18 @@ td {
 .modal-overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background-color: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: inherit;
   z-index: 200;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: max(16px, env(safe-area-inset-top, 16px)) max(16px, env(safe-area-inset-right, 16px)) max(16px, env(safe-area-inset-bottom, 16px)) max(16px, env(safe-area-inset-left, 16px));
+  padding-top: max(env(safe-area-inset-top), 20px);
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
   box-sizing: border-box;
 }
 
@@ -1363,6 +1375,9 @@ td {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  background: rgba(18, 26, 18, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75);
 }
 
 .modal-title {
@@ -1422,31 +1437,59 @@ td {
    8. POPUP QR CHUYỂN KHOẢN QUỸ CHIẾU QUỶ
    ========================================================================== */
 .modal-qr-card {
-  gap: 14px;
-  padding: 20px 18px;
+  gap: 12px;
+  padding: 16px 18px;
+  background: rgba(18, 26, 18, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.85);
+  box-sizing: border-box;
 }
 
 .modal-qr-header {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: space-between;
   width: 100%;
+  padding-bottom: 2px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.modal-title.qr-title {
-  font-size: 20px;
+.modal-qr-header-title {
+  font-size: 16px;
   font-weight: 800;
   letter-spacing: 0.5px;
   color: #ffffff;
-  text-align: center;
-  width: 100%;
+  text-transform: uppercase;
 }
 
-/* Khung hiển thị ảnh QR */
+.modal-qr-close-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: #ffffff;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+  outline: none;
+}
+
+.modal-qr-close-btn:hover {
+  opacity: 0.8;
+  transform: scale(1.1);
+}
+
+.modal-qr-close-btn:active {
+  transform: scale(0.9);
+}
+
+/* Khung hiển thị ảnh QR: vuông vức hoàn hảo, không méo, không tràn trên mọi thiết bị */
 .qr-image-container {
-  width: min(260px, 60vw);
-  height: min(260px, 60vw);
-  max-height: 32vh;
+  width: min(240px, 58vw);
+  height: min(240px, 58vw);
+  max-height: min(240px, 32vh, 58vw);
+  aspect-ratio: 1 / 1;
   margin: 0 auto;
   background-color: #ffffff;
   padding: 8px;
@@ -1454,7 +1497,7 @@ td {
   align-items: center;
   justify-content: center;
   border: 2px solid #ffffff;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
   box-sizing: border-box;
 }
 
@@ -1468,8 +1511,8 @@ td {
 /* Hộp đường link MoMo kèm icon sao chép */
 .qr-link-box {
   background-color: rgba(255, 255, 255, 0.08);
-  border: 1px dashed rgba(255, 255, 255, 0.6);
-  padding: 10px 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.5);
+  padding: 8px 12px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1487,7 +1530,7 @@ td {
 }
 
 .qr-link-url {
-  font-size: 12px;
+  font-size: clamp(10px, 2.7vw, 12px);
   font-weight: 800;
   color: #66ff33;
   white-space: nowrap;
@@ -1532,7 +1575,7 @@ td {
 .modal-btn-save-qr {
   background-color: #999999;
   color: #000000;
-  height: 48px;
+  height: clamp(42px, 5.5vh, 48px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1596,13 +1639,17 @@ td {
   inset: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  background-color: rgba(0, 0, 0, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-radius: inherit;
   z-index: 125;
   display: flex;
   flex-direction: column;
-  padding: max(16px, env(safe-area-inset-top, 16px)) max(12px, env(safe-area-inset-right, 12px)) max(16px, env(safe-area-inset-bottom, 16px)) max(12px, env(safe-area-inset-left, 12px));
+  padding-top: max(env(safe-area-inset-top), 20px);
+  padding-right: max(12px, env(safe-area-inset-right));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(12px, env(safe-area-inset-left));
   overflow: hidden;
   box-sizing: border-box;
   transform: translateY(100%);
@@ -1655,15 +1702,15 @@ td {
 
 /* ==========================================================================
    Khối 1 (Fixed Panel - Bên trái):
-   - Chứa nút 'X' và các mốc thứ tự ván (#1, #2, #3...).
-   - Chiều rộng cố định 54px, tuyệt đối không cho phép cuộn ngang (overflow-x: hidden).
+   - Chứa nút Sắp xếp và các mốc thứ tự ván (#1, #2, #3...).
+   - Chiều rộng responsive 44px - 54px.
    - Nền hoàn toàn trong suốt (transparent).
    ========================================================================== */
 .daily-stats-fixed-panel {
-  flex: 0 0 54px;
-  width: 54px;
-  min-width: 54px;
-  max-width: 54px;
+  flex: 0 0 clamp(44px, 12vw, 54px);
+  width: clamp(44px, 12vw, 54px);
+  min-width: clamp(44px, 12vw, 54px);
+  max-width: clamp(44px, 12vw, 54px);
   overflow-x: hidden;
   background: transparent;
   box-sizing: border-box;
@@ -1671,11 +1718,11 @@ td {
   flex-direction: column;
 }
 
-/* Header cell trong Khối 1 chứa nút Close [✕] */
+/* Header cell trong Khối 1 chứa nút Sắp xếp */
 .stats-fixed-header-cell {
-  height: 58px;
-  min-height: 58px;
-  max-height: 58px;
+  height: clamp(50px, 7vh, 58px);
+  min-height: clamp(50px, 7vh, 58px);
+  max-height: clamp(50px, 7vh, 58px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1718,9 +1765,9 @@ td {
 }
 
 .stats-fixed-row-cell {
-  height: 40px;
-  min-height: 40px;
-  max-height: 40px;
+  height: clamp(36px, 5vh, 40px);
+  min-height: clamp(36px, 5vh, 40px);
+  max-height: clamp(36px, 5vh, 40px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1739,11 +1786,11 @@ td {
   background: transparent;
   border: none;
   color: rgba(255, 255, 255, 0.3);
-  font-size: 14px;
+  font-size: clamp(12px, 3.2vw, 14px);
   font-weight: 600;
   width: 100%;
   height: 100%;
-  min-height: 40px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1766,7 +1813,7 @@ td {
 .stats-trash-btn {
   width: 100%;
   height: 100%;
-  min-height: 40px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1790,12 +1837,12 @@ td {
 /* ==========================================================================
    Khối 2 (Scrollable Panel - Bên phải):
    - Chứa danh sách tên người chơi và các ô điểm số.
-   - width: calc(100% - 54px); overflow-x: auto;
-   - Cuộn ngang độc lập, biến mất khi chạm mép trái Khối 2, tuyệt đối không trượt sang Khối 1.
+   - Tự động co giãn theo số lượng người chơi (flex: 1 1 auto).
+   - Cuộn ngang mượt mà khi có nhiều hơn 5 người chơi.
    ========================================================================== */
 .daily-stats-scrollable-panel {
-  flex: 1 1 calc(100% - 54px);
-  width: calc(100% - 54px);
+  flex: 1 1 auto;
+  width: 0;
   min-width: 0;
   overflow-x: auto;
   overflow-y: hidden;
@@ -1823,20 +1870,22 @@ td {
 
 /* Hàng tiêu đề người chơi trên Khối 2 */
 .stats-scrollable-header-row {
-  height: 58px;
-  min-height: 58px;
-  max-height: 58px;
+  height: clamp(50px, 7vh, 58px);
+  min-height: clamp(50px, 7vh, 58px);
+  max-height: clamp(50px, 7vh, 58px);
   display: flex;
   flex-direction: row;
   align-items: center;
+  min-width: 100%;
+  width: max-content;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   box-sizing: border-box;
 }
 
 .stats-player-head-cell {
-  width: 62px;
-  min-width: 62px;
-  max-width: 62px;
+  flex: 1 0 58px;
+  min-width: 58px;
+  max-width: 120px;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -1848,13 +1897,13 @@ td {
 }
 
 .stats-player-name {
-  font-size: 13px;
+  font-size: clamp(10px, 2.8vw, 13px);
   font-weight: 800;
   text-transform: uppercase;
   line-height: 1.4;
   letter-spacing: 0.5px;
   white-space: nowrap;
-  max-width: 62px;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   color: #ffffff;
@@ -1862,7 +1911,7 @@ td {
 }
 
 .stats-player-score {
-  font-size: 16px;
+  font-size: clamp(13px, 3.8vw, 16px);
   font-weight: 800;
   line-height: 1.2;
   color: #ffffff;
@@ -1892,12 +1941,14 @@ td {
 }
 
 .stats-scrollable-data-row {
-  height: 40px;
-  min-height: 40px;
-  max-height: 40px;
+  height: clamp(36px, 5vh, 40px);
+  min-height: clamp(36px, 5vh, 40px);
+  max-height: clamp(36px, 5vh, 40px);
   display: flex;
   flex-direction: row;
   align-items: center;
+  min-width: 100%;
+  width: max-content;
   box-sizing: border-box;
   transition: background-color 0.2s ease;
 }
@@ -1908,9 +1959,9 @@ td {
 }
 
 .stats-score-cell {
-  width: 62px;
-  min-width: 62px;
-  max-width: 62px;
+  flex: 1 0 58px;
+  min-width: 58px;
+  max-width: 120px;
   height: 100%;
   display: flex;
   align-items: center;
@@ -1921,7 +1972,7 @@ td {
 }
 
 .stats-score-value {
-  font-size: 16px;
+  font-size: clamp(13px, 3.8vw, 16px);
   font-weight: 800;
   color: #ffffff;
   display: block;
@@ -1984,7 +2035,10 @@ td {
 /* Thiết bị màn hình hẹp (320px - 360px như iPhone SE 1, Galaxy A, màn hình gập đóng) */
 @media (max-width: 360px) {
   .app-screen {
-    padding: max(8px, env(safe-area-inset-top, 8px)) max(8px, env(safe-area-inset-right, 8px)) max(8px, env(safe-area-inset-bottom, 8px)) max(8px, env(safe-area-inset-left, 8px));
+    padding-top: max(env(safe-area-inset-top), 20px);
+    padding-right: max(8px, env(safe-area-inset-right));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-left: max(8px, env(safe-area-inset-left));
     gap: 8px;
   }
 
@@ -2027,11 +2081,14 @@ td {
   }
 }
 
-/* Thiết bị màn hình ngắn (chiều cao <= 670px như iPhone SE, điện thoại màn hình nhỏ, hoặc trình duyệt hiển thị thanh URL) */
+/* Thiết bị màn hình ngắn (chiều cao <= 670px như iPhone SE, điện thoại màn hình nhỏ, hoặc trình duyệt hiển thị thanh URL / bàn phím mở) */
 @media (max-height: 670px) {
   .app-screen {
     gap: 8px;
-    padding: max(8px, env(safe-area-inset-top, 8px)) max(10px, env(safe-area-inset-right, 10px)) max(8px, env(safe-area-inset-bottom, 8px)) max(10px, env(safe-area-inset-left, 10px));
+    padding-top: max(env(safe-area-inset-top), 20px);
+    padding-right: max(10px, env(safe-area-inset-right));
+    padding-bottom: max(8px, env(safe-area-inset-bottom));
+    padding-left: max(10px, env(safe-area-inset-left));
   }
 
   .player-row {

@@ -163,21 +163,47 @@ export default function ScoreInputTable({
     setTempName(player.name || '');
   };
 
+  // Cập nhật tên theo thời gian thực (realtime) ngay khi người dùng gõ từng ký tự
+  const handleInputChange = (playerId, val) => {
+    setTempName(val);
+    onUpdatePlayerName(playerId, val);
+  };
+
+  // Chốt lưu tên tự động khi mất tiêu điểm (onBlur) hoặc chạm ra ngoài màn hình
+  const handleInputBlur = (playerId) => {
+    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    blurTimerRef.current = setTimeout(() => {
+      const finalName = tempName.trim();
+      if (finalName) {
+        saveKnownPlayer(finalName);
+      }
+      onUpdatePlayerName(playerId, finalName);
+      setEditingPlayerId(null);
+      setTempName('');
+      window.scrollTo(0, 0);
+    }, 120);
+  };
+
   const handleNameSave = (playerId, newName) => {
     if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-    const toSave = (newName !== undefined ? newName : tempName).trim();
+    const raw = newName !== undefined ? newName : tempName;
+    const toSave = (raw || '').trim();
     if (toSave) {
       saveKnownPlayer(toSave);
     }
     onUpdatePlayerName(playerId, toSave);
     setEditingPlayerId(null);
     setTempName('');
+    window.scrollTo(0, 0);
   };
 
   // Hoàn tất điền gợi ý khi bấm Tab, ArrowRight hoặc chạm vào chữ mờ
   const handleAcceptSuggestion = (suggestedFullName) => {
     if (!suggestedFullName) return;
     setTempName(suggestedFullName);
+    if (editingPlayerId) {
+      onUpdatePlayerName(editingPlayerId, suggestedFullName);
+    }
     if (inputRef.current) {
       inputRef.current.focus();
       const len = suggestedFullName.length;
@@ -185,12 +211,23 @@ export default function ScoreInputTable({
     }
   };
 
+  // Giữ cố định vị trí hàng khi đang gõ tên để tránh bị nhảy hàng / mất tiêu điểm
+  const frozenOrderRef = useRef(null);
+
   // Sắp xếp danh sách người chơi trên bảng nhập liệu theo quy tắc ưu tiên:
   // - Nhóm có tên (Được sắp xếp): Sắp xếp vị trí theo thứ tự tổng điểm từ cao xuống thấp
   // - Nhóm trống (Ghim xuống cuối): Hàng thỏa mãn đồng thời 2 điều kiện: tên bị bỏ trống VÀ điểm số bằng 0
   //   sẽ bị loại khỏi luồng sắp xếp điểm, luôn được đẩy (push/append) xuống dưới cùng danh sách
   const sortedPlayers = useMemo(() => {
-    return [...players].sort((a, b) => {
+    // Nếu đang trong quá trình gõ tên, giữ nguyên thứ tự hàng hiện tại để người dùng nhập liền mạch
+    if (editingPlayerId && frozenOrderRef.current) {
+      const map = new Map(players.map((p) => [p.id, p]));
+      return frozenOrderRef.current
+        .map((id) => map.get(id))
+        .filter(Boolean);
+    }
+
+    const sorted = [...players].sort((a, b) => {
       const nameA = (a.name || '').trim();
       const scoreA = cumulativeScores[a.id] || 0;
       const isEmptyA = nameA === '' && scoreA === 0;
@@ -215,7 +252,10 @@ export default function ScoreInputTable({
       // Điểm bằng nhau: giữ thứ tự ổn định theo id
       return a.id.localeCompare(b.id);
     });
-  }, [players, cumulativeScores]);
+
+    frozenOrderRef.current = sorted.map((p) => p.id);
+    return sorted;
+  }, [players, cumulativeScores, editingPlayerId]);
 
   // Hiệu ứng FLIP (First, Last, Invert, Play) chuyển đổi vị trí mượt mà khi thứ tự thay đổi
   useLayoutEffect(() => {
@@ -366,17 +406,17 @@ export default function ScoreInputTable({
                         type="text"
                         autoFocus
                         value={tempName}
-                        onChange={(e) => setTempName(e.target.value)}
-                        onBlur={() => {
-                          blurTimerRef.current = setTimeout(() => {
-                            handleNameSave(player.id, tempName);
-                          }, 160);
+                        onChange={(e) => handleInputChange(player.id, e.target.value)}
+                        onFocus={() => {
+                          window.scrollTo(0, 0);
                         }}
+                        onBlur={() => handleInputBlur(player.id)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
                             const toSave = activeSuggestion ? activeSuggestion.fullName : tempName;
                             handleNameSave(player.id, toSave);
+                            inputRef.current?.blur();
                           } else if (e.key === 'Tab') {
                             if (activeSuggestion) {
                               e.preventDefault();
