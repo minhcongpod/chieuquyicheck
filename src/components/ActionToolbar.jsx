@@ -1,54 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ResetIcon, UndoIcon, LedgerCalendarIcon, QrCodeIcon, CheckmarkIcon, CrossIcon } from './Icons';
+import { UndoIcon, LedgerCalendarIcon, QrCodeIcon, CheckmarkIcon, CrossIcon } from './Icons';
 
 export default function ActionToolbar({
   sumTotal = 0,
   canConfirm = false,
   onConfirmRound,
-  onResetConfirm,
   onUndoConfirm,
-  onResetClick,
   onUndoClick,
-  onStatsClick,
   onLedgerClick,
   onQrClick,
-  onInfoClick,
   canUndo = false,
   hasLedger = false,
-  canReset = false
 }) {
-  // Trạng thái trượt xác nhận inline: null | 'reset' | 'undo'
+  // Trạng thái trượt xác nhận inline: null | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
-  // displayMode ghi nhớ 'reset' hoặc 'undo' để giữ nguyên icon khi trượt ra
-  const [displayMode, setDisplayMode] = useState('reset');
 
   const toolbarRef = useRef(null);
 
-  // Kích hoạt chế độ trượt xác nhận
+  // Kích hoạt chế độ trượt xác nhận hoàn tác
   const handleTriggerMode = (mode) => {
-    if (mode === 'reset' && !canReset) return;
     if (mode === 'undo' && !canUndo) return;
 
-    // Nếu có onResetClick hoặc onUndoClick từ ngoài mà không dùng confirm inline
-    if (mode === 'reset' && onResetClick && !onResetConfirm) {
-      onResetClick();
-      return;
-    }
     if (mode === 'undo' && onUndoClick && !onUndoConfirm) {
       onUndoClick();
       return;
     }
 
-    setDisplayMode(mode);
     setConfirmMode(mode);
   };
 
-  // Xác nhận thực hiện hành động
+  // Xác nhận thực hiện hoàn tác
   const handleExecuteConfirm = () => {
-    if (confirmMode === 'reset') {
-      if (onResetConfirm) onResetConfirm();
-      else if (onResetClick) onResetClick();
-    } else if (confirmMode === 'undo') {
+    if (confirmMode === 'undo') {
       if (onUndoConfirm) onUndoConfirm();
       else if (onUndoClick) onUndoClick();
     }
@@ -84,7 +67,7 @@ export default function ActionToolbar({
 
   return (
     <div className="action-toolbar" ref={toolbarRef}>
-      {/* 1. KHU VỰC TRÁI: Chiếm toàn bộ độ rộng còn lại (flex: 1, tương đương độ rộng nút chốt ván xanh lá) */}
+      {/* 1. KHU VỰC TRÁI: Chiếm toàn bộ độ rộng còn lại (flex: 1, tương đương nút chốt ván xanh lá) */}
       <div className="toolbar-left-slot">
         {/* Nút Chốt Ván kèm Tổng Điểm Kiểm Tra (Disable khi tổng chưa bằng 0 hoặc chưa nhập điểm) */}
         <button
@@ -99,7 +82,7 @@ export default function ActionToolbar({
           <CheckmarkIcon width={28} height={28} className="confirm-sum-check" color="#000000" />
         </button>
 
-        {/* Nút hành động đang được kích hoạt (Reset hoặc Back) - Hiển thị chữ RESET / BACK theo yêu cầu */}
+        {/* Nút hành động đang được kích hoạt (Quay lại) - Hiển thị chữ BACK */}
         <button
           type="button"
           className={`toolbar-btn toolbar-btn-active-action ${confirmMode ? 'slide-in' : 'slide-right-out'}`}
@@ -107,35 +90,19 @@ export default function ActionToolbar({
           title="Bấm để hủy thao tác"
           tabIndex={confirmMode ? 0 : -1}
         >
-          {displayMode === 'reset' ? (
-            <span className="action-confirm-label">RESET</span>
-          ) : (
-            <span className="action-confirm-label">BACK</span>
-          )}
+          <span className="action-confirm-label">BACK</span>
         </button>
       </div>
 
-      {/* 2. KHU VỰC PHẢI: Chiều rộng cố định 212px (bằng 3 nút 68px + 2 khoảng cách 4px) */}
+      {/* 2. KHU VỰC PHẢI: Chiều rộng cố định 212px (3 nút 68px + 2 khoảng cách 4px) */}
       <div className="toolbar-right-slot">
-        {/* Bộ 3 nút chức năng mặc định: Reset, Undo, QR MoMo */}
+        {/* Bộ 3 nút chức năng theo thứ tự: Quay lại, Thống kê, QR Code */}
         <div
           className={`toolbar-right-group toolbar-right-default ${
             confirmMode ? 'slide-left-out' : 'slide-in'
           }`}
         >
-          {/* Nút Reset (Cột 2) - Disable khi chưa có bất kỳ thay đổi nào */}
-          <button
-            type="button"
-            className="toolbar-btn toolbar-btn-reset"
-            onClick={() => canReset && handleTriggerMode('reset')}
-            disabled={!canReset}
-            title={canReset ? "Reset toàn bộ điểm về 0" : "Chưa có thay đổi nào để reset"}
-            tabIndex={confirmMode || !canReset ? -1 : 0}
-          >
-            <ResetIcon width={28} height={28} />
-          </button>
-
-          {/* Nút Back/Undo (Cột 3) */}
+          {/* Nút 1: Quay lại (Undo) */}
           <button
             type="button"
             className="toolbar-btn toolbar-btn-undo"
@@ -147,16 +114,27 @@ export default function ActionToolbar({
             <UndoIcon width={28} height={28} />
           </button>
 
-          {/* Nút Sổ Thống Kê Điểm (Cột 4) - Disable khi chưa có lần chốt sổ nào giống nút Back */}
+          {/* Nút 2: Thống kê (Sổ thống kê điểm) - Disable khi chưa có lần chốt sổ nào */}
           <button
             type="button"
-            className="toolbar-btn toolbar-btn-ledger toolbar-btn-info"
-            onClick={() => hasLedger && !confirmMode && (onStatsClick || onLedgerClick || onQrClick || onInfoClick)()}
+            className="toolbar-btn toolbar-btn-ledger"
+            onClick={() => hasLedger && !confirmMode && onLedgerClick && onLedgerClick()}
             disabled={!hasLedger}
             title={hasLedger ? "Sổ thống kê điểm" : "Chưa có lần chốt sổ nào"}
             tabIndex={confirmMode || !hasLedger ? -1 : 0}
           >
-            <LedgerCalendarIcon width={24} height={24} color="#000000" />
+            <LedgerCalendarIcon width={26} height={26} color="#000000" />
+          </button>
+
+          {/* Nút 3: QR Code Quỹ Chiếu Quỷ */}
+          <button
+            type="button"
+            className="toolbar-btn toolbar-btn-qr"
+            onClick={() => !confirmMode && onQrClick && onQrClick()}
+            title="Mã QR Quỹ Chiếu Quỷ"
+            tabIndex={confirmMode ? -1 : 0}
+          >
+            <QrCodeIcon width={28} height={28} color="#000000" />
           </button>
         </div>
 
@@ -171,7 +149,7 @@ export default function ActionToolbar({
             type="button"
             className="toolbar-btn toolbar-btn-confirm-yes"
             onClick={handleExecuteConfirm}
-            title={confirmMode === 'reset' ? 'Xác nhận Reset toàn bộ điểm' : 'Xác nhận hoàn tác ván đấu'}
+            title="Xác nhận hoàn tác ván đấu"
             tabIndex={confirmMode ? 0 : -1}
           >
             <CheckmarkIcon width={32} height={32} color="#000000" />

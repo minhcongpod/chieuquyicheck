@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ExpandIcon, CompressIcon } from './Icons';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { ExpandIcon, SortScoreIcon, SortNameIcon } from './Icons';
+import { ResetConfirmModal } from './Modals';
 
 /**
  * Quy tắc bôi màu nền tự động tại Bảng lịch sử điểm:
@@ -37,15 +38,6 @@ function getScoreCellClass(score) {
 
 /**
  * Tính số lần SÂM và CHÁY của từng người chơi dựa trên lịch sử ván đấu:
- * 
- * 1. Luật tính SÂM (Dành cho người thắng):
- * - Bàn 3 người: Ô điểm +40 -> Tự động cộng 1 Sâm vào thống kê của người chơi này.
- * - Bàn 4 người: Ô điểm +60 -> Tự động cộng 1 Sâm vào thống kê của người chơi này.
- * - Bàn 5 người: Ô điểm +80 -> Tự động cộng 1 Sâm vào thống kê của người chơi này.
- * - Bàn 2 người: Người thắng được +20 điểm (khi 1 người +20 và 1 người -20).
- *
- * 2. Luật tính CHÁY (Dành cho người thua):
- * - Bất kỳ người chơi nào kết thúc ván đấu với số điểm là -20 điểm sẽ bị hệ thống ghi nhận là "1 Cháy".
  */
 export function calculateSamAndChay(history, players) {
   const samCount = {};
@@ -95,6 +87,7 @@ export function calculateSamAndChay(history, players) {
 
 function HistoryTableContent({
   players,
+  sortedPlayers,
   reversedHistory,
   isExpanded,
   onToggle,
@@ -102,35 +95,62 @@ function HistoryTableContent({
   cumulativeScores = {},
   samCount = {},
   chayCount = {},
-  onChotSo
+  onChotSo,
+  canReset = false,
+  onResetClick,
+  sortMode = 'score',
+  onToggleSort
 }) {
   return (
     <>
-      {/* Header Bảng Lịch Sử (Icon Phóng to/Thu nhỏ + 5 tên người chơi và điểm tích luỹ) */}
+      {/* Header Bảng Lịch Sử (Icon Phóng to / Sắp xếp + 5 tên người chơi và điểm tích luỹ) */}
       <div className={`history-header ${isExpanded ? 'expanded-header' : ''}`}>
-        {/* Cột Phóng to / Thu nhỏ */}
+        {/* Cột Phóng to (khi thu gọn) / Sắp xếp (khi phóng to) */}
         <div className="history-trophy-col">
-          <button
-            type="button"
-            className="history-toggle-btn"
-            onClick={onToggle}
-            title={isExpanded ? 'Thu nhỏ bảng lịch sử điểm' : 'Phóng to xem toàn bộ bảng lịch sử điểm'}
-            aria-label={isExpanded ? 'Thu nhỏ bảng lịch sử điểm' : 'Phóng to xem toàn bộ bảng lịch sử điểm'}
-          >
-            {isExpanded ? <CompressIcon /> : <ExpandIcon />}
-          </button>
+          {isExpanded ? (
+            <button
+              type="button"
+              className="history-toggle-btn history-sort-btn"
+              onClick={onToggleSort}
+              title={
+                sortMode === 'score'
+                  ? 'Đang sắp xếp: Điểm cao -> thấp. Bấm để sắp xếp theo tên (A -> Z)'
+                  : 'Đang sắp xếp: Tên A -> Z. Bấm để sắp xếp theo điểm (Cao -> Thấp)'
+              }
+              aria-label="Sắp xếp cột người chơi"
+            >
+              {sortMode === 'score' ? (
+                <SortScoreIcon width={28} height={28} />
+              ) : (
+                <SortNameIcon width={28} height={28} />
+              )}
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="history-toggle-btn"
+              onClick={onToggle}
+              title="Phóng to xem toàn bộ bảng lịch sử điểm"
+              aria-label="Phóng to xem toàn bộ bảng lịch sử điểm"
+            >
+              <ExpandIcon />
+            </button>
+          )}
         </div>
 
-        {/* 5 Cột Tên Người Chơi (và Điểm tích luỹ hiện ngay dưới tên khi phóng to) */}
+        {/* 5 Cột Tên Người Chơi (và Điểm tích luỹ hiện ngay dưới tên khi phóng to) theo thứ tự sortedPlayers */}
         <div className="history-names-group">
-          {players.map((player, index) => {
-            const defaultName = String.fromCharCode(65 + index);
+          {sortedPlayers.map((player) => {
+            const originalIndex = players.findIndex(p => p.id === player.id);
+            const defaultName = String.fromCharCode(65 + (originalIndex >= 0 ? originalIndex : 0));
             const displayName = (player.name && player.name.trim()) ? player.name.trim().toUpperCase() : defaultName;
             const totalScore = cumulativeScores[player.id] !== undefined ? cumulativeScores[player.id] : 0;
+            const colorClass = originalIndex >= 0 ? `text-p${originalIndex + 1}` : 'text-p1';
+
             return (
               <div
                 key={player.id}
-                className={`history-name-col text-p${index + 1}`}
+                className={`history-name-col ${colorClass}`}
                 title={displayName}
               >
                 <span className="history-name-text">
@@ -153,7 +173,7 @@ function HistoryTableContent({
         {reversedHistory.length === 0 ? (
           <div className="history-row">
             <div className="history-round-num">#1</div>
-            {players.map((player) => (
+            {sortedPlayers.map((player) => (
               <div key={player.id} className="history-score-cell">
                 {/* Bỏ trống điểm */}
               </div>
@@ -171,10 +191,10 @@ function HistoryTableContent({
                   #{roundNum}
                 </div>
 
-                {/* 5 Cột Điểm của từng người chơi với quy tắc bôi màu tự động */}
-                {players.map((player) => {
+                {/* 5 Cột Điểm của từng người chơi theo thứ tự sortedPlayers */}
+                {sortedPlayers.map((player) => {
                   const score = scores[player.id] || 0;
-                  const highlightClass = getScoreCellClass(score, scores);
+                  const highlightClass = getScoreCellClass(score);
 
                   return (
                     <div
@@ -191,14 +211,14 @@ function HistoryTableContent({
         )}
       </div>
 
-      {/* Footer hiển thị khi phóng to: Dòng SÂM, Dòng CHÁY và Nút CHỐT SỔ */}
+      {/* Footer hiển thị khi phóng to: Dòng SÂM, Dòng CHÁY và Nhóm Nút RESET + SAVE */}
       {isExpanded && (
         <div className="history-expanded-footer">
           {/* 1. Dòng SÂM */}
           <div className="history-stat-row">
             <div className="history-stat-label text-sam">SÂM</div>
             <div className="history-stat-cells">
-              {players.map((player) => {
+              {sortedPlayers.map((player) => {
                 const count = samCount[player.id] || 0;
                 return (
                   <div key={player.id} className="history-stat-cell">
@@ -217,7 +237,7 @@ function HistoryTableContent({
           <div className="history-stat-row">
             <div className="history-stat-label text-chay">CHÁY</div>
             <div className="history-stat-cells">
-              {players.map((player) => {
+              {sortedPlayers.map((player) => {
                 const count = chayCount[player.id] || 0;
                 return (
                   <div key={player.id} className="history-stat-cell">
@@ -232,20 +252,32 @@ function HistoryTableContent({
             </div>
           </div>
 
-          {/* 3. Nút CHỐT SỔ: Ghi sổ và đóng bottom sheet Lịch sử điểm lại (Disable khi chưa có dữ liệu) */}
-          <button
-            type="button"
-            className="btn-chot-so"
-            onClick={() => {
-              if (history.length === 0) return;
-              if (onChotSo) onChotSo();
-              if (onToggle) onToggle(); // Đóng bottom sheet lịch sử điểm lại
-            }}
-            disabled={history.length === 0}
-            title={history.length > 0 ? "Chốt sổ các ván đấu đã chơi" : "Chưa có dữ liệu nào để chốt sổ"}
-          >
-            CHỐT SỔ
-          </button>
+          {/* 3. Nhóm nút điều khiển: RESET (bên cạnh) và SAVE (thay cho CHỐT SỔ) */}
+          <div className="history-footer-actions">
+            <button
+              type="button"
+              className="btn-history-reset"
+              onClick={onResetClick}
+              disabled={!canReset}
+              title={canReset ? "Reset toàn bộ điểm về 0" : "Chưa có thay đổi nào để reset"}
+            >
+              RESET
+            </button>
+
+            <button
+              type="button"
+              className="btn-chot-so btn-history-save"
+              onClick={() => {
+                if (reversedHistory.length === 0) return;
+                if (onChotSo) onChotSo();
+                if (onToggle) onToggle(); // Đóng bottom sheet lịch sử điểm lại
+              }}
+              disabled={reversedHistory.length === 0}
+              title={reversedHistory.length > 0 ? "Lưu sổ các ván đấu đã chơi" : "Chưa có dữ liệu nào để lưu"}
+            >
+              SAVE
+            </button>
+          </div>
         </div>
       )}
     </>
@@ -256,11 +288,17 @@ export default function HistoryTable({
   players,
   history,
   cumulativeScores,
-  onChotSo
+  onChotSo,
+  canReset = false,
+  onResetConfirm
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  // Chế độ sắp xếp cột: 'score' (Cao bên trái - thấp dần bên phải) | 'name' (A đến Z)
+  const [sortMode, setSortMode] = useState('score');
+  // Trạng thái modal xác nhận Reset
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
 
   const startYRef = useRef(0);
   const startXRef = useRef(0);
@@ -272,10 +310,49 @@ export default function HistoryTable({
   const { samCount, chayCount } = calculateSamAndChay(history, players);
 
   // Tính tổng điểm tích lũy của từng người chơi
-  const finalCumulativeScores = cumulativeScores || players.reduce((acc, player) => {
-    acc[player.id] = (history || []).reduce((sum, round) => sum + (round.scores?.[player.id] || 0), 0);
-    return acc;
-  }, {});
+  const finalCumulativeScores = useMemo(() => {
+    if (cumulativeScores) return cumulativeScores;
+    return players.reduce((acc, player) => {
+      acc[player.id] = (history || []).reduce((sum, round) => sum + (round.scores?.[player.id] || 0), 0);
+      return acc;
+    }, {});
+  }, [cumulativeScores, players, history]);
+
+  // Sắp xếp danh sách người chơi theo sortMode:
+  // - 'score': Điểm cao bên trái, điểm thấp dần sang phải
+  // - 'name': Tên người chơi từ A đến Z
+  const sortedPlayers = useMemo(() => {
+    const list = [...players];
+    if (sortMode === 'score') {
+      return list.sort((a, b) => {
+        const scoreA = finalCumulativeScores[a.id] ?? 0;
+        const scoreB = finalCumulativeScores[b.id] ?? 0;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA; // Cao bên trái - thấp dần bên phải
+        }
+        // Điểm bằng nhau thì giữ thứ tự người chơi ban đầu
+        const idxA = players.findIndex(p => p.id === a.id);
+        const idxB = players.findIndex(p => p.id === b.id);
+        return idxA - idxB;
+      });
+    } else {
+      // sortMode === 'name': A đến Z
+      return list.sort((a, b) => {
+        const idxA = players.findIndex(p => p.id === a.id);
+        const idxB = players.findIndex(p => p.id === b.id);
+        const defaultNameA = String.fromCharCode(65 + (idxA >= 0 ? idxA : 0));
+        const defaultNameB = String.fromCharCode(65 + (idxB >= 0 ? idxB : 0));
+        const nameA = (a.name && a.name.trim()) ? a.name.trim().toUpperCase() : defaultNameA;
+        const nameB = (b.name && b.name.trim()) ? b.name.trim().toUpperCase() : defaultNameB;
+        return nameA.localeCompare(nameB, 'vi');
+      });
+    }
+  }, [players, sortMode, finalCumulativeScores]);
+
+  // Chuyển đổi chế độ sắp xếp khi bấm vào icon
+  const handleToggleSort = () => {
+    setSortMode(prev => (prev === 'score' ? 'name' : 'score'));
+  };
 
   // Nhấn Escape để đóng chế độ phóng to
   useEffect(() => {
@@ -318,7 +395,6 @@ export default function HistoryTable({
 
     // Chỉ kích hoạt khi kéo xuống và hướng di chuyển chủ yếu là chiều dọc
     if (deltaY > 0 && Math.abs(deltaY) > Math.abs(deltaX)) {
-      // Nếu danh sách đã cuộn xuống dưới, ưu tiên cho người dùng cuộn nội dung lên đầu trước
       if (listRef.current && listRef.current.scrollTop > 0) {
         return;
       }
@@ -337,7 +413,6 @@ export default function HistoryTable({
   const handleTouchEnd = () => {
     if (!isExpanded) return;
     if (isDraggingRef.current) {
-      // Ngưỡng kéo xuống quá 70px thì thu gọn bảng lịch sử
       if (currentDragYRef.current > 70) {
         setIsExpanded(false);
       }
@@ -378,7 +453,7 @@ export default function HistoryTable({
   };
 
   // Sắp xếp đảo ngược: ván mới nhất luôn lên đầu tiên
-  const reversedHistory = [...history].reverse();
+  const reversedHistory = useMemo(() => [...(history || [])].reverse(), [history]);
 
   return (
     <>
@@ -386,12 +461,15 @@ export default function HistoryTable({
       <div className="history-section">
         <HistoryTableContent
           players={players}
+          sortedPlayers={sortedPlayers}
           reversedHistory={reversedHistory}
           isExpanded={false}
           onToggle={() => setIsExpanded(true)}
           cumulativeScores={finalCumulativeScores}
           samCount={samCount}
           chayCount={chayCount}
+          sortMode={sortMode}
+          onToggleSort={handleToggleSort}
         />
       </div>
 
@@ -421,6 +499,7 @@ export default function HistoryTable({
 
         <HistoryTableContent
           players={players}
+          sortedPlayers={sortedPlayers}
           reversedHistory={reversedHistory}
           isExpanded={true}
           onToggle={() => setIsExpanded(false)}
@@ -429,8 +508,22 @@ export default function HistoryTable({
           samCount={samCount}
           chayCount={chayCount}
           onChotSo={onChotSo}
+          canReset={canReset}
+          onResetClick={() => canReset && setIsResetModalOpen(true)}
+          sortMode={sortMode}
+          onToggleSort={handleToggleSort}
         />
       </div>
+
+      {/* 3. Popup Cảnh Báo Reset Trận Đấu */}
+      <ResetConfirmModal
+        isOpen={isResetModalOpen}
+        onClose={() => setIsResetModalOpen(false)}
+        onConfirm={() => {
+          if (onResetConfirm) onResetConfirm();
+          setIsResetModalOpen(false);
+        }}
+      />
     </>
   );
 }

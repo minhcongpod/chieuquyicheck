@@ -221,3 +221,22 @@ export function CheckIcon({ className = "w-[18px] h-[18px]", width = 18, height 
   );
 }
 
+// Icon Sắp xếp theo số điểm: Cao bên trái - thấp dần bên phải (1 2 ->)
+export function SortScoreIcon({ className = "w-[26px] h-[26px]", width = 26, height = 26, color = "white" }) {
+  return (
+    <svg width={width} height={height} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <path d="M2.56006 22.575H22.5849L29.8601 22.4718L22.6689 29.7166L20.4473 27.5254L22.5873 25.6926H2.56006V22.575Z" fill={color}/>
+      <path d="M13.3717 3.97396V18.9908H9.93971V7.59932L7.27956 8.32907L6.44299 5.3898L10.3685 3.97396H13.3717Z" fill={color}/>
+      <path d="M15.4519 16.5545L20.3868 11.4303C21.2478 10.548 21.8782 9.68707 21.8782 8.82616C21.8782 7.9019 21.2905 7.27224 20.3029 7.27224C19.3153 7.27224 18.5391 7.94388 18.1399 8.86813L15.3046 7.2089C16.2494 5.02456 18.2239 3.99574 20.2609 3.99574C22.8856 3.99574 25.2379 5.71757 25.2379 8.67886C25.2379 10.4427 24.293 11.9546 22.949 13.2986L20.5128 15.7554H25.4477V18.9892H15.4519V16.553V16.5545Z" fill={color}/>
+    </svg>
+  );
+}
+
+// Icon Sắp xếp theo tên: A đến Z (A Z ->)
+export function SortNameIcon({ className = "w-[26px] h-[26px]", width = 26, height = 26, color = "white" }) {
+  return (
+    <svg width={width} height={height} viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <path d="M22.6689 29.7168L20.4473 27.5254L22.5869 25.6924H2.55957V22.5752H22.585L29.8604 22.4717L22.6689 29.7168ZM29.8604 4.06445V6.88672L22.5977 15.5752H29.8604V18.9521H17.9463V16.126L25.209 7.43652H17.9463V4.06445H29.8604ZM16.5459 18.9082H13.1797L12.2422 16.5127H6.44043L5.50684 18.9082H2.13965L7.91797 4.1084H10.7676L16.5459 18.9082ZM7.75781 13.1357H10.9268L9.3418 9.08008L7.75781 13.1357Z" fill={color}/>
+    </svg>
+  );
+}

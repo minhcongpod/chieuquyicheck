@@ -271,19 +271,16 @@ export default function App() {
         onOpenKeyboard={handleOpenKeyboard}
       />
 
-      {/* 2. Hàng 4 nút chức năng kèm trượt xác nhận Reset, Undo */}
+      {/* 2. Hàng 4 nút chức năng: Tích xanh - Quay lại - Thống kê - QR code */}
       <ActionToolbar
         sumTotal={currentSumTotal}
         canConfirm={canConfirmRound}
         onConfirmRound={handleConfirmRound}
-        onResetConfirm={handleResetConfirm}
         onUndoConfirm={handleUndoConfirm}
-        onStatsClick={() => setIsDailyStatsOpen(true)}
         onLedgerClick={() => setIsDailyStatsOpen(true)}
         onQrClick={() => setIsQrModalOpen(true)}
         canUndo={history.length > 0}
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
-        canReset={canReset}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Khu vực dưới cùng) */}
@@ -292,6 +289,8 @@ export default function App() {
         history={history}
         cumulativeScores={cumulativeScores}
         onChotSo={handleChotSo}
+        canReset={canReset}
+        onResetConfirm={handleResetConfirm}
       />
 
       {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 */}

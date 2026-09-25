@@ -514,10 +514,11 @@ td {
   transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
 }
 
-/* 3 Nút mặc định màu xám: Reset, Undo, QR */
-.toolbar-btn-reset,
+/* 3 Nút mặc định màu xám theo thứ tự: Quay lại, Thống kê, QR Code */
 .toolbar-btn-undo,
+.toolbar-btn-ledger,
 .toolbar-btn-info,
+.toolbar-btn-reset,
 .toolbar-btn-qr {
   width: 68px;
   height: 60px;
@@ -531,17 +532,18 @@ td {
   transition: opacity 0.15s ease, transform 0.1s ease;
 }
 
-.toolbar-btn-reset:active,
 .toolbar-btn-undo:active,
+.toolbar-btn-ledger:active,
 .toolbar-btn-info:active,
+.toolbar-btn-reset:active,
 .toolbar-btn-qr:active {
   transform: scale(0.95);
   opacity: 0.8;
 }
 
-.toolbar-btn-reset:disabled,
 .toolbar-btn-undo:disabled,
-.toolbar-btn-ledger:disabled {
+.toolbar-btn-ledger:disabled,
+.toolbar-btn-reset:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -995,9 +997,50 @@ td {
   line-height: 1;
 }
 
-/* Nút CHỐT SỔ */
-.btn-chot-so {
+/* Cụm 2 nút chức năng dưới Footer: RESET và SAVE */
+.history-footer-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
   width: 100%;
+  margin-top: 6px;
+  margin-bottom: 2px;
+}
+
+.btn-history-reset {
+  flex: 1;
+  height: 40px;
+  background-color: var(--color-btn-gray);
+  color: #000000;
+  border: none;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+  border-radius: 2px;
+}
+
+.btn-history-reset:active {
+  transform: scale(0.98);
+  opacity: 0.85;
+}
+
+.btn-history-reset:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Nút SAVE (thay cho CHỐT SỔ) */
+.btn-chot-so,
+.btn-history-save {
+  flex: 1;
   height: 40px;
   background-color: #66ff33;
   color: #000000;
@@ -1011,17 +1054,17 @@ td {
   align-items: center;
   justify-content: center;
   transition: transform 0.1s ease, opacity 0.15s ease;
-  margin-top: 6px;
-  margin-bottom: 2px;
   border-radius: 2px;
 }
 
-.btn-chot-so:active {
+.btn-chot-so:active,
+.btn-history-save:active {
   transform: scale(0.98);
   opacity: 0.85;
 }
 
-.btn-chot-so:disabled {
+.btn-chot-so:disabled,
+.btn-history-save:disabled {
   opacity: 0.4;
   cursor: not-allowed;
   transform: none;
