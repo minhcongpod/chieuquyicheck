@@ -11,12 +11,23 @@ export default function ActionToolbar({
   onQrClick,
   canUndo = false,
   hasLedger = false,
-  isViewOnly = false
+  isViewOnly = false,
+  viewOnlyUrl = ''
 }) {
   // Trạng thái trượt xác nhận inline: null | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const toolbarRef = useRef(null);
+
+  const handleCopyViewOnlyLink = () => {
+    const url = viewOnlyUrl || (typeof window !== 'undefined' ? `${window.location.origin}/view${window.location.pathname.startsWith('/view') ? '' : window.location.pathname}` : '');
+    if (url && navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    }
+  };
 
   // Kích hoạt chế độ trượt xác nhận hoàn tác
   const handleTriggerMode = (mode) => {
@@ -62,11 +73,22 @@ export default function ActionToolbar({
   if (isViewOnly) {
     return (
       <div className="action-toolbar is-view-only" ref={toolbarRef}>
-        {/* KHU VỰC TRÁI: Nút VIEW ONLY */}
+        {/* KHU VỰC TRÁI: Nút VIEW ONLY (Bấm vào để sao chép liên kết View-Only) */}
         <div className="toolbar-left-slot">
-          <div className="toolbar-btn toolbar-btn-view-only" title="Chế độ chỉ xem (View-only)">
-            <EyeIcon width={24} height={24} color="#000000" />
-            <span className="view-only-text">VIEW ONLY</span>
+          <div
+            className="toolbar-btn toolbar-btn-view-only"
+            title="Bấm để sao chép liên kết Chỉ xem (View-only)"
+            onClick={handleCopyViewOnlyLink}
+            style={{ cursor: 'pointer' }}
+          >
+            {copiedLink ? (
+              <CheckmarkIcon width={22} height={22} color="#000000" />
+            ) : (
+              <EyeIcon width={24} height={24} color="#000000" />
+            )}
+            <span className="view-only-text">
+              {copiedLink ? 'ĐÃ COPY LINK' : 'VIEW ONLY'}
+            </span>
           </div>
         </div>
 

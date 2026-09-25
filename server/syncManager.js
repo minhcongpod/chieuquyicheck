@@ -50,7 +50,7 @@ const roomDeviceOrder = new Map();   // roomId -> Array<deviceId> (FIFO order of
  * - Cùng 1 thiết bị khi mở lại/reload hoặc mở nhiều tab sẽ dùng chung slot Active đó, không chiếm thêm slot của người khác.
  * - Từ thiết bị thứ 3 trở đi sẽ vào chế độ View-Only.
  */
-function assignSlotForConnection(roomId, ws, deviceId) {
+function assignSlotForConnection(roomId, ws, deviceId, isExplicitViewOnly = false) {
   if (!roomActiveDevices.has(roomId)) {
     roomActiveDevices.set(roomId, []);
   }
@@ -59,6 +59,19 @@ function assignSlotForConnection(roomId, ws, deviceId) {
   }
   if (!roomDeviceOrder.has(roomId)) {
     roomDeviceOrder.set(roomId, []);
+  }
+
+  const activeDevices = roomActiveDevices.get(roomId);
+
+  // Nếu kết nối qua link View-Only riêng: Cấp thẳng quyền view_only và không chiếm slot / không xếp hàng Active
+  if (isExplicitViewOnly) {
+    ws.role = 'view_only';
+    ws.slotIndex = null;
+    ws.deviceId = deviceId;
+    ws.roomId = roomId;
+    ws.isExplicitViewOnly = true;
+    console.log(`[SyncServer] 👁️ Cấp quyền VIEW-ONLY (Dedicated Link) cho thiết bị ${deviceId} tại phòng "${roomId}"`);
+    return { role: 'view_only', slotIndex: null, activeCount: activeDevices.length };
   }
 
   const devMap = roomDeviceSockets.get(roomId);
@@ -71,8 +84,6 @@ function assignSlotForConnection(roomId, ws, deviceId) {
   if (!devOrder.includes(deviceId)) {
     devOrder.push(deviceId);
   }
-
-  const activeDevices = roomActiveDevices.get(roomId);
 
   let role = 'view_only';
   let slotIndex = null;
@@ -99,6 +110,7 @@ function assignSlotForConnection(roomId, ws, deviceId) {
   ws.slotIndex = slotIndex;
   ws.deviceId = deviceId;
   ws.roomId = roomId;
+  ws.isExplicitViewOnly = false;
 
   return { role, slotIndex, activeCount: activeDevices.length };
 }
@@ -109,6 +121,9 @@ function assignSlotForConnection(roomId, ws, deviceId) {
  * giải phóng slot đó và tự động đôn thiết bị tiếp theo trong hàng chờ lên Active.
  */
 function releaseSlotAndPromote(roomId, ws) {
+  if (ws.isExplicitViewOnly) {
+    return (roomActiveDevices.get(roomId) || []).length;
+  }
   const deviceId = ws.deviceId;
   if (!deviceId) return 0;
 
@@ -302,6 +317,7 @@ export function setupWebSocketServer(httpServer) {
     const urlObj = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
     const roomId = urlObj.searchParams.get('room') || 'default';
     const deviceId = urlObj.searchParams.get('deviceId') || ('anon_' + Math.random().toString(36).substr(2, 9));
+    const isExplicitViewOnly = urlObj.searchParams.get('viewOnly') === '1' || urlObj.searchParams.get('view') === '1' || urlObj.searchParams.get('mode') === 'view';
     
     ws.isAlive = true;
     ws.on('pong', () => {
@@ -314,8 +330,8 @@ export function setupWebSocketServer(httpServer) {
     }
     roomClients.get(roomId).add(ws);
 
-    // Phân bổ slot theo thiết bị (2 thiết bị đầu tiên Active, từ thiết bị thứ 3 là View-only)
-    const { role, slotIndex, activeCount } = assignSlotForConnection(roomId, ws, deviceId);
+    // Phân bổ slot theo thiết bị (2 thiết bị đầu tiên Active, từ thiết bị thứ 3 hoặc link view-only là View-only)
+    const { role, slotIndex, activeCount } = assignSlotForConnection(roomId, ws, deviceId, isExplicitViewOnly);
 
     // Báo số người đang online và số slot Active trong phòng cho mọi người
     broadcastToRoom(roomId, {

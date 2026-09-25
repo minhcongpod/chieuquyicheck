@@ -20,6 +20,7 @@ export default function App() {
     role,
     isViewOnly,
     slotIndex,
+    viewOnlyUrl,
     updatePlayerName,
     updateRoundDeltas,
     confirmRound,
@@ -329,6 +330,7 @@ export default function App() {
         canUndo={history.length > 0}
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
         isViewOnly={isViewOnly}
+        viewOnlyUrl={viewOnlyUrl}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Ẩn hoàn toàn khi mở bàn phím để đỡ rối mắt) */}

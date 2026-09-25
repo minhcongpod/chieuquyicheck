@@ -24,22 +24,40 @@ export function fireConfetti() {
 }
 
 export function useRealtimeGame() {
-  // Lấy roomId từ URL path (ví dụ: /1, /2, /nhom1) hoặc query param (?room=1, mặc định 'default')
-  const [roomId] = useState(() => {
+  // Lấy roomId và cờ View-Only từ URL:
+  // - Hỗ trợ đường dẫn riêng: /view/:roomId (vd: /view/1, /view/nhom1, hoặc /view)
+  // - Hỗ trợ query param: ?view=1 hoặc ?mode=view
+  // - Hỗ trợ đường dẫn phòng thông thường: /1, /nhom1 (hoặc mặc định 'default')
+  const [{ roomId, isForcedViewOnly }] = useState(() => {
     if (typeof window !== 'undefined') {
-      // 1. Ưu tiên lấy từ URL pathname (loại bỏ dấu / ở đầu và cuối: /1 -> "1", /nhom1/ -> "nhom1")
-      const cleanPath = window.location.pathname.replace(/^\/+|\/+$/g, '');
-      if (cleanPath && cleanPath !== '') {
-        return decodeURIComponent(cleanPath);
-      }
-      // 2. Hỗ trợ query param dạng ?room=1
+      const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
       const params = new URLSearchParams(window.location.search);
-      const roomParam = params.get('room');
-      if (roomParam && roomParam.trim() !== '') {
-        return roomParam.trim();
+      const viewParam = params.get('view') || params.get('mode');
+      
+      const isForcedView = (
+        viewParam === 'true' ||
+        viewParam === '1' ||
+        viewParam === 'view' ||
+        pathname.startsWith('view/') ||
+        pathname === 'view'
+      );
+
+      let extractedRoom = 'default';
+      if (pathname.startsWith('view/')) {
+        const afterView = pathname.slice(5).replace(/^\/+|\/+$/g, '');
+        if (afterView) extractedRoom = decodeURIComponent(afterView);
+      } else if (pathname === 'view') {
+        const r = params.get('room');
+        if (r && r.trim() !== '') extractedRoom = r.trim();
+      } else if (pathname && pathname !== '') {
+        extractedRoom = decodeURIComponent(pathname);
+      } else if (params.get('room') && params.get('room').trim() !== '') {
+        extractedRoom = params.get('room').trim();
       }
+
+      return { roomId: extractedRoom, isForcedViewOnly: Boolean(isForcedView) };
     }
-    return 'default';
+    return { roomId: 'default', isForcedViewOnly: false };
   });
 
   const [players, setPlayers] = useState(() => {
@@ -83,12 +101,12 @@ export function useRealtimeGame() {
   const [roundDeltas, setRoundDeltas] = useState({});
   const [isConnected, setIsConnected] = useState(false);
   const [userCount, setUserCount] = useState(1);
-  const [role, setRole] = useState('active'); // 'active' (2 người đầu) | 'view_only' (từ người thứ 3)
+  const [role, setRole] = useState(isForcedViewOnly ? 'view_only' : 'active');
   const [slotIndex, setSlotIndex] = useState(null); // 1, 2 hoặc null
 
-  const isViewOnly = role === 'view_only';
-  const roleRef = useRef(role);
-  roleRef.current = role;
+  const isViewOnly = isForcedViewOnly || role === 'view_only';
+  const roleRef = useRef(isViewOnly ? 'view_only' : role);
+  roleRef.current = isViewOnly ? 'view_only' : role;
 
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
@@ -123,7 +141,7 @@ function getOrCreateDeviceId() {
       if (typeof window === 'undefined') return;
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws?room=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}`;
+      const wsUrl = `${protocol}//${window.location.host}/ws?room=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}${isForcedViewOnly ? '&viewOnly=1' : ''}`;
 
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
@@ -131,7 +149,7 @@ function getOrCreateDeviceId() {
       ws.onopen = () => {
         if (!isMounted) return;
         setIsConnected(true);
-        console.log(`[ChieuQuy Sync] Đã kết nối phòng "${roomId}" (Device: ${deviceId})`);
+        console.log(`[ChieuQuy Sync] Đã kết nối phòng "${roomId}" (Device: ${deviceId}, ViewOnly: ${isForcedViewOnly})`);
       };
 
       ws.onmessage = (event) => {
@@ -145,15 +163,19 @@ function getOrCreateDeviceId() {
             if (payload.history) setHistory(payload.history);
             if (payload.roundDeltas) setRoundDeltas(payload.roundDeltas);
             if (payload.dailyLedger) setDailyLedger(payload.dailyLedger);
-            if (data.role) setRole(data.role);
-            if (data.slotIndex !== undefined) setSlotIndex(data.slotIndex);
+            if (!isForcedViewOnly) {
+              if (data.role) setRole(data.role);
+              if (data.slotIndex !== undefined) setSlotIndex(data.slotIndex);
+            }
             // Lưu cache offline
             localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(payload.players || []));
             localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(payload.history || []));
             if (payload.dailyLedger) localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(payload.dailyLedger));
           } else if (type === 'ROLE_ASSIGNMENT') {
-            if (payload?.role) setRole(payload.role);
-            if (payload?.slotIndex !== undefined) setSlotIndex(payload.slotIndex);
+            if (!isForcedViewOnly) {
+              if (payload?.role) setRole(payload.role);
+              if (payload?.slotIndex !== undefined) setSlotIndex(payload.slotIndex);
+            }
             console.log(`[ChieuQuy Sync] Phân quyền phòng: ${payload?.role} (Slot: ${payload?.slotIndex})`);
           } else if (type === 'STATE_UPDATE') {
             if (payload.players) setPlayers(payload.players);
@@ -304,6 +326,14 @@ function getOrCreateDeviceId() {
     });
   }, [roomId, sendMessage]);
 
+  const viewOnlyUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/view/${roomId === 'default' ? '' : roomId}`.replace(/\/+$/, '') || `${window.location.origin}/view`
+    : `/view/${roomId}`;
+
+  const roomUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/${roomId === 'default' ? '' : roomId}`.replace(/\/+$/, '') || `${window.location.origin}/`
+    : `/${roomId}`;
+
   return {
     roomId,
     players,
@@ -314,7 +344,10 @@ function getOrCreateDeviceId() {
     userCount,
     role,
     isViewOnly,
+    isForcedViewOnly,
     slotIndex,
+    viewOnlyUrl,
+    roomUrl,
     updatePlayerName,
     updateRoundDeltas,
     confirmRound,
