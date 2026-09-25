@@ -40,76 +40,139 @@ const INITIAL_PLAYERS = [
 // Lưu trữ trạng thái trong bộ nhớ RAM và danh sách kết nối
 const roomStates = new Map(); // roomId -> state
 const roomClients = new Map(); // roomId -> Set<ws>
-const roomActiveSlots = new Map(); // roomId -> Array<ws> (tối đa 2 người chơi Active)
+const roomActiveDevices = new Map(); // roomId -> Array<deviceId> (tối đa 2 thiết bị Active)
+const roomDeviceSockets = new Map(); // roomId -> Map<deviceId, Set<ws>>
+const roomDeviceOrder = new Map();   // roomId -> Array<deviceId> (FIFO order of connected devices)
 
 /**
- * Phân bổ slot khi có client mới kết nối vào phòng:
- * - 2 người đầu tiên được cấp quyền Active (Chủ phòng / Người chơi)
- * - Từ người thứ 3 trở đi được cấp quyền View-Only (Chỉ xem)
+ * Phân bổ quyền cho thiết bị:
+ * - 2 thiết bị đầu tiên được cấp quyền Active (Slot #1 hoặc #2).
+ * - Cùng 1 thiết bị khi mở lại/reload hoặc mở nhiều tab sẽ dùng chung slot Active đó, không chiếm thêm slot của người khác.
+ * - Từ thiết bị thứ 3 trở đi sẽ vào chế độ View-Only.
  */
-function assignSlotForConnection(roomId, ws) {
-  if (!roomActiveSlots.has(roomId)) {
-    roomActiveSlots.set(roomId, []);
+function assignSlotForConnection(roomId, ws, deviceId) {
+  if (!roomActiveDevices.has(roomId)) {
+    roomActiveDevices.set(roomId, []);
   }
-  let activeSlots = roomActiveSlots.get(roomId).filter((s) => s.readyState === 1);
+  if (!roomDeviceSockets.has(roomId)) {
+    roomDeviceSockets.set(roomId, new Map());
+  }
+  if (!roomDeviceOrder.has(roomId)) {
+    roomDeviceOrder.set(roomId, []);
+  }
 
-  if (activeSlots.length < 2) {
-    activeSlots.push(ws);
-    ws.role = 'active';
-    ws.slotIndex = activeSlots.length; // 1 hoặc 2
-    console.log(`[SyncServer] 🟢 Cấp quyền ACTIVE cho client mới tại phòng "${roomId}" (Slot #${ws.slotIndex})`);
+  const devMap = roomDeviceSockets.get(roomId);
+  if (!devMap.has(deviceId)) {
+    devMap.set(deviceId, new Set());
+  }
+  devMap.get(deviceId).add(ws);
+
+  const devOrder = roomDeviceOrder.get(roomId);
+  if (!devOrder.includes(deviceId)) {
+    devOrder.push(deviceId);
+  }
+
+  const activeDevices = roomActiveDevices.get(roomId);
+
+  let role = 'view_only';
+  let slotIndex = null;
+
+  if (activeDevices.includes(deviceId)) {
+    // Thiết bị này đã có quyền Active từ trước (reload / mở thêm tab)
+    role = 'active';
+    slotIndex = activeDevices.indexOf(deviceId) + 1;
+    console.log(`[SyncServer] 🟢 Thiết bị ${deviceId} duy trì ACTIVE slot #${slotIndex} tại phòng "${roomId}"`);
+  } else if (activeDevices.length < 2) {
+    // Slot còn trống: Cấp quyền Active cho thiết bị mới
+    activeDevices.push(deviceId);
+    role = 'active';
+    slotIndex = activeDevices.length;
+    console.log(`[SyncServer] 🟢 Cấp quyền ACTIVE cho thiết bị mới ${deviceId} tại phòng "${roomId}" (Slot #${slotIndex})`);
   } else {
-    ws.role = 'view_only';
-    ws.slotIndex = null;
-    console.log(`[SyncServer] 👁️ Cấp quyền VIEW-ONLY cho client mới tại phòng "${roomId}"`);
+    // Đã đủ 2 thiết bị Active: Chuyển sang View-Only
+    role = 'view_only';
+    slotIndex = null;
+    console.log(`[SyncServer] 👁️ Cấp quyền VIEW-ONLY cho thiết bị ${deviceId} tại phòng "${roomId}"`);
   }
 
-  roomActiveSlots.set(roomId, activeSlots);
-  return { role: ws.role, slotIndex: ws.slotIndex, activeCount: activeSlots.length };
+  ws.role = role;
+  ws.slotIndex = slotIndex;
+  ws.deviceId = deviceId;
+  ws.roomId = roomId;
+
+  return { role, slotIndex, activeCount: activeDevices.length };
 }
 
 /**
- * Cơ chế giải phóng slot (Release Slot):
- * Khi 1 trong 2 người chơi đầu tiên thoát trang (đóng tab, mất kết nối),
- * hệ thống tự động giải phóng slot và đôn người tiếp theo đang chờ ở chế độ view_only lên Active.
+ * Cơ chế giải phóng slot (Release Slot) & Đôn người thứ 3 lên Active:
+ * Khi tất cả các kết nối của một thiết bị Active bị đóng,
+ * giải phóng slot đó và tự động đôn thiết bị tiếp theo trong hàng chờ lên Active.
  */
 function releaseSlotAndPromote(roomId, ws) {
-  if (!roomActiveSlots.has(roomId)) return 0;
+  const deviceId = ws.deviceId;
+  if (!deviceId) return 0;
 
-  let activeSlots = roomActiveSlots.get(roomId).filter((s) => s !== ws && s.readyState === 1);
+  const devMap = roomDeviceSockets.get(roomId);
+  const activeDevices = roomActiveDevices.get(roomId) || [];
+  const devOrder = roomDeviceOrder.get(roomId) || [];
   const clients = roomClients.get(roomId);
 
-  // Nếu slot còn trống (< 2) và còn client khác đang kết nối trong phòng
-  if (activeSlots.length < 2 && clients && clients.size > 0) {
-    for (const candidate of clients) {
-      if (activeSlots.length >= 2) break;
-      if (!activeSlots.includes(candidate) && candidate.readyState === 1) {
-        candidate.role = 'active';
-        candidate.slotIndex = activeSlots.length + 1;
-        activeSlots.push(candidate);
+  if (devMap && devMap.has(deviceId)) {
+    devMap.get(deviceId).delete(ws);
 
-        console.log(`[SyncServer] 🚀 ĐÔN CLIENT LÊN ACTIVE tại phòng "${roomId}" (Slot #${candidate.slotIndex})`);
+    // Kiểm tra xem thiết bị này còn socket nào đang kết nối không
+    const remainingSockets = Array.from(devMap.get(deviceId)).filter(s => s.readyState === 1);
+    if (remainingSockets.length === 0) {
+      // Thiết bị đã ngắt kết nối hoàn toàn
+      devMap.delete(deviceId);
 
-        // Gửi thông báo cập nhật quyền Active ngay lập tức qua realtime
-        try {
-          candidate.send(JSON.stringify({
-            type: 'ROLE_ASSIGNMENT',
-            payload: {
-              role: 'active',
-              slotIndex: candidate.slotIndex,
-              totalUsers: clients.size,
-              activeCount: activeSlots.length
+      const oIdx = devOrder.indexOf(deviceId);
+      if (oIdx !== -1) devOrder.splice(oIdx, 1);
+
+      // Nếu thiết bị vừa thoát đang giữ slot Active -> GIẢI PHÓNG SLOT VÀ ĐÔN THIẾT BỊ TIẾP THEO
+      const sIdx = activeDevices.indexOf(deviceId);
+      if (sIdx !== -1) {
+        activeDevices.splice(sIdx, 1);
+        console.log(`[SyncServer] 🚪 Thiết bị Active ${deviceId} đã thoát phòng "${roomId}". Giải phóng slot!`);
+
+        // Tìm thiết bị đang chờ đầu tiên trong devOrder chưa có Active slot
+        for (const candidateDevId of devOrder) {
+          if (activeDevices.length >= 2) break;
+          if (!activeDevices.includes(candidateDevId)) {
+            activeDevices.push(candidateDevId);
+            const newSlotIndex = activeDevices.length;
+            console.log(`[SyncServer] 🚀 ĐÔN THIẾT BỊ ${candidateDevId} LÊN ACTIVE (Slot #${newSlotIndex})`);
+
+            // Gửi ROLE_ASSIGNMENT cho tất cả socket của thiết bị được đôn
+            const candSockets = devMap.get(candidateDevId);
+            if (candSockets) {
+              for (const candWs of candSockets) {
+                if (candWs.readyState === 1) {
+                  candWs.role = 'active';
+                  candWs.slotIndex = newSlotIndex;
+                  try {
+                    candWs.send(JSON.stringify({
+                      type: 'ROLE_ASSIGNMENT',
+                      payload: {
+                        role: 'active',
+                        slotIndex: newSlotIndex,
+                        totalUsers: clients ? clients.size : 0,
+                        activeCount: activeDevices.length
+                      }
+                    }));
+                  } catch (e) {
+                    console.error('[SyncServer] Lỗi gửi ROLE_ASSIGNMENT đôn quyền:', e);
+                  }
+                }
+              }
             }
-          }));
-        } catch (e) {
-          console.error('[SyncServer] Lỗi gửi ROLE_ASSIGNMENT đôn quyền:', e);
+          }
         }
       }
     }
   }
 
-  roomActiveSlots.set(roomId, activeSlots);
-  return activeSlots.length;
+  return activeDevices.length;
 }
 
 import { SAMPLE_DAILY_LEDGER } from '../src/constants/sampleLedger.js';
@@ -238,7 +301,12 @@ export function setupWebSocketServer(httpServer) {
   wss.on('connection', async (ws, request) => {
     const urlObj = new URL(request.url, `http://${request.headers.host || 'localhost'}`);
     const roomId = urlObj.searchParams.get('room') || 'default';
-    ws.roomId = roomId;
+    const deviceId = urlObj.searchParams.get('deviceId') || ('anon_' + Math.random().toString(36).substr(2, 9));
+    
+    ws.isAlive = true;
+    ws.on('pong', () => {
+      ws.isAlive = true;
+    });
 
     // Đăng ký client vào phòng
     if (!roomClients.has(roomId)) {
@@ -246,8 +314,8 @@ export function setupWebSocketServer(httpServer) {
     }
     roomClients.get(roomId).add(ws);
 
-    // Phân bổ slot theo cơ chế FIFO (2 người đầu tiên Active, từ người thứ 3 là View-only)
-    const { role, slotIndex, activeCount } = assignSlotForConnection(roomId, ws);
+    // Phân bổ slot theo thiết bị (2 thiết bị đầu tiên Active, từ thiết bị thứ 3 là View-only)
+    const { role, slotIndex, activeCount } = assignSlotForConnection(roomId, ws, deviceId);
 
     // Báo số người đang online và số slot Active trong phòng cho mọi người
     broadcastToRoom(roomId, {
@@ -408,6 +476,7 @@ export function setupWebSocketServer(httpServer) {
           }
 
           case 'PING': {
+            ws.isAlive = true;
             ws.send(JSON.stringify({ type: 'PONG' }));
             break;
           }
@@ -428,7 +497,9 @@ export function setupWebSocketServer(httpServer) {
 
         if (clients.size === 0) {
           roomClients.delete(roomId);
-          roomActiveSlots.delete(roomId);
+          roomActiveDevices.delete(roomId);
+          roomDeviceSockets.delete(roomId);
+          roomDeviceOrder.delete(roomId);
         } else {
           broadcastToRoom(roomId, {
             type: 'ROOM_USERS_COUNT',
@@ -444,7 +515,30 @@ export function setupWebSocketServer(httpServer) {
     });
   });
 
+  // Server Heartbeat định kỳ mỗi 8 giây: Quét và đóng ngay lập tức các kết nối treo/mất mạng ngầm
+  const heartbeatInterval = setInterval(() => {
+    for (const [roomId, clients] of roomClients) {
+      for (const ws of clients) {
+        if (ws.isAlive === false) {
+          console.log(`[SyncServer] 💀 Phát hiện kết nối chết không phản hồi tại phòng "${roomId}". Terminating...`);
+          ws.terminate();
+          continue;
+        }
+        ws.isAlive = false;
+        try {
+          ws.ping();
+        } catch (e) {
+          ws.terminate();
+        }
+      }
+    }
+  }, 8000);
+
+  wss.on('close', () => {
+    clearInterval(heartbeatInterval);
+  });
 
   console.log('[SyncServer] WebSocket Realtime Server đã khởi động sẵn sàng tại /ws');
   return wss;
 }
+

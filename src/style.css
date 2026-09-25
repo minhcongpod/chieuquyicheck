@@ -274,7 +274,7 @@ td {
 }
 
 .player-score-text.score-3digits {
-  font-size: 24px;
+  font-size: 30px;
 }
 
 .player-score-text.score-4digits {
@@ -1957,28 +1957,28 @@ td {
 
   .player-name-text,
   .player-name-input {
-    font-size: 24px;
+    font-size: 30px;
   }
 
   .player-score-text {
-    font-size: 24px;
+    font-size: 30px;
   }
 
   .player-btn-minus,
   .player-btn-plus {
     min-width: 58px;
-    font-size: 24px;
+    font-size: 30px;
   }
 
   .player-btn-minus.size-3digits,
   .player-btn-plus.size-3digits {
-    font-size: 20px;
+    font-size: 24px;
   }
 
   .confirm-sum-text,
   .toolbar-btn-active-action,
   .action-confirm-label {
-    font-size: 22px;
+    font-size: 24px;
   }
 
   .toolbar-right-slot {

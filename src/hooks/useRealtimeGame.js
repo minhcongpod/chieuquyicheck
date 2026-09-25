@@ -93,6 +93,20 @@ export function useRealtimeGame() {
   const socketRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
 
+function getOrCreateDeviceId() {
+  if (typeof window === 'undefined') return 'server';
+  try {
+    let id = localStorage.getItem('cq_device_id');
+    if (!id) {
+      id = 'dev_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+      localStorage.setItem('cq_device_id', id);
+    }
+    return id;
+  } catch (e) {
+    return 'dev_fallback_' + Date.now();
+  }
+}
+
   // Gửi tin nhắn qua WebSocket an toàn
   const sendMessage = useCallback((type, payload) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
@@ -103,12 +117,13 @@ export function useRealtimeGame() {
   // Kết nối WebSocket
   useEffect(() => {
     let isMounted = true;
+    const deviceId = getOrCreateDeviceId();
 
     function connect() {
       if (typeof window === 'undefined') return;
 
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws?room=${encodeURIComponent(roomId)}`;
+      const wsUrl = `${protocol}//${window.location.host}/ws?room=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}`;
 
       const ws = new WebSocket(wsUrl);
       socketRef.current = ws;
@@ -116,7 +131,7 @@ export function useRealtimeGame() {
       ws.onopen = () => {
         if (!isMounted) return;
         setIsConnected(true);
-        console.log(`[ChieuQuy Sync] Đã kết nối phòng "${roomId}"`);
+        console.log(`[ChieuQuy Sync] Đã kết nối phòng "${roomId}" (Device: ${deviceId})`);
       };
 
       ws.onmessage = (event) => {
@@ -182,16 +197,25 @@ export function useRealtimeGame() {
 
     connect();
 
-    // Heartbeat ping mỗi 25s để giữ kết nối trên mobile
+    // Heartbeat ping mỗi 15s để giữ kết nối trên mobile
     const pingInterval = setInterval(() => {
       if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
         socketRef.current.send(JSON.stringify({ type: 'PING' }));
       }
-    }, 25000);
+    }, 15000);
+
+    // Giải phóng ngay socket khi người dùng đóng tab / điều hướng trang
+    const handleBeforeUnload = () => {
+      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+        socketRef.current.close(1000, 'Tab closed');
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
       isMounted = false;
       clearInterval(pingInterval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
       if (socketRef.current) socketRef.current.close();
     };
