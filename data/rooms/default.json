@@ -18,17 +18,151 @@
     },
     {
       "id": "p4",
-      "name": "",
+      "name": "C",
       "color": "#c073ff"
     },
     {
       "id": "p5",
-      "name": "",
+      "name": "CONG",
       "color": "#fd6161"
     }
   ],
   "history": [],
   "roundDeltas": {},
-  "updatedAt": 1790310920040,
-  "dailyLedger": []
+  "updatedAt": 1790322215220,
+  "dailyLedger": [
+    {
+      "id": "ledger-1",
+      "roundIndex": 1,
+      "label": "#1",
+      "timestamp": 1790142870630,
+      "playersInfo": [
+        {
+          "id": "LINH",
+          "name": "LINH",
+          "color": "#f4e950"
+        },
+        {
+          "id": "CÔNG",
+          "name": "CÔNG",
+          "color": "#66ff33"
+        },
+        {
+          "id": "MINH",
+          "name": "MINH",
+          "color": "#16e4ff"
+        },
+        {
+          "id": "HẢI",
+          "name": "HẢI",
+          "color": "#c073ff"
+        },
+        {
+          "id": "TUẤN",
+          "name": "TUẤN",
+          "color": "#fd6161"
+        }
+      ],
+      "scores": {
+        "p1": 80,
+        "LINH": 80,
+        "p2": -20,
+        "CÔNG": -20,
+        "p3": -20,
+        "MINH": -20,
+        "p4": -20,
+        "HẢI": -20,
+        "p5": -20,
+        "TUẤN": -20
+      }
+    },
+    {
+      "id": "ledger-2",
+      "roundIndex": 2,
+      "label": "#2",
+      "timestamp": 1790229270630,
+      "playersInfo": [
+        {
+          "id": "LINH",
+          "name": "LINH",
+          "color": "#f4e950"
+        },
+        {
+          "id": "CÔNG",
+          "name": "CÔNG",
+          "color": "#66ff33"
+        },
+        {
+          "id": "MINH",
+          "name": "MINH",
+          "color": "#16e4ff"
+        },
+        {
+          "id": "HẢI",
+          "name": "HẢI",
+          "color": "#c073ff"
+        },
+        {
+          "id": "CHIẾN",
+          "name": "CHIẾN",
+          "color": "#ff9f43"
+        }
+      ],
+      "scores": {
+        "p1": 20,
+        "LINH": 20,
+        "p2": 0,
+        "CÔNG": 0,
+        "p3": -20,
+        "MINH": -20,
+        "p4": 0,
+        "HẢI": 0,
+        "p5": 0,
+        "CHIẾN": 0
+      }
+    },
+    {
+      "id": "ledger-3",
+      "roundIndex": 3,
+      "label": "#3",
+      "timestamp": 1790315670630,
+      "playersInfo": [
+        {
+          "id": "LINH",
+          "name": "LINH",
+          "color": "#f4e950"
+        },
+        {
+          "id": "CÔNG",
+          "name": "CÔNG",
+          "color": "#66ff33"
+        },
+        {
+          "id": "MINH",
+          "name": "MINH",
+          "color": "#16e4ff"
+        },
+        {
+          "id": "TOÀN",
+          "name": "TOÀN",
+          "color": "#54a0ff"
+        },
+        {
+          "id": "DŨNG",
+          "name": "DŨNG",
+          "color": "#1dd1a1"
+        }
+      ],
+      "scores": {
+        "p1": 15,
+        "LINH": 15,
+        "p2": -1,
+        "CÔNG": -1,
+        "p3": -1,
+        "MINH": -1,
+        "TOÀN": -11,
+        "DŨNG": -2
+      }
+    }
+  ]
 }

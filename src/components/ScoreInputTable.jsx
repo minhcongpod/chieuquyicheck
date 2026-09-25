@@ -44,31 +44,67 @@ export default function ScoreInputTable({
 
   const inputRef = useRef(null);
   const blurTimerRef = useRef(null);
+  const debounceTimerRef = useRef(null);
   const rowRefs = useRef({});
   const prevPositions = useRef({});
   const isFirstRender = useRef(true);
+  const frozenOrderRef = useRef(null);
+
+  // Dọn dẹp timer khi component unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    };
+  }, []);
 
   const handleNameClick = (player) => {
     if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    // Khóa cố định thứ tự hiện tại của các hàng ngay khi mở ô nhập
+    frozenOrderRef.current = sortedPlayers.map((p) => p.id);
     setEditingPlayerId(player.id);
     setTempName(player.name || '');
   };
 
-  // Cập nhật tên theo thời gian thực (realtime) ngay khi người dùng gõ từng ký tự
+  // Cập nhật tên người chơi:
+  // - State cục bộ (tempName) cập nhật tức thì (0ms) để ô input phản hồi mượt mà từng ký tự
+  // - State tổng thể và WebSocket được debounce 400ms để tránh kích hoạt re-render toàn app liên tục
   const handleInputChange = (playerId, val) => {
     setTempName(val);
-    onUpdatePlayerName(playerId, val);
+
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      onUpdatePlayerName(playerId, val);
+    }, 400);
   };
 
   // Chốt lưu tên tự động khi mất tiêu điểm (onBlur) hoặc chạm ra ngoài màn hình
   const handleInputBlur = (playerId) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
     if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+
     blurTimerRef.current = setTimeout(() => {
       const finalName = tempName.trim();
       if (finalName) {
         saveKnownPlayer(finalName);
       }
       onUpdatePlayerName(playerId, finalName);
+
+      // Lưu lại toạ độ DOM chính xác của các hàng trước khi mở khoá sắp xếp
+      sortedPlayers.forEach((player) => {
+        const el = rowRefs.current[player.id];
+        if (el) {
+          prevPositions.current[player.id] = el.getBoundingClientRect().top;
+        }
+      });
+
+      frozenOrderRef.current = null;
       setEditingPlayerId(null);
       setTempName('');
       window.scrollTo(0, 0);
@@ -76,22 +112,37 @@ export default function ScoreInputTable({
   };
 
   const handleNameSave = (playerId, newName) => {
-    if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (blurTimerRef.current) {
+      clearTimeout(blurTimerRef.current);
+      blurTimerRef.current = null;
+    }
+
     const raw = newName !== undefined ? newName : tempName;
     const toSave = (raw || '').trim();
     if (toSave) {
       saveKnownPlayer(toSave);
     }
     onUpdatePlayerName(playerId, toSave);
+
+    sortedPlayers.forEach((player) => {
+      const el = rowRefs.current[player.id];
+      if (el) {
+        prevPositions.current[player.id] = el.getBoundingClientRect().top;
+      }
+    });
+
+    frozenOrderRef.current = null;
     setEditingPlayerId(null);
     setTempName('');
     window.scrollTo(0, 0);
   };
 
-  // Giữ cố định vị trí hàng khi đang gõ tên để tránh bị nhảy hàng / mất tiêu điểm
-  const frozenOrderRef = useRef(null);
-
   // Sắp xếp danh sách người chơi trên bảng nhập liệu theo quy tắc ưu tiên:
+  // - Khi người dùng đang gõ tên (editingPlayerId !== null): CỐ ĐỊNH 100% thứ tự, không xáo trộn
   // - Nhóm có tên (Được sắp xếp): Sắp xếp vị trí theo thứ tự tổng điểm từ cao xuống thấp
   // - Nhóm trống (Ghim xuống cuối): Hàng thỏa mãn đồng thời 2 điều kiện: tên bị bỏ trống VÀ điểm số bằng 0
   //   sẽ bị loại khỏi luồng sắp xếp điểm, luôn được đẩy (push/append) xuống dưới cùng danh sách
@@ -136,6 +187,11 @@ export default function ScoreInputTable({
 
   // Hiệu ứng FLIP (First, Last, Invert, Play) chuyển đổi vị trí mượt mà khi thứ tự thay đổi
   useLayoutEffect(() => {
+    // TẠM DỪNG HOÀN TOÀN FLIP animation khi người dùng đang nhập tên để triệt tiêu mọi rung giật / layout shift
+    if (editingPlayerId) {
+      return;
+    }
+
     if (isFirstRender.current) {
       // Lưu vị trí ban đầu của 5 người chơi
       sortedPlayers.forEach((player) => {
@@ -204,7 +260,7 @@ export default function ScoreInputTable({
         clearTimeout(timerId);
       };
     }
-  }, [sortedPlayers, cumulativeScores]);
+  }, [sortedPlayers, cumulativeScores, editingPlayerId]);
 
   // Cập nhật lại vị trí khi xoay màn hình hoặc resize
   useEffect(() => {
@@ -294,7 +350,11 @@ export default function ScoreInputTable({
                             handleNameSave(player.id, tempName);
                             inputRef.current?.blur();
                           } else if (e.key === 'Escape') {
+                            if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+                            if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+                            frozenOrderRef.current = null;
                             setEditingPlayerId(null);
+                            setTempName('');
                           }
                         }}
                         className="player-name-input"
