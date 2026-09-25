@@ -1471,7 +1471,7 @@ td {
 }
 
 .modal-btn-open-link {
-  background-color: #fd6161;
+  background-color: #999999;
   color: #000000;
   height: 48px;
   display: flex;
@@ -1484,7 +1484,7 @@ td {
 }
 
 .modal-btn-save-qr {
-  background-color: #66ff33;
+  background-color: #999999;
   color: #000000;
   height: 48px;
   display: flex;

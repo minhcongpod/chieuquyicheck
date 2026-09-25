@@ -3,11 +3,11 @@ import confetti from 'canvas-confetti';
 import { SAMPLE_DAILY_LEDGER } from '../constants/sampleLedger';
 
 const INITIAL_PLAYERS = [
-  { id: 'p1', name: 'A', color: '#f4e950' },
-  { id: 'p2', name: 'B', color: '#66ff33' },
-  { id: 'p3', name: 'C', color: '#16e4ff' },
-  { id: 'p4', name: 'D', color: '#c073ff' },
-  { id: 'p5', name: 'E', color: '#fd6161' }
+  { id: 'p1', name: '', color: '#f4e950' },
+  { id: 'p2', name: '', color: '#66ff33' },
+  { id: 'p3', name: '', color: '#16e4ff' },
+  { id: 'p4', name: '', color: '#c073ff' },
+  { id: 'p5', name: '', color: '#fd6161' }
 ];
 
 // Hàm bắn 1 đợt pháo hoa ăn mừng khi chốt ván
@@ -45,7 +45,18 @@ export function useRealtimeGame() {
   const [players, setPlayers] = useState(() => {
     try {
       const saved = localStorage.getItem(`cq_players_${roomId}`);
-      return saved ? JSON.parse(saved) : INITIAL_PLAYERS;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Xóa bỏ hoàn toàn các tên mặc định gán sẵn cũ (A, B, C, D, E)
+        return parsed.map((p, idx) => {
+          const legacyDefault = String.fromCharCode(65 + idx);
+          if (p.name === legacyDefault) {
+            return { ...p, name: '' };
+          }
+          return p;
+        });
+      }
+      return INITIAL_PLAYERS;
     } catch (e) {
       return INITIAL_PLAYERS;
     }
@@ -210,9 +221,9 @@ export function useRealtimeGame() {
 
   const resetGame = useCallback(() => {
     sendMessage('RESET_GAME', {});
-    // Cập nhật ngay lập tức tại máy này: reset toàn bộ tên người chơi về mặc định A, B, C, D, E
+    // Cập nhật ngay lập tức tại máy này: reset toàn bộ tên người chơi về chuỗi rỗng "" và điểm về 0
     setPlayers(prev => {
-      const next = prev.map((p, idx) => ({ ...p, name: String.fromCharCode(65 + idx) }));
+      const next = prev.map(p => ({ ...p, name: '' }));
       localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(next));
       return next;
     });

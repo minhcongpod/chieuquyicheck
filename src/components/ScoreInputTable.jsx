@@ -175,16 +175,37 @@ export default function ScoreInputTable({
     }
   };
 
-  // Sắp xếp người chơi theo tổng điểm sau mỗi ván: Cao nhất trên cùng, thấp nhất dưới cùng
-  const sortedPlayers = [...players].sort((a, b) => {
-    const scoreA = cumulativeScores[a.id] || 0;
-    const scoreB = cumulativeScores[b.id] || 0;
-    if (scoreB !== scoreA) {
-      return scoreB - scoreA; // Cao nhất trên cùng
-    }
-    // Khi bằng điểm, giữ thứ tự gốc ổn định (p1, p2, p3, p4, p5)
-    return a.id.localeCompare(b.id);
-  });
+  // Sắp xếp danh sách người chơi trên bảng nhập liệu theo quy tắc ưu tiên:
+  // - Nhóm có tên (Được sắp xếp): Sắp xếp vị trí theo thứ tự tổng điểm từ cao xuống thấp
+  // - Nhóm trống (Ghim xuống cuối): Hàng thỏa mãn đồng thời 2 điều kiện: tên bị bỏ trống VÀ điểm số bằng 0
+  //   sẽ bị loại khỏi luồng sắp xếp điểm, luôn được đẩy (push/append) xuống dưới cùng danh sách
+  const sortedPlayers = useMemo(() => {
+    return [...players].sort((a, b) => {
+      const nameA = (a.name || '').trim();
+      const scoreA = cumulativeScores[a.id] || 0;
+      const isEmptyA = nameA === '' && scoreA === 0;
+
+      const nameB = (b.name || '').trim();
+      const scoreB = cumulativeScores[b.id] || 0;
+      const isEmptyB = nameB === '' && scoreB === 0;
+
+      // 1. Nhóm trống luôn bị ghim xuống cuối cùng
+      if (isEmptyA && !isEmptyB) return 1;
+      if (!isEmptyA && isEmptyB) return -1;
+      if (isEmptyA && isEmptyB) {
+        // Cả 2 đều thuộc nhóm trống: giữ nguyên thứ tự p1, p2, p3...
+        return a.id.localeCompare(b.id);
+      }
+
+      // 2. Nhóm có tên: sắp xếp theo tổng điểm từ cao xuống thấp
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+
+      // Điểm bằng nhau: giữ thứ tự ổn định theo id
+      return a.id.localeCompare(b.id);
+    });
+  }, [players, cumulativeScores]);
 
   // Hiệu ứng FLIP (First, Last, Invert, Play) chuyển đổi vị trí mượt mà khi thứ tự thay đổi
   useLayoutEffect(() => {
@@ -421,7 +442,7 @@ export default function ScoreInputTable({
                     </div>
                   ) : (
                     <span className="player-name-text">
-                      {(player.name && player.name.trim()) ? player.name.trim().toUpperCase() : String.fromCharCode(65 + index)}
+                      {(player.name && player.name.trim()) ? player.name.trim().toUpperCase() : ''}
                     </span>
                   )}
                 </div>

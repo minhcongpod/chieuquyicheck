@@ -3,32 +3,32 @@
   "players": [
     {
       "id": "p1",
-      "name": "A",
+      "name": "",
       "color": "#f4e950"
     },
     {
       "id": "p2",
-      "name": "B",
+      "name": "",
       "color": "#66ff33"
     },
     {
       "id": "p3",
-      "name": "C",
+      "name": "",
       "color": "#16e4ff"
     },
     {
       "id": "p4",
-      "name": "D",
+      "name": "",
       "color": "#c073ff"
     },
     {
       "id": "p5",
-      "name": "E",
+      "name": "",
       "color": "#fd6161"
     }
   ],
   "history": [],
   "roundDeltas": {},
-  "updatedAt": 1790245594638,
+  "updatedAt": 1790306002211,
   "dailyLedger": []
 }

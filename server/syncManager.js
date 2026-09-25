@@ -12,13 +12,13 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-// 5 Người chơi mặc định
+// 5 Người chơi mặc định (chuỗi rỗng ban đầu)
 const INITIAL_PLAYERS = [
-  { id: 'p1', name: 'A', color: '#f4e950' }, // Vàng
-  { id: 'p2', name: 'B', color: '#66ff33' }, // Xanh lá
-  { id: 'p3', name: 'C', color: '#16e4ff' }, // Cyan
-  { id: 'p4', name: 'D', color: '#c073ff' }, // Tím
-  { id: 'p5', name: 'E', color: '#fd6161' }  // Đỏ
+  { id: 'p1', name: '', color: '#f4e950' }, // Vàng
+  { id: 'p2', name: '', color: '#66ff33' }, // Xanh lá
+  { id: 'p3', name: '', color: '#16e4ff' }, // Cyan
+  { id: 'p4', name: '', color: '#c073ff' }, // Tím
+  { id: 'p5', name: '', color: '#fd6161' }  // Đỏ
 ];
 
 // Lưu trữ trạng thái trong bộ nhớ RAM và danh sách kết nối
@@ -41,6 +41,14 @@ function getOrCreateRoomState(roomId) {
       const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
       if (!data.dailyLedger || data.dailyLedger.length === 0) {
         data.dailyLedger = JSON.parse(JSON.stringify(SAMPLE_DAILY_LEDGER));
+      }
+      // Dọn dẹp tên mặc định cũ A, B, C, D, E nếu phòng chưa có lịch sử đấu
+      if (!data.history || data.history.length === 0) {
+        data.players = (data.players || []).map((p, idx) => {
+          const oldDefault = String.fromCharCode(65 + idx);
+          if (p.name === oldDefault) return { ...p, name: '' };
+          return p;
+        });
       }
       roomStates.set(roomId, data);
       return data;
@@ -197,9 +205,9 @@ export function setupWebSocketServer(httpServer) {
           case 'RESET_GAME': {
             state.history = [];
             state.roundDeltas = {};
-            state.players = (state.players || []).map((p, idx) => ({
+            state.players = (state.players || []).map((p) => ({
               ...p,
-              name: String.fromCharCode(65 + idx)
+              name: ''
             }));
             state.updatedAt = Date.now();
             saveRoomState(roomId, state);

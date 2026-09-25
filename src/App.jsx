@@ -61,12 +61,8 @@ export default function App() {
       return true;
     }
 
-    // 4. Có tên người chơi thay đổi so với mặc định ban đầu (A, B, C, D, E)
-    if (players && players.some((p, idx) => {
-      const defaultName = String.fromCharCode(65 + idx);
-      const currentName = p.name ? p.name.trim().toUpperCase() : '';
-      return currentName !== '' && currentName !== defaultName;
-    })) {
+    // 4. Có tên người chơi đã được nhập (khác rỗng)
+    if (players && players.some(p => (p.name || '').trim() !== '')) {
       return true;
     }
 
@@ -219,16 +215,19 @@ export default function App() {
     const seenNamesInRound = new Set();
 
     players.forEach((p, idx) => {
-      const rawName = (p.name && p.name.trim()) ? p.name.trim() : String.fromCharCode(65 + idx);
-      let displayName = rawName.toUpperCase();
+      const rawName = (p.name && p.name.trim()) ? p.name.trim() : '';
+      const score = cumulativeScores[p.id] || 0;
+
+      // Bỏ qua các hàng trống hoàn toàn (tên rỗng và điểm bằng 0)
+      if (!rawName && score === 0) return;
+
+      let displayName = rawName ? rawName.toUpperCase() : `NGƯỜI CHƠI ${idx + 1}`;
 
       // Đảm bảo không trùng tên nếu tại bàn có 2 người đặt cùng tên
       if (seenNamesInRound.has(displayName)) {
         displayName = `${displayName}_${idx + 1}`;
       }
       seenNamesInRound.add(displayName);
-
-      const score = cumulativeScores[p.id] || 0;
 
       // Lưu điểm duy nhất theo tên chuẩn displayName (không lưu thêm p.id tránh sinh cột trùng)
       sessionScores[displayName] = score;

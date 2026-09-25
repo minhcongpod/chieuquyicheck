@@ -183,8 +183,7 @@ function HistoryTableContent({
         <div className="history-names-group">
           {sortedPlayers.map((player) => {
             const originalIndex = players.findIndex((p) => p.id === player.id);
-            const defaultName = String.fromCharCode(65 + (originalIndex >= 0 ? originalIndex : 0));
-            const displayName = player.name && player.name.trim() ? player.name.trim().toUpperCase() : defaultName;
+            const displayName = player.name && player.name.trim() ? player.name.trim().toUpperCase() : '';
             const totalScore = cumulativeScores[player.id] !== undefined ? cumulativeScores[player.id] : 0;
             const colorClass = originalIndex >= 0 ? `text-p${originalIndex + 1}` : 'text-p1';
 
@@ -387,14 +386,29 @@ export default function HistoryTable({
   }, [cumulativeScores, players, history]);
 
   // Sắp xếp danh sách người chơi theo sortMode:
-  // - 'score': Điểm cao bên trái, điểm thấp dần sang phải
-  // - 'name': Tên người chơi từ A đến Z
+  // - 'score': Điểm cao bên trái, điểm thấp dần sang phải (nhóm trống ghim sang phải cùng)
+  // - 'name': Tên người chơi từ A đến Z (người chưa có tên ghim sang phải cùng)
   const sortedPlayers = useMemo(() => {
     const list = [...players];
     if (sortMode === 'score') {
       return list.sort((a, b) => {
+        const nameA = (a.name || '').trim();
         const scoreA = finalCumulativeScores[a.id] ?? 0;
+        const isEmptyA = nameA === '' && scoreA === 0;
+
+        const nameB = (b.name || '').trim();
         const scoreB = finalCumulativeScores[b.id] ?? 0;
+        const isEmptyB = nameB === '' && scoreB === 0;
+
+        // Nhóm trống luôn ghim sang phải (dưới cùng)
+        if (isEmptyA && !isEmptyB) return 1;
+        if (!isEmptyA && isEmptyB) return -1;
+        if (isEmptyA && isEmptyB) {
+          const idxA = players.findIndex((p) => p.id === a.id);
+          const idxB = players.findIndex((p) => p.id === b.id);
+          return idxA - idxB;
+        }
+
         if (scoreB !== scoreA) {
           return scoreB - scoreA; // Cao bên trái - thấp dần bên phải
         }
@@ -406,12 +420,15 @@ export default function HistoryTable({
     } else {
       // sortMode === 'name': A đến Z
       return list.sort((a, b) => {
-        const idxA = players.findIndex((p) => p.id === a.id);
-        const idxB = players.findIndex((p) => p.id === b.id);
-        const defaultNameA = String.fromCharCode(65 + (idxA >= 0 ? idxA : 0));
-        const defaultNameB = String.fromCharCode(65 + (idxB >= 0 ? idxB : 0));
-        const nameA = a.name && a.name.trim() ? a.name.trim().toUpperCase() : defaultNameA;
-        const nameB = b.name && b.name.trim() ? b.name.trim().toUpperCase() : defaultNameB;
+        const nameA = a.name && a.name.trim() ? a.name.trim().toUpperCase() : '';
+        const nameB = b.name && b.name.trim() ? b.name.trim().toUpperCase() : '';
+        if (!nameA && nameB) return 1;
+        if (nameA && !nameB) return -1;
+        if (!nameA && !nameB) {
+          const idxA = players.findIndex((p) => p.id === a.id);
+          const idxB = players.findIndex((p) => p.id === b.id);
+          return idxA - idxB;
+        }
         return nameA.localeCompare(nameB, 'vi');
       });
     }
