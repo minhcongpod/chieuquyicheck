@@ -330,9 +330,6 @@ td {
 .player-btn-plus.is-active {
   background-color: rgba(0, 0, 0, 0.3) !important;
   box-shadow: inset 0 0 0 2px var(--row-color, #000000);
-  /* 2. Dịch chuyển ký hiệu sang bên trái */
-  justify-content: flex-start;
-  padding-left: 7px;
 }
 
 .player-btn-minus.size-3digits.is-active,
@@ -1213,12 +1210,17 @@ td {
   }
 }
 
-/* Các hàng phím 1-4 (Chiều cao co giãn clamp 50-60px) */
+/* Các hàng phím 1-4 (Chiều cao co giãn clamp 50-70px) */
 .keyboard-row {
   width: 100%;
-  height: clamp(50px, 6.8vh, 60px);
+  height: clamp(50px, 6.8vh, 70px);
   display: flex;
   flex-direction: row;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.keyboard-row:last-child {
+  border-bottom: none;
 }
 
 /* Phím bấm số (Chia đều 3 cột 33.333% trên mọi kích thước màn hình) */
@@ -1228,6 +1230,7 @@ td {
   height: 100%;
   background: transparent;
   border: none;
+  border-right: 1px solid rgba(0, 0, 0, 0.2);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1236,6 +1239,10 @@ td {
   color: var(--color-text-light);
   cursor: pointer;
   transition: background-color 0.1s ease;
+}
+
+.keyboard-key:last-child {
+  border-right: none;
 }
 
 .keyboard-key:active {
@@ -1899,7 +1906,7 @@ td {
 /* Thiết bị màn hình hẹp (320px - 360px như iPhone SE 1, Galaxy A, màn hình gập đóng) */
 @media (max-width: 360px) {
   .app-screen {
-    padding-top: max(env(safe-area-inset-top), 50px);
+    padding-top: max(env(safe-area-inset-top), 100px);
     padding-right: max(8px, env(safe-area-inset-right));
     padding-bottom: max(8px, env(safe-area-inset-bottom));
     padding-left: max(8px, env(safe-area-inset-left));
