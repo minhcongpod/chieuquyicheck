@@ -189,7 +189,7 @@ td {
   border-right: 2.5px solid #000000;
   box-sizing: border-box;
   cursor: pointer;
-  padding: 0 24px 0 20px;
+  padding: 0 8px 0 8px;
 }
 
 /* Ô tên người chơi */
@@ -234,7 +234,7 @@ td {
   padding: 0;
   margin: 0;
   font-family: inherit;
-  font-size: 34px;
+  font-size: 30px;
   font-weight: 800;
   line-height: 1;
   letter-spacing: normal;
@@ -415,7 +415,7 @@ td {
   box-shadow: inset 0 0 0 2px var(--row-color, #000000);
   /* 2. Dịch chuyển ký hiệu sang bên trái */
   justify-content: flex-start;
-  padding-left: 8px;
+  padding-left: 7px;
 }
 
 .player-btn-minus.size-3digits.is-active,
@@ -976,7 +976,7 @@ td {
   align-items: center;
   justify-content: center;
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 600;
   color: rgba(255, 255, 255, 0.3);
   flex-shrink: 0;
 }
@@ -1700,9 +1700,9 @@ td {
 .stats-round-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.3);
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 600;
   width: 100%;
   height: 100%;
   min-height: 40px;
@@ -1820,12 +1820,30 @@ td {
   overflow: hidden;
   text-overflow: ellipsis;
   color: #ffffff;
+  transition: color 0.15s ease;
 }
 
 .stats-player-score {
   font-size: 16px;
   font-weight: 800;
   line-height: 1.2;
+  color: #ffffff;
+  transition: color 0.15s ease;
+}
+
+/* Định dạng màu sắc cột người chơi: Dương -> Xanh (#66ff33), Âm -> Đỏ (#fd6161), Bằng 0 -> Trắng (#ffffff) */
+.stats-player-head-cell.is-pos .stats-player-name,
+.stats-player-head-cell.is-pos .stats-player-score {
+  color: #66ff33;
+}
+
+.stats-player-head-cell.is-neg .stats-player-name,
+.stats-player-head-cell.is-neg .stats-player-score {
+  color: #fd6161;
+}
+
+.stats-player-head-cell.is-zero .stats-player-name,
+.stats-player-head-cell.is-zero .stats-player-score {
   color: #ffffff;
 }
 
@@ -1871,6 +1889,19 @@ td {
   display: block;
   text-align: center;
   letter-spacing: -0.3px;
+  transition: color 0.15s ease;
+}
+
+.stats-score-value.is-pos {
+  color: #66ff33;
+}
+
+.stats-score-value.is-neg {
+  color: #fd6161;
+}
+
+.stats-score-value.is-zero {
+  color: #ffffff;
 }
 
 .stats-score-dash {

@@ -409,12 +409,13 @@ export default function DailyStatsDrawer({
               - Cuộn ngầm bên trong phạm vi Khối 2, biến mất khi chạm mép trái Khối 2, không trượt sang Khối 1. */}
           <div className="daily-stats-scrollable-panel">
             <div className="stats-scrollable-track">
-              {/* Header row: Tên người chơi và Tổng điểm tích luỹ theo displayPlayers (Bỏ màu sắc) */}
+              {/* Header row: Tên người chơi và Tổng điểm tích luỹ theo displayPlayers (Dương: xanh, Âm: đỏ, 0: trắng) */}
               <div className="stats-scrollable-header-row">
                 {displayPlayers.map((player) => {
                   const total = totalScoresByPlayer[player.name] || 0;
+                  const statusClass = total > 0 ? 'is-pos' : total < 0 ? 'is-neg' : 'is-zero';
                   return (
-                    <div key={player.name} className="stats-player-head-cell">
+                    <div key={player.name} className={`stats-player-head-cell ${statusClass}`}>
                       <span className="stats-player-name">
                         {player.name}
                       </span>
@@ -439,6 +440,10 @@ export default function DailyStatsDrawer({
                       {displayPlayers.map((player) => {
                         const score = getPlayerScore(entry, player);
                         const isScoreDefined = score !== undefined && score !== null;
+                        const numScore = isScoreDefined ? Number(score) : null;
+                        const scoreClass = numScore !== null
+                          ? (numScore > 0 ? 'is-pos' : numScore < 0 ? 'is-neg' : 'is-zero')
+                          : '';
 
                         return (
                           <div 
@@ -449,7 +454,7 @@ export default function DailyStatsDrawer({
                             }}
                           >
                             {isScoreDefined ? (
-                              <span className="stats-score-value">
+                              <span className={`stats-score-value ${scoreClass}`}>
                                 {score}
                               </span>
                             ) : (
