@@ -5,12 +5,10 @@
 
 /* 1. KHAI BÁO BIẾN MÀU SẮC & THÔNG SỐ (Dễ dàng thay đổi) */
 :root {
-  /* Kích thước màn hình chuẩn tối thiểu 375 x 812 px */
+  /* Kích thước màn hình: giới hạn chiều ngang tối thiểu 375px */
   --screen-width: 100%;
   --screen-min-width: 375px;
-  --screen-min-height: 812px;
-  --screen-max-width: 440px;
-  --screen-bg: #111511;
+  --screen-bg: #000000;
 
   /* Màu sắc 5 người chơi (Chuẩn theo Figma 100%) */
   --color-player-1: #f4e950;
@@ -96,14 +94,13 @@ td {
 }
 
 /* ==========================================================================
-   2. KHUNG MÀN HÌNH CHÍNH (TỐI THIỂU 375 x 812 PX)
+   2. KHUNG MÀN HÌNH CHÍNH (GIỚI HẠN CHIỀU NGANG TỐI THIỂU 375 PX)
    ========================================================================== */
 .app-screen {
   width: 100%;
   min-width: 375px;
   max-width: var(--screen-max-width, 440px);
   height: 100%;
-  min-height: 812px;
   height: 100dvh;
   max-height: 100dvh;
   margin: 0 auto;
@@ -131,8 +128,6 @@ td {
 
   .app-screen {
     height: min(920px, calc(100dvh - 24px));
-    border-radius: 28px;
-    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -267,96 +262,7 @@ td {
   text-transform: uppercase;
 }
 
-/* Lớp phủ gợi ý inline: Ký tự prefix ẩn, ký tự suffix mờ hơn */
-.player-name-ghost-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  pointer-events: none;
-  z-index: 1;
-  font-family: inherit;
-  font-size: 32px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: uppercase;
-  white-space: pre;
-  overflow: hidden;
-}
 
-.ghost-prefix {
-  visibility: hidden;
-  white-space: pre;
-  font-family: inherit;
-  font-size: 32px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: uppercase;
-}
-
-.ghost-suffix {
-  opacity: 0.35;
-  color: #000000;
-  font-family: inherit;
-  font-size: 32px;
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: uppercase;
-  white-space: pre;
-  pointer-events: auto;
-  cursor: pointer;
-  user-select: none;
-  transition: opacity 0.15s ease;
-}
-
-.ghost-suffix:hover {
-  opacity: 0.6;
-}
-
-/* Popup gợi ý các tên người chơi quen thuộc khi bấm trên mobile */
-.player-name-suggestions-popup {
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0;
-  z-index: 50;
-  display: flex;
-  flex-direction: row;
-  gap: 5px;
-  padding: 4px 6px;
-  background: rgba(18, 18, 18, 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-}
-
-.name-suggestion-chip {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #ffffff;
-  font-size: 13px;
-  font-weight: 800;
-  text-transform: uppercase;
-  padding: 3px 8px;
-  border-radius: 6px;
-  cursor: pointer;
-  white-space: nowrap;
-  outline: none;
-  transition: background 0.12s ease, transform 0.1s ease;
-}
-
-.name-suggestion-chip:active {
-  transform: scale(0.95);
-  background: #ffffff;
-  color: #121212;
-}
 
 /* Ô điểm tổng tích luỹ (ở bên phải của Khối Trái) */
 .player-score-box {
@@ -1376,17 +1282,14 @@ td {
 
 .modal-card {
   width: 100%;
-  max-width: min(360px, 92vw);
+  max-width: min(300px, 86vw);
   max-height: min(85vh, 85dvh);
   overflow-y: auto;
   box-sizing: border-box;
-  padding: 24px 20px;
+  padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  background: rgba(18, 26, 18, 0.96);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.75);
+  gap: 12px;
 }
 
 .modal-title {
@@ -1446,68 +1349,32 @@ td {
    8. POPUP QR CHUYỂN KHOẢN QUỸ CHIẾU QUỶ
    ========================================================================== */
 .modal-qr-card {
+  width: min(300px, 86vw);
+  margin: 0 auto;
   gap: 12px;
-  padding: 16px 18px;
-  background: rgba(18, 26, 18, 0.98);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 24px 50px rgba(0, 0, 0, 0.85);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
   box-sizing: border-box;
 }
 
-.modal-qr-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-bottom: 2px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.modal-qr-header-title {
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
-  color: #ffffff;
-  text-transform: uppercase;
-}
-
-.modal-qr-close-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px;
-  color: #ffffff;
-  transition: transform 0.1s ease, opacity 0.15s ease;
-  outline: none;
-}
-
-.modal-qr-close-btn:hover {
-  opacity: 0.8;
-  transform: scale(1.1);
-}
-
-.modal-qr-close-btn:active {
-  transform: scale(0.9);
-}
-
-/* Khung hiển thị ảnh QR: vuông vức hoàn hảo, không méo, không tràn trên mọi thiết bị */
+/* Khung hiển thị ảnh QR: Chiều ngang bằng chính xác 2 nút và ô link, tỷ lệ vuông vức */
 .qr-image-container {
-  width: min(240px, 58vw);
-  height: min(240px, 58vw);
-  max-height: min(240px, 32vh, 58vw);
+  width: 100%;
   aspect-ratio: 1 / 1;
   margin: 0 auto;
   background-color: #ffffff;
-  padding: 8px;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid #ffffff;
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.6);
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .qr-image-display {
@@ -1517,11 +1384,13 @@ td {
   display: block;
 }
 
-/* Hộp đường link MoMo kèm icon sao chép */
+/* Hộp đường link MoMo kèm icon sao chép: Chiều ngang bằng với QR và 2 nút */
 .qr-link-box {
+  width: 100%;
   background-color: rgba(255, 255, 255, 0.08);
-  border: 1px dashed rgba(255, 255, 255, 0.5);
-  padding: 8px 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  border-radius: 0;
+  padding: 10px 12px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1529,7 +1398,6 @@ td {
   gap: 8px;
   cursor: pointer;
   transition: background-color 0.15s ease;
-  width: 100%;
   box-sizing: border-box;
 }
 
@@ -1539,7 +1407,7 @@ td {
 }
 
 .qr-link-url {
-  font-size: clamp(10px, 2.7vw, 12px);
+  font-size: 12px;
   font-weight: 800;
   color: #66ff33;
   white-space: nowrap;
@@ -1555,6 +1423,7 @@ td {
 .qr-copy-btn {
   background: transparent;
   border: none;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1573,7 +1442,7 @@ td {
   transform: scale(0.88);
 }
 
-/* Nhóm 2 nút: Mở link và Lưu QR */
+/* Nhóm 2 nút: Mở link và Lưu QR: Chiều ngang bằng với QR và ô link */
 .modal-qr-actions {
   display: flex;
   gap: 8px;
@@ -1582,9 +1451,12 @@ td {
 
 .modal-btn-open-link,
 .modal-btn-save-qr {
+  flex: 1;
   background-color: #999999;
   color: #000000;
-  height: clamp(42px, 5.5vh, 48px);
+  height: 48px;
+  border: none;
+  border-radius: 0;
   display: flex;
   align-items: center;
   justify-content: center;

@@ -1,20 +1,7 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
-import { DEFAULT_KNOWN_PLAYERS } from '../constants/sampleLedger';
 
 /**
- * Loại bỏ dấu tiếng Việt để hỗ trợ tìm kiếm không dấu / gõ Telex
- */
-function removeVietnameseTones(str) {
-  if (!str) return '';
-  return str
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/đ/g, 'd')
-    .replace(/Đ/g, 'D');
-}
-
-/**
- * Lưu tên người chơi mới vào localStorage để ghi nhớ và gợi ý cho những lần sau
+ * Lưu tên người chơi mới vào localStorage để ghi nhớ cho những lần sau
  */
 function saveKnownPlayer(name) {
   if (!name || !name.trim()) return;
@@ -61,102 +48,6 @@ export default function ScoreInputTable({
   const prevPositions = useRef({});
   const isFirstRender = useRef(true);
 
-  // Tập hợp danh sách tất cả người chơi từng chơi (Mặc định + LocalStorage + Bàn hiện tại + Sổ lịch sử)
-  const knownNames = useMemo(() => {
-    const nameMap = new Map();
-
-    // 1. Danh sách người chơi quen thuộc ban đầu (Linh, Công, Minh, Chiến, Toàn, Tuấn, Hải, An, Dũng, Bình)
-    (DEFAULT_KNOWN_PLAYERS || []).forEach(name => {
-      if (name && name.trim()) {
-        const clean = name.trim();
-        nameMap.set(clean.toLowerCase(), clean);
-      }
-    });
-
-    // 2. Các tên đã từng lưu trong localStorage
-    try {
-      const raw = localStorage.getItem('cq_known_players');
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          parsed.forEach(name => {
-            if (name && typeof name === 'string' && name.trim()) {
-              const clean = name.trim();
-              nameMap.set(clean.toLowerCase(), clean);
-            }
-          });
-        }
-      }
-    } catch (e) {}
-
-    // 3. Người chơi hiện đang ngồi tại bàn
-    if (players && Array.isArray(players)) {
-      players.forEach(p => {
-        if (p.name && p.name.trim()) {
-          const clean = p.name.trim();
-          nameMap.set(clean.toLowerCase(), clean);
-        }
-      });
-    }
-
-    // 4. Người chơi từ sổ điểm theo ngày (dailyLedger)
-    if (dailyLedger && Array.isArray(dailyLedger)) {
-      dailyLedger.forEach(entry => {
-        if (entry.playersInfo && Array.isArray(entry.playersInfo)) {
-          entry.playersInfo.forEach(pInfo => {
-            if (pInfo.name && pInfo.name.trim()) {
-              const clean = pInfo.name.trim();
-              nameMap.set(clean.toLowerCase(), clean);
-            }
-          });
-        }
-      });
-    }
-
-    return Array.from(nameMap.values());
-  }, [players, dailyLedger]);
-
-  // Tìm các ứng viên phù hợp với từ khoá đang gõ
-  const candidateMatches = useMemo(() => {
-    const query = tempName.trim();
-    if (!query) return [];
-
-    const queryLower = query.toLowerCase();
-    const queryNoTone = removeVietnameseTones(queryLower);
-
-    return knownNames.filter((name) => {
-      const nameLower = name.trim().toLowerCase();
-      // Không gợi ý nếu người dùng đã gõ trọn vẹn 100%
-      if (nameLower === queryLower) return false;
-
-      // 1. So khớp tiền tố có dấu
-      if (nameLower.startsWith(queryLower)) return true;
-
-      // 2. So khớp tiền tố không dấu (gõ Telex hoặc không dấu)
-      const nameNoTone = removeVietnameseTones(nameLower);
-      if (nameNoTone.startsWith(queryNoTone)) return true;
-
-      return false;
-    });
-  }, [tempName, knownNames]);
-
-  // Gợi ý inline chính: Ký tự còn lại sẽ hiển thị mờ hơn nối tiếp sau ký tự đang gõ
-  // Ví dụ gõ "L" -> Gợi ý "Linh", phần suffix "INH" hiển thị mờ hơn
-  const activeSuggestion = useMemo(() => {
-    if (candidateMatches.length === 0) return null;
-    const match = candidateMatches[0].trim();
-    const query = tempName.trim();
-
-    // Suffix là phần đuôi còn lại sau số ký tự người dùng đã gõ
-    const suffix = match.slice(query.length);
-
-    return {
-      fullName: match,
-      prefix: tempName,
-      suffix: suffix
-    };
-  }, [candidateMatches, tempName]);
-
   const handleNameClick = (player) => {
     if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
     setEditingPlayerId(player.id);
@@ -195,20 +86,6 @@ export default function ScoreInputTable({
     setEditingPlayerId(null);
     setTempName('');
     window.scrollTo(0, 0);
-  };
-
-  // Hoàn tất điền gợi ý khi bấm Tab, ArrowRight hoặc chạm vào chữ mờ
-  const handleAcceptSuggestion = (suggestedFullName) => {
-    if (!suggestedFullName) return;
-    setTempName(suggestedFullName);
-    if (editingPlayerId) {
-      onUpdatePlayerName(editingPlayerId, suggestedFullName);
-    }
-    if (inputRef.current) {
-      inputRef.current.focus();
-      const len = suggestedFullName.length;
-      inputRef.current.setSelectionRange(len, len);
-    }
   };
 
   // Giữ cố định vị trí hàng khi đang gõ tên để tránh bị nhảy hàng / mất tiêu điểm
@@ -414,81 +291,18 @@ export default function ScoreInputTable({
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            const toSave = activeSuggestion ? activeSuggestion.fullName : tempName;
-                            handleNameSave(player.id, toSave);
+                            handleNameSave(player.id, tempName);
                             inputRef.current?.blur();
-                          } else if (e.key === 'Tab') {
-                            if (activeSuggestion) {
-                              e.preventDefault();
-                              handleAcceptSuggestion(activeSuggestion.fullName);
-                            }
-                          } else if (e.key === 'ArrowRight') {
-                            if (
-                              activeSuggestion &&
-                              inputRef.current &&
-                              inputRef.current.selectionStart === tempName.length
-                            ) {
-                              e.preventDefault();
-                              handleAcceptSuggestion(activeSuggestion.fullName);
-                            }
                           } else if (e.key === 'Escape') {
                             setEditingPlayerId(null);
                           }
                         }}
                         className="player-name-input"
-                        autoComplete="off"
-                        autoCorrect="off"
+                        autoComplete="on"
+                        autoCorrect="on"
                         autoCapitalize="characters"
                         spellCheck={false}
                       />
-
-                      {/* Gợi ý inline: Các ký tự tiếp theo mờ hơn nối tiếp sau ký tự đã gõ */}
-                      {activeSuggestion && activeSuggestion.suffix && (
-                        <div className="player-name-ghost-overlay" aria-hidden="true">
-                          <span className="ghost-prefix">{tempName}</span>
-                          <span
-                            className="ghost-suffix"
-                            onMouseDown={(e) => {
-                              e.preventDefault();
-                              if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                              handleAcceptSuggestion(activeSuggestion.fullName);
-                            }}
-                            onTouchStart={(e) => {
-                              e.preventDefault();
-                              if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                              handleAcceptSuggestion(activeSuggestion.fullName);
-                            }}
-                            title="Chạm để điền nhanh"
-                          >
-                            {activeSuggestion.suffix}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Chip gợi ý nổi bên dưới cho thao tác chạm nhanh trên mobile */}
-                      {candidateMatches.length > 0 && (
-                        <div className="player-name-suggestions-popup">
-                          {candidateMatches.slice(0, 3).map((name) => (
-                            <button
-                              key={name}
-                              type="button"
-                              className="name-suggestion-chip"
-                              onMouseDown={(e) => {
-                                e.preventDefault();
-                                if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                                handleNameSave(player.id, name);
-                              }}
-                              onTouchStart={(e) => {
-                                e.preventDefault();
-                                if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
-                                handleNameSave(player.id, name);
-                              }}
-                            >
-                              {name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <span className="player-name-text">

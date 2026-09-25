@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CopyIcon, CheckIcon, ExternalLinkIcon, DownloadQrIcon, LoadingSpinnerIcon, CrossIcon } from './Icons';
+import { CopyIcon, CheckIcon, ExternalLinkIcon, DownloadQrIcon, LoadingSpinnerIcon } from './Icons';
 
 /**
  * Popup Chuyển Khoản Quỹ Chiếu Quỷ (MoMo QR)
@@ -62,20 +62,6 @@ export function QrTransferModal({ isOpen, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card modal-qr-card" onClick={(e) => e.stopPropagation()}>
-        {/* Header với tiêu đề và nút Đóng */}
-        <div className="modal-qr-header">
-          <span className="modal-qr-header-title">QUỸ CHIẾU QUỶ</span>
-          <button
-            type="button"
-            className="modal-qr-close-btn"
-            onClick={onClose}
-            aria-label="Đóng popup"
-            title="Đóng popup"
-          >
-            <CrossIcon width={20} height={20} color="#ffffff" />
-          </button>
-        </div>
-
         {/* Khung mã QR MoMo */}
         <div className="qr-image-container">
           <img
