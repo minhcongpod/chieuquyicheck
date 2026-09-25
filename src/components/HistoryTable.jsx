@@ -359,13 +359,21 @@ export default function HistoryTable({
   cumulativeScores,
   onChotSo,
   canReset = false,
-  onResetConfirm
+  onResetConfirm,
+  onExpandChange
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   // Chế độ sắp xếp cột: 'score' (Cao bên trái - thấp dần bên phải) | 'name' (A đến Z)
   const [sortMode, setSortMode] = useState('score');
+
+  // Thông báo trạng thái phóng to/thu nhỏ cho component cha (App.jsx)
+  useEffect(() => {
+    if (onExpandChange) {
+      onExpandChange(isExpanded);
+    }
+  }, [isExpanded, onExpandChange]);
 
   const startYRef = useRef(0);
   const startXRef = useRef(0);

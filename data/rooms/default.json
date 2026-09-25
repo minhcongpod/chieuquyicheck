@@ -13,7 +13,7 @@
     },
     {
       "id": "p3",
-      "name": "",
+      "name": "CÔ BG",
       "color": "#16e4ff"
     },
     {
@@ -66,7 +66,7 @@
     }
   ],
   "roundDeltas": {},
-  "updatedAt": 1790309079465,
+  "updatedAt": 1790309275536,
   "dailyLedger": [
     {
       "id": "ledger-1",

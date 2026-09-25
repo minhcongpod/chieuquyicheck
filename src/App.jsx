@@ -34,8 +34,40 @@ export default function App() {
   // Trạng thái mở Bảng thống kê điểm theo ngày
   const [isDailyStatsOpen, setIsDailyStatsOpen] = useState(false);
 
+  // Trạng thái mở Bảng lịch sử điểm phóng to
+  const [isHistoryExpanded, setIsHistoryExpanded] = useState(false);
+
   // Trạng thái Modal QR MoMo
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  // Đóng bàn phím và làm sạch dữ liệu tạm khi xem Bảng thống kê hoặc Bảng lịch sử phóng to
+  const handleOpenDailyStats = () => {
+    setActiveKeypad(null);
+    setCurrentKeypadValue('');
+    setIsDailyStatsOpen(true);
+  };
+
+  const handleOpenQrModal = () => {
+    setActiveKeypad(null);
+    setCurrentKeypadValue('');
+    setIsQrModalOpen(true);
+  };
+
+  const handleHistoryExpandChange = (expanded) => {
+    setIsHistoryExpanded(expanded);
+    if (expanded) {
+      setActiveKeypad(null);
+      setCurrentKeypadValue('');
+    }
+  };
+
+  // Tự động tắt bàn phím khi bất kỳ bảng nào (Thống kê, Lịch sử phóng to, QR) đang mở
+  useEffect(() => {
+    if (isDailyStatsOpen || isHistoryExpanded || isQrModalOpen) {
+      setActiveKeypad(null);
+      setCurrentKeypadValue('');
+    }
+  }, [isDailyStatsOpen, isHistoryExpanded, isQrModalOpen]);
 
   // Tính tổng điểm tích luỹ qua tất cả các ván đấu đã hoàn thành
   const cumulativeScores = players.reduce((acc, player) => {
@@ -76,6 +108,9 @@ export default function App() {
 
   // Mở bàn phím số khi bấm nút - hoặc + ở hàng người chơi
   const handleOpenKeyboard = (player, mode) => {
+    setIsDailyStatsOpen(false);
+    setIsHistoryExpanded(false);
+    setIsQrModalOpen(false);
     const playerIndex = players.findIndex(p => p.id === player.id);
     setActiveKeypad({
       player,
@@ -273,7 +308,7 @@ export default function App() {
         cumulativeScores={cumulativeScores}
         roundDeltas={roundDeltas}
         dailyLedger={dailyLedger}
-        activeKeypad={activeKeypad}
+        activeKeypad={(!isDailyStatsOpen && !isHistoryExpanded && !isQrModalOpen) ? activeKeypad : null}
         onUpdatePlayerName={handleUpdatePlayerName}
         onOpenKeyboard={handleOpenKeyboard}
       />
@@ -284,8 +319,8 @@ export default function App() {
         canConfirm={canConfirmRound}
         onConfirmRound={handleConfirmRound}
         onUndoConfirm={handleUndoConfirm}
-        onLedgerClick={() => setIsDailyStatsOpen(true)}
-        onQrClick={() => setIsQrModalOpen(true)}
+        onLedgerClick={handleOpenDailyStats}
+        onQrClick={handleOpenQrModal}
         canUndo={history.length > 0}
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
       />
@@ -298,10 +333,11 @@ export default function App() {
         onChotSo={handleChotSo}
         canReset={canReset}
         onResetConfirm={handleResetConfirm}
+        onExpandChange={handleHistoryExpandChange}
       />
 
-      {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 */}
-      {activeKeypad && (
+      {/* 4. Bàn phím số tương tác theo thiết kế ở ảnh số 2 (Tắt hoàn toàn khi xem bảng thống kê hoặc bảng lịch sử phóng to) */}
+      {activeKeypad && !isDailyStatsOpen && !isHistoryExpanded && !isQrModalOpen && (
         <Keyboard
           activePlayer={activeKeypad.player}
           onNumberClick={handleKeypadNumber}

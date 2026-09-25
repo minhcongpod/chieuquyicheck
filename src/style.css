@@ -109,7 +109,7 @@ td {
   display: flex;
   flex-direction: column;
   padding: max(10px, env(safe-area-inset-top, 10px)) max(10px, env(safe-area-inset-right, 10px)) max(10px, env(safe-area-inset-bottom, 10px)) max(10px, env(safe-area-inset-left, 10px));
-  gap: clamp(8px, 1.8vh, 16px);
+  gap: clamp(8px, 1.8vh, 20px);
   box-sizing: border-box;
   overscroll-behavior: none;
   touch-action: manipulation;
@@ -1585,7 +1585,7 @@ td {
   background-color: rgba(0, 0, 0, 0.85);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
-  z-index: 95;
+  z-index: 125;
   display: flex;
   flex-direction: column;
   padding: max(16px, env(safe-area-inset-top, 16px)) max(12px, env(safe-area-inset-right, 12px)) max(16px, env(safe-area-inset-bottom, 16px)) max(12px, env(safe-area-inset-left, 12px));
