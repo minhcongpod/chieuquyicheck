@@ -1,6 +1,4 @@
-import 'dotenv/config';
 import express from 'express';
-import './server/telegramBot.js';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';

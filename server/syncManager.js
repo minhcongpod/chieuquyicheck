@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import admin from 'firebase-admin';
-import './telegramBot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -433,21 +432,6 @@ export function setupWebSocketServer(httpServer) {
               actionType: 'CONFIRM_ROUND',
               payload: state
             });
-
-            // Gửi thông báo đến Telegram
-            import('./telegramBot.js').then(({ broadcastToTelegram }) => {
-              let msg = `✅ Vòng chơi mới vừa được cập nhật tại phòng "${roomId}"\n`;
-              if (newRound.scores) {
-                 msg += `Chi tiết điểm:\n`;
-                 for (const [pId, score] of Object.entries(newRound.scores)) {
-                    const p = state.players.find(x => x.id === pId);
-                    if (p && p.name) {
-                       msg += `- ${p.name}: ${score > 0 ? '+' : ''}${score}\n`;
-                    }
-                 }
-              }
-              broadcastToTelegram(msg);
-            }).catch(e => console.error('[Telegram] Lỗi gửi tin:', e));
             break;
           }
 
