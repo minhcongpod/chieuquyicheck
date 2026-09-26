@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import admin from 'firebase-admin';
+import './telegramBot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -195,7 +196,7 @@ import { SAMPLE_DAILY_LEDGER } from '../src/constants/sampleLedger.js';
 /**
  * Đọc trạng thái phòng từ Firebase/File (nếu có) hoặc khởi tạo mới
  */
-async function getOrCreateRoomState(roomId) {
+export async function getOrCreateRoomState(roomId) {
   if (roomStates.has(roomId)) {
     return roomStates.get(roomId);
   }
@@ -432,6 +433,21 @@ export function setupWebSocketServer(httpServer) {
               actionType: 'CONFIRM_ROUND',
               payload: state
             });
+
+            // Gửi thông báo đến Telegram
+            import('./telegramBot.js').then(({ broadcastToTelegram }) => {
+              let msg = `✅ Vòng chơi mới vừa được cập nhật tại phòng "${roomId}"\n`;
+              if (newRound.scores) {
+                 msg += `Chi tiết điểm:\n`;
+                 for (const [pId, score] of Object.entries(newRound.scores)) {
+                    const p = state.players.find(x => x.id === pId);
+                    if (p && p.name) {
+                       msg += `- ${p.name}: ${score > 0 ? '+' : ''}${score}\n`;
+                    }
+                 }
+              }
+              broadcastToTelegram(msg);
+            }).catch(e => console.error('[Telegram] Lỗi gửi tin:', e));
             break;
           }
 
@@ -452,6 +468,7 @@ export function setupWebSocketServer(httpServer) {
           case 'RESET_GAME': {
             state.history = [];
             state.roundDeltas = {};
+            state.dailyLedger = []; // Thêm dòng này để xóa sạch Thống kê điểm
             state.players = (state.players || []).map((p) => ({
               ...p,
               name: ''
