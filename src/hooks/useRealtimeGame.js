@@ -145,7 +145,6 @@ export function useRealtimeGame() {
   const [role, setRole] = useState('view_only');
   const [slotIndex, setSlotIndex] = useState(null); // 1, 2 hoặc null
   const [activeSlots, setActiveSlots] = useState([]);
-  const [justPromoted, setJustPromoted] = useState(false);
 
   const isViewOnly = isForcedViewOnly || role === 'view_only';
   const roleRef = useRef(isViewOnly ? 'view_only' : role);
@@ -153,25 +152,6 @@ export function useRealtimeGame() {
 
   const prevHistoryLenRef = useRef(history.length);
   const prevLedgerLenRef = useRef(dailyLedger.length);
-
-  // Theo dõi sự kiện được nâng cấp từ View-Only lên Editor để thông báo người dùng
-  const prevRoleRef = useRef('view_only');
-  const isInitialRoleRef = useRef(true);
-
-  useEffect(() => {
-    if (isInitialRoleRef.current) {
-      isInitialRoleRef.current = false;
-      prevRoleRef.current = role;
-      return;
-    }
-    if (prevRoleRef.current === 'view_only' && role === 'active') {
-      setJustPromoted(true);
-      fireConfetti();
-      const timer = setTimeout(() => setJustPromoted(false), 5000);
-      return () => clearTimeout(timer);
-    }
-    prevRoleRef.current = role;
-  }, [role]);
 
   // Lắng nghe dữ liệu thời gian thực từ Firebase Firestore & Điều phối phân quyền
   useEffect(() => {
@@ -623,7 +603,6 @@ export function useRealtimeGame() {
     isForcedViewOnly,
     slotIndex,
     activeSlots,
-    justPromoted,
     viewOnlyUrl,
     roomUrl,
     updatePlayerName,
