@@ -8,9 +8,9 @@
 
 ## 🌟 Tính Năng Nổi Bật
 
-1. **Đồng bộ thời gian thực không cần Render (Firebase Realtime & Presence)**:
+1. **Đồng bộ thời gian thực không cần máy chủ (Firebase Realtime & Presence)**:
    - Tất cả các máy/điện thoại mở cùng một link sẽ hiển thị và cập nhật điểm số tức thì với độ trễ siêu thấp (< 50ms) qua Google Cloud Firestore.
-   - Hoàn toàn loại bỏ hiện tượng máy chủ ngủ (sleep/cold start) của Render.
+   - Kiến trúc Serverless 100% không còn hiện tượng máy chủ ngủ (sleep/cold start).
    - Hỗ trợ nhiều phòng chơi riêng biệt qua query parameter `?room=ten_phong` (mặc định là `default`).
    - Phân quyền tự động: 2 máy kết nối đầu tiên được quyền Active (sửa điểm), từ máy thứ 3 trở đi chuyển sang chế độ View-Only (chỉ xem).
    - Hỗ trợ link chia sẻ View-Only riêng biệt (`?view=1` hoặc `?mode=view`).

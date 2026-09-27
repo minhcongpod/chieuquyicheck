@@ -71,7 +71,7 @@ export default function ScoreInputTable({
 
   // Cập nhật tên người chơi:
   // - State cục bộ (tempName) cập nhật tức thì (0ms) để ô input phản hồi mượt mà từng ký tự
-  // - State tổng thể và WebSocket được debounce 400ms để tránh kích hoạt re-render toàn app liên tục
+  // - State tổng thể và Firebase được debounce 400ms để tránh kích hoạt re-render toàn app liên tục
   const handleInputChange = (playerId, val) => {
     setTempName(val);
 
