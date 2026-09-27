@@ -122,6 +122,8 @@ td {
   display: flex;
   flex-direction: column;
   gap: 1px;
+  position: relative;
+  z-index: 95;
 }
 
 /* Danh sách 5 hàng người chơi */
@@ -678,18 +680,32 @@ td {
   overflow: hidden;
 }
 
-/* Ẩn hoàn toàn bảng lịch sử khi mở bàn phím để đỡ rối mắt */
-.history-section.is-hidden {
-  display: none !important;
-}
-
-/* Vùng đệm trống khi ẩn bảng lịch sử: Chạm vào khoảng trống để thoát bàn phím */
+/* Hiệu ứng Blur Background khi mở bàn phím (Đồng bộ phong cách với Modal và Thống kê điểm) */
 .keyboard-dismiss-backdrop {
-  flex: 1;
-  min-height: 0;
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 90;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  animation: fadeInBackdrop 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeInBackdrop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* Drawer toàn màn hình phóng to bảng lịch sử (Hiệu ứng trượt lên / trượt xuống mượt mà) */
@@ -1218,18 +1234,22 @@ td {
    Kích thước: 390x370px, nền #050122, nằm dưới cùng
    ========================================================================== */
 .keyboard-overlay {
-  position: absolute;
+  position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   width: 100%;
   height: auto;
-  padding-bottom: max(6px, env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, #369b15 0%, #00000000 100%);
+  padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(180deg, rgba(22, 68, 22, 0.94) 0%, rgba(8, 20, 9, 0.98) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8), 0 -1px 0 rgba(102, 255, 51, 0.35);
+  border-top: 1.5px solid rgba(102, 255, 51, 0.4);
   z-index: 100;
   display: flex;
   flex-direction: column;
-  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 @keyframes slideUp {

@@ -58,6 +58,12 @@ export default function App() {
     setIsQrModalOpen(true);
   }, []);
 
+  // Đóng bàn phím khi chạm vào vùng mờ bên ngoài (giữ nguyên điểm đã nhập)
+  const handleCloseKeyboard = useCallback(() => {
+    setActiveKeypad(null);
+    setCurrentKeypadValue('');
+  }, []);
+
   const handleHistoryExpandChange = useCallback((expanded) => {
     setIsHistoryExpanded(prev => (prev !== expanded ? expanded : prev));
     if (expanded) {
@@ -355,16 +361,15 @@ export default function App() {
         canReset={canReset}
         onResetConfirm={handleResetConfirm}
         onExpandChange={handleHistoryExpandChange}
-        isHidden={isKeyboardOpen}
         isViewOnly={isViewOnly}
       />
 
-      {/* Vùng trống khi ẩn bảng lịch sử: Chạm vào để đóng bàn phím */}
+      {/* Vùng mờ nền khi mở bàn phím (Blur Background) - Chạm vào để đóng bàn phím */}
       {isKeyboardOpen && (
         <div
           className="keyboard-dismiss-backdrop"
-          onClick={handleKeypadCancel}
-          title="Chạm vào vùng trống để tắt bàn phím"
+          onClick={handleCloseKeyboard}
+          title="Chạm vào vùng mờ để đóng bàn phím"
         />
       )}
 
