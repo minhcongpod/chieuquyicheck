@@ -306,7 +306,7 @@ td {
   font-weight: 800;
   color: #000000;
   cursor: pointer;
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.08s ease, font-size 0.12s ease;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, font-size 0.12s ease;
   white-space: nowrap;
   box-sizing: border-box;
   line-height: 1;
@@ -343,7 +343,6 @@ td {
 .player-btn-minus:active:not(.is-active),
 .player-btn-plus:active:not(.is-active) {
   background-color: rgba(0, 0, 0, 0.15);
-  transform: scale(0.96);
 }
 
 /* 1. Hiệu ứng nền (Background Overlay 30% black) khi đang mở bàn phím nhập điểm */
@@ -422,6 +421,7 @@ td {
   align-items: center;
   gap: 4px;
   position: relative;
+  z-index: 95;
   user-select: none;
   flex-shrink: 0;
 }
@@ -1259,7 +1259,7 @@ td {
   width: 100%;
   height: auto;
   padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, #1f7c00, #081409fa);
+  background: linear-gradient(180deg, #1f7c007d, #08140971);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-top: 1.5px solid rgba(102, 255, 51, 0.4);
