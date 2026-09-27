@@ -42,6 +42,13 @@
   font-weight: 800;
 }
 
+button,
+button:focus,
+button:focus-visible {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
 html,
 body {
   width: 100%;
@@ -290,6 +297,7 @@ td {
   min-width: clamp(60px, 18vw, 76px);
   height: 100%;
   border: none;
+  outline: none !important;
   background: transparent;
   display: flex;
   align-items: center;
@@ -303,6 +311,15 @@ td {
   box-sizing: border-box;
   line-height: 1;
   position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.player-btn-minus:focus,
+.player-btn-plus:focus,
+.player-btn-minus:focus-visible,
+.player-btn-plus:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .player-btn-minus {
@@ -329,11 +346,12 @@ td {
   transform: scale(0.96);
 }
 
-/* 1. Hiệu ứng nền (Background Overlay 30% black) & Đường viền (Inner Border 2px trùng màu hàng) */
+/* 1. Hiệu ứng nền (Background Overlay 30% black) khi đang mở bàn phím nhập điểm */
 .player-btn-minus.is-active,
 .player-btn-plus.is-active {
   background-color: rgba(0, 0, 0, 0.3) !important;
-  box-shadow: inset 0 0 0 2px var(--row-color, #000000);
+  box-shadow: none !important;
+  outline: none !important;
 }
 
 .player-btn-minus.size-3digits.is-active,
@@ -1281,6 +1299,7 @@ td {
   height: 100%;
   background: transparent;
   border: none;
+  outline: none !important;
   border-right: 1.5px solid rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
@@ -1289,23 +1308,27 @@ td {
   font-weight: 800;
   color: var(--color-text-light);
   cursor: pointer;
-  transition: all 0.08s ease;
+  transition: background-color 0.08s ease, color 0.08s ease, box-shadow 0.08s ease;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
+}
+
+.keyboard-key:focus,
+.keyboard-key:focus-visible {
+  outline: none !important;
 }
 
 .keyboard-key:last-child {
   border-right: none;
 }
 
-/* Hiệu ứng bấm / phát sáng khi bấm chuột, chạm tay hoặc gõ phím vật lý */
+/* Hiệu ứng bấm / phát sáng khi bấm chuột, chạm tay hoặc gõ phím vật lý (Giữ nguyên kích thước 100%) */
 .keyboard-key:active,
 .keyboard-key.is-pressed {
   background-color: rgba(102, 255, 51, 0.35) !important;
   color: #ffffff !important;
   text-shadow: 0 0 10px rgba(102, 255, 51, 0.9), 0 0 20px #66ff33;
   box-shadow: inset 0 0 16px rgba(102, 255, 51, 0.45);
-  transform: scale(0.96);
 }
 
 .keyboard-key-cancel:active,
@@ -1313,7 +1336,6 @@ td {
   background-color: rgba(253, 97, 97, 0.35) !important;
   color: #ffffff !important;
   box-shadow: inset 0 0 16px rgba(253, 97, 97, 0.5) !important;
-  transform: scale(0.96);
 }
 
 .keyboard-key-cancel:active svg,

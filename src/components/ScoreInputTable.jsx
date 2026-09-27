@@ -459,9 +459,11 @@ export default function ScoreInputTable({
                   <button
                     type="button"
                     className={`player-btn-minus ${isMinusActive ? 'is-active' : ''} ${getBtnSizeClass(minusText)}`}
-                    onClick={() => onOpenKeyboard(player, '-')}
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onOpenKeyboard(player, '-');
+                    }}
                     title="Trừ điểm"
-                    style={isMinusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}
                   >
                     <span className="player-btn-content">
                       <span className="player-btn-symbol">{minusText}</span>
@@ -473,9 +475,11 @@ export default function ScoreInputTable({
                   <button
                     type="button"
                     className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${getBtnSizeClass(plusText)}`}
-                    onClick={() => onOpenKeyboard(player, '+')}
+                    onClick={(e) => {
+                      e.currentTarget.blur();
+                      onOpenKeyboard(player, '+');
+                    }}
                     title="Cộng điểm"
-                    style={isPlusActive ? { boxShadow: `inset 0 0 0 2px ${player.color}` } : undefined}
                   >
                     <span className="player-btn-content">
                       <span className="player-btn-symbol">{plusText}</span>
