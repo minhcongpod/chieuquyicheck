@@ -226,6 +226,126 @@ export default function App() {
     setCurrentKeypadValue('');
   };
 
+  // ⌨️ Lắng nghe sự kiện bàn phím cứng trên PC/Laptop để nhập điểm siêu tốc
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // 1. Không can thiệp nếu người dùng đang nhập tên người chơi (input text)
+      const tag = e.target?.tagName?.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || e.target?.isContentEditable) {
+        return;
+      }
+
+      // 2. Không xử lý nếu ở chế độ View-Only hoặc đang mở modal khác
+      if (isViewOnly || isDailyStatsOpen || isHistoryExpanded || isQrModalOpen) {
+        return;
+      }
+
+      // 3. Khi bàn phím số đang mở
+      if (activeKeypad) {
+        // Phím số từ 0 đến 9 (cả hàng số chính và Numpad)
+        if (/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+          handleKeypadNumber(e.key);
+          return;
+        }
+
+        // Phím dấu trừ (-) để đổi sang mode trừ
+        if (e.key === '-' || e.code === 'Minus' || e.code === 'NumpadSubtract') {
+          e.preventDefault();
+          if (activeKeypad.mode !== '-') {
+            setActiveKeypad(prev => ({ ...prev, mode: '-' }));
+            const num = parseInt(currentKeypadValue, 10);
+            if (!isNaN(num) && num !== 0) {
+              updateRoundDeltas(prev => ({
+                ...prev,
+                [activeKeypad.player.id]: -num
+              }));
+            }
+          }
+          return;
+        }
+
+        // Phím dấu cộng (+) để đổi sang mode cộng
+        if (e.key === '+' || e.code === 'NumpadAdd' || (e.shiftKey && e.code === 'Equal')) {
+          e.preventDefault();
+          if (activeKeypad.mode !== '+') {
+            setActiveKeypad(prev => ({ ...prev, mode: '+' }));
+            const num = parseInt(currentKeypadValue, 10);
+            if (!isNaN(num) && num !== 0) {
+              updateRoundDeltas(prev => ({
+                ...prev,
+                [activeKeypad.player.id]: num
+              }));
+            }
+          }
+          return;
+        }
+
+        // Phím Backspace: Xóa lùi ký tự cuối cùng
+        if (e.key === 'Backspace') {
+          e.preventDefault();
+          handleKeypadBackspace();
+          return;
+        }
+
+        // Phím Escape (Esc): Hủy thao tác nhập và thoát (tương đương nút 'X' đỏ)
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          handleKeypadCancel();
+          return;
+        }
+
+        // Phím Enter hoặc NumpadEnter: Đóng bàn phím và xác nhận số điểm đã gõ
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleCloseKeyboard();
+          return;
+        }
+
+        // Phím Tab hoặc Mũi tên Xuống: Di chuyển nhanh sang người chơi kế tiếp
+        if (e.key === 'Tab' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          const nextIdx = (activeKeypad.index + 1) % players.length;
+          handleOpenKeyboard(players[nextIdx], activeKeypad.mode);
+          return;
+        }
+
+        // Phím Shift + Tab hoặc Mũi tên Lên: Di chuyển về người chơi trước
+        if ((e.shiftKey && e.key === 'Tab') || e.key === 'ArrowUp') {
+          e.preventDefault();
+          const prevIdx = (activeKeypad.index - 1 + players.length) % players.length;
+          handleOpenKeyboard(players[prevIdx], activeKeypad.mode);
+          return;
+        }
+      } else {
+        // Khi bàn phím chưa mở: Nếu ván đã đủ điều kiện chốt (tổng bằng 0 và có điểm), gõ Enter để chốt ván ngay
+        if (e.key === 'Enter' && canConfirmRound) {
+          e.preventDefault();
+          handleConfirmRound();
+          return;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    activeKeypad,
+    currentKeypadValue,
+    isViewOnly,
+    isDailyStatsOpen,
+    isHistoryExpanded,
+    isQrModalOpen,
+    canConfirmRound,
+    players,
+    handleKeypadNumber,
+    handleKeypadBackspace,
+    handleKeypadCancel,
+    handleCloseKeyboard,
+    handleConfirmRound,
+    updateRoundDeltas
+  ]);
+
   // Xử lý xác nhận Reset trận đấu (đồng bộ realtime)
   const handleResetConfirm = () => {
     resetGame();
