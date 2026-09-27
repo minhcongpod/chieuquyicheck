@@ -1241,10 +1241,9 @@ td {
   width: 100%;
   height: auto;
   padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(180deg, rgba(22, 68, 22, 0.94) 0%, rgba(8, 20, 9, 0.98) 100%);
+  background: linear-gradient(180deg, #1f7c00, #081409fa);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.8), 0 -1px 0 rgba(102, 255, 51, 0.35);
   border-top: 1.5px solid rgba(102, 255, 51, 0.4);
   z-index: 100;
   display: flex;
@@ -1268,7 +1267,7 @@ td {
   height: clamp(50px, 6.8vh, 70px);
   display: flex;
   flex-direction: row;
-  border-bottom: 1.3px solid rgba(0, 0, 0, 0.4);
+  border-bottom: 1.5px solid rgba(0, 0, 0, 0.4);
 }
 
 .keyboard-row:last-child {
@@ -1282,7 +1281,7 @@ td {
   height: 100%;
   background: transparent;
   border: none;
-  border-right: 1.3px solid rgba(0, 0, 0, 0.4);
+  border-right: 1.5px solid rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
