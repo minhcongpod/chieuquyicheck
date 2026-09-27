@@ -375,6 +375,11 @@ export default function ScoreInputTable({
 
                 {/* Điểm Tổng Tích Luỹ */}
                 <div className="player-score-box">
+                  {isViewOnly && delta !== undefined && delta !== 0 && (
+                    <span className={`view-live-delta ${delta > 0 ? 'is-plus' : 'is-minus'}`}>
+                      {delta > 0 ? `+${delta}` : delta}
+                    </span>
+                  )}
                   <span
                     className={`player-score-text ${
                       Math.abs(displayScore) >= 1000

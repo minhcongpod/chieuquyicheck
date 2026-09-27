@@ -20,6 +20,7 @@ export default function App() {
     role,
     isViewOnly,
     slotIndex,
+    justPromoted,
     viewOnlyUrl,
     updatePlayerName,
     updateRoundDeltas,
@@ -307,6 +308,18 @@ export default function App() {
 
   return (
     <div className="app-screen">
+      {/* Toast thông báo khi người xem được tự động cấp quyền Editor */}
+      {justPromoted && (
+        <div className="promotion-toast" role="alert">
+          <div className="promotion-content">
+            <span className="promotion-icon">🎉</span>
+            <span className="promotion-text">
+              Bạn đã được cấp quyền chỉnh sửa phòng chơi (Slot {slotIndex || 2})!
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 1. Phần bảng điểm nhập liệu 5 người chơi (Khu vực trên cùng) */}
       <ScoreInputTable
         players={players}
