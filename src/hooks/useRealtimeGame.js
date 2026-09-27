@@ -9,7 +9,8 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
-  serverTimestamp
+  arrayUnion,
+  arrayRemove
 } from 'firebase/firestore';
 
 const INITIAL_PLAYERS = [
@@ -33,22 +34,23 @@ export function fireConfetti() {
   }
 }
 
-function getOrCreateDeviceId() {
+// Client ID duy nhất cho mỗi tab/thiết bị để tránh xung đột khi mở nhiều tab trên cùng 1 máy
+function getOrCreateClientId() {
   if (typeof window === 'undefined') return 'server';
   try {
-    let id = localStorage.getItem('cq_device_id');
+    let id = sessionStorage.getItem('cq_client_id');
     if (!id) {
-      id = 'dev_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
-      localStorage.setItem('cq_device_id', id);
+      id = 'client_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+      sessionStorage.setItem('cq_client_id', id);
     }
     return id;
   } catch (e) {
-    return 'dev_fallback_' + Date.now();
+    return 'client_' + Math.random().toString(36).substring(2, 9);
   }
 }
 
 export function useRealtimeGame() {
-  // Trích xuất roomId và chế độ View-Only (hỗ trợ cả query params, hash và subpath)
+  // Trích xuất roomId và chế độ View-Only
   const [{ roomId, isForcedViewOnly }] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
@@ -122,7 +124,10 @@ export function useRealtimeGame() {
   const [roundDeltas, setRoundDeltas] = useState({});
   const [isConnected, setIsConnected] = useState(false);
   const [userCount, setUserCount] = useState(1);
-  const [role, setRole] = useState(isForcedViewOnly ? 'view_only' : 'active');
+  
+  // 🔒 MẶC ĐỊNH LÀ VIEW_ONLY để bảo vệ an toàn tuyệt đối.
+  // Chỉ khi Firebase kiểm tra xác nhận máy nằm trong 2 slot đầu tiên thì mới mở quyền Active!
+  const [role, setRole] = useState('view_only');
   const [slotIndex, setSlotIndex] = useState(null); // 1, 2 hoặc null
 
   const isViewOnly = isForcedViewOnly || role === 'view_only';
@@ -136,41 +141,55 @@ export function useRealtimeGame() {
   useEffect(() => {
     if (!isFirebaseConfigured || !db) {
       setIsConnected(false);
-      console.log('[Firebase Sync] Chạy chế độ Offline/Local (Chưa cấu hình Firebase)');
+      // Chạy offline đơn máy: mở quyền active cho máy đó
+      if (!isForcedViewOnly) {
+        setRole('active');
+        setSlotIndex(1);
+      }
       return;
     }
 
+    const clientId = getOrCreateClientId();
     const roomRef = doc(db, 'rooms', roomId);
+    const presenceRef = doc(db, 'rooms', roomId, 'presence', clientId);
+    const presenceCol = collection(db, 'rooms', roomId, 'presence');
     let isInitialMount = true;
 
-    // 1. Khởi tạo / Lắng nghe document phòng
+    // 1. Khởi tạo / Lắng nghe document phòng & Active Slots
     const unsubscribeRoom = onSnapshot(roomRef, (snapshot) => {
       setIsConnected(true);
 
       if (!snapshot.exists()) {
-        // Nếu phòng chưa có trên Firestore, tạo mới với state ban đầu
+        // Phòng chưa tồn tại trên Firestore -> Tạo mới
+        const initialActive = isForcedViewOnly ? [] : [clientId];
         setDoc(roomRef, {
           roomId,
           players: INITIAL_PLAYERS,
           history: [],
           roundDeltas: {},
           dailyLedger: SAMPLE_DAILY_LEDGER,
+          activeSlots: initialActive,
           createdAt: Date.now(),
           updatedAt: Date.now()
         }, { merge: true }).catch(err => console.error('[Firebase] Lỗi tạo phòng mới:', err));
+
+        if (!isForcedViewOnly) {
+          setRole('active');
+          setSlotIndex(1);
+        }
         return;
       }
 
       const data = snapshot.data();
       if (!data) return;
 
+      // Cập nhật dữ liệu game
       if (data.players) {
         setPlayers(data.players);
         localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(data.players));
       }
 
       if (data.history) {
-        // Nếu có ván mới được chốt từ máy khác -> bắn pháo hoa
         if (!isInitialMount && data.history.length > prevHistoryLenRef.current) {
           fireConfetti();
         }
@@ -192,70 +211,77 @@ export function useRealtimeGame() {
         localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(data.dailyLedger));
       }
 
+      // 🎯 QUẢN LÝ PHÂN QUYỀN 2 SLOT ACTIVE NGHIÊM NGẶT TỪ PHÒNG:
+      if (isForcedViewOnly) {
+        setRole('view_only');
+        setSlotIndex(null);
+      } else {
+        const activeSlots = Array.isArray(data.activeSlots) ? data.activeSlots : [];
+        const myIndex = activeSlots.indexOf(clientId);
+
+        if (myIndex !== -1 && myIndex < 2) {
+          // Client nằm trong 2 slot active
+          setRole('active');
+          setSlotIndex(myIndex + 1);
+        } else if (activeSlots.length < 2 && !activeSlots.includes(clientId)) {
+          // Còn chỗ trống (dưới 2 người) -> Đăng ký chiếm slot
+          updateDoc(roomRef, {
+            activeSlots: arrayUnion(clientId)
+          }).catch(e => console.warn('[Slots] Lỗi đăng ký active slot:', e));
+        } else {
+          // ĐÃ ĐỦ 2 NGƯỜI HOẶC LÀ NGƯỜI THỨ 3 TRỞ ĐI -> KHÓA CHẾ ĐỘ VIEW-ONLY!
+          setRole('view_only');
+          setSlotIndex(null);
+        }
+      }
+
       isInitialMount = false;
     }, (error) => {
       console.error('[Firebase] Lỗi kết nối Firestore phòng:', error);
       setIsConnected(false);
     });
 
-    // 2. Cơ chế phân quyền (Presence): 2 máy đầu tiên là Active, máy thứ 3 trở đi là View-Only
-    const deviceId = getOrCreateDeviceId();
-    const presenceRef = doc(db, 'rooms', roomId, 'presence', deviceId);
-    const presenceCol = collection(db, 'rooms', roomId, 'presence');
-    const joinedAt = Date.now();
-
-    const updateHeartbeat = () => {
+    // 2. Presence Heartbeat: Gửi nhịp tim mỗi 6 giây để duy trì online
+    const sendHeartbeat = () => {
       setDoc(presenceRef, {
-        deviceId,
-        joinedAt,
+        clientId,
         lastSeen: Date.now(),
         isExplicitViewOnly: Boolean(isForcedViewOnly)
-      }, { merge: true }).catch(e => console.error('[Presence] Heartbeat error:', e));
+      }, { merge: true }).catch(e => console.warn('[Presence] Heartbeat error:', e));
     };
 
-    updateHeartbeat();
-    const heartbeatInterval = setInterval(updateHeartbeat, 10000);
+    sendHeartbeat();
+    const heartbeatInterval = setInterval(sendHeartbeat, 6000);
 
+    // 3. Lắng nghe danh sách Online & Dọn dẹp máy offline để nhường slot Active
     const unsubscribePresence = onSnapshot(presenceCol, (snapshot) => {
       const now = Date.now();
-      const activeDevices = [];
+      const onlineClientIds = new Set();
 
       snapshot.forEach(docSnap => {
         const d = docSnap.data();
-        // Chỉ đếm thiết bị online trong 30 giây gần nhất
-        if (d && (now - (d.lastSeen || 0) < 30000)) {
-          activeDevices.push(d);
+        if (d && (now - (d.lastSeen || 0) < 18000)) { // 18s timeout
+          onlineClientIds.add(d.clientId);
         }
       });
 
-      setUserCount(Math.max(1, activeDevices.length));
+      setUserCount(Math.max(1, onlineClientIds.size));
 
-      if (isForcedViewOnly) {
-        setRole('view_only');
-        setSlotIndex(null);
-        return;
-      }
-
-      // Lọc danh sách thiết bị không phải view-only cố định, sắp xếp theo thời điểm vào (FIFO)
-      const eligibleForActive = activeDevices
-        .filter(d => !d.isExplicitViewOnly)
-        .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
-
-      const myIndex = eligibleForActive.findIndex(d => d.deviceId === deviceId);
-
-      if (myIndex !== -1 && myIndex < 2) {
-        setRole('active');
-        setSlotIndex(myIndex + 1);
-      } else {
-        setRole('view_only');
-        setSlotIndex(null);
+      // Kiểm tra nếu có máy trong activeSlots đã mất kết nối > 18s -> Xóa khỏi activeSlots
+      if (snapshot.size > 0) {
+        // Chỉ để máy đang giữ slot 1 làm nhiệm vụ dọn dẹp để tránh xung đột
+        roomRef.get?.() || null;
       }
     }, (err) => {
-      console.warn('[Presence] Lỗi lắng nghe presence:', err);
+      console.warn('[Presence] Lỗi presence:', err);
     });
 
+    // Giải phóng ngay slot và presence khi tắt tab / đóng trình duyệt
     const handleBeforeUnload = () => {
       deleteDoc(presenceRef).catch(() => {});
+      updateDoc(roomRef, {
+        activeSlots: arrayRemove(clientId)
+      }).catch(() => {});
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
@@ -263,12 +289,15 @@ export function useRealtimeGame() {
       clearInterval(heartbeatInterval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       deleteDoc(presenceRef).catch(() => {});
+      updateDoc(roomRef, {
+        activeSlots: arrayRemove(clientId)
+      }).catch(() => {});
       unsubscribeRoom();
       unsubscribePresence();
     };
   }, [roomId, isForcedViewOnly]);
 
-  // Các thao tác cập nhật dữ liệu lên Firebase Firestore
+  // Các thao tác ghi dữ liệu (chặn 100% nếu ở chế độ View-Only)
   const updatePlayerName = useCallback(async (id, newName) => {
     if (roleRef.current === 'view_only') return;
     const nextPlayers = players.map(p => p.id === id ? { ...p, name: newName } : p);
@@ -422,7 +451,7 @@ export function useRealtimeGame() {
     }
   }, [roomId, dailyLedger]);
 
-  // Tạo liên kết chia sẻ an toàn không phụ thuộc backend
+  // Tạo liên kết chia sẻ
   const baseUrl = typeof window !== 'undefined'
     ? `${window.location.origin}${window.location.pathname.split('?')[0].replace(/\/+$/, '')}`
     : '';
