@@ -50,6 +50,7 @@ export default function ScoreInputTable({
   const prevPositions = useRef({});
   const isFirstRender = useRef(true);
   const frozenOrderRef = useRef(null);
+  const isTabSwitchingRef = useRef(false);
 
   // Dọn dẹp timer khi component unmount
   useEffect(() => {
@@ -59,6 +60,14 @@ export default function ScoreInputTable({
     };
   }, []);
 
+  // Tự động focus và bôi đen toàn bộ chữ khi chuyển ô nhập tên để người dùng gõ đè ngay
+  useEffect(() => {
+    if (editingPlayerId && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [editingPlayerId]);
+
   const handleNameClick = (player) => {
     if (isViewOnly) return;
     if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
@@ -67,6 +76,46 @@ export default function ScoreInputTable({
     frozenOrderRef.current = sortedPlayers.map((p) => p.id);
     setEditingPlayerId(player.id);
     setTempName(player.name || '');
+  };
+
+  // Chuyển nhanh sang ô nhập tên người chơi tiếp theo (hoặc trước đó khi giữ Shift) bằng phím Tab
+  const handleSwitchToPlayer = (currentPlayerId, isBackward = false) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+    if (blurTimerRef.current) {
+      clearTimeout(blurTimerRef.current);
+      blurTimerRef.current = null;
+    }
+
+    // 1. Lưu ngay lập tức tên người chơi hiện tại
+    const finalName = tempName.trim();
+    if (finalName) {
+      saveKnownPlayer(finalName);
+    }
+    onUpdatePlayerName(currentPlayerId, finalName);
+
+    // 2. Xác định người chơi tiếp theo theo thứ tự đang hiển thị (sortedPlayers)
+    const currentIndex = sortedPlayers.findIndex((p) => p.id === currentPlayerId);
+    if (currentIndex === -1) return;
+
+    const total = sortedPlayers.length;
+    const nextIndex = isBackward
+      ? (currentIndex - 1 + total) % total
+      : (currentIndex + 1) % total;
+
+    const nextPlayer = sortedPlayers[nextIndex];
+    if (!nextPlayer) return;
+
+    // 3. Đặt cờ bỏ qua blur và chuyển focus sang người chơi tiếp theo
+    isTabSwitchingRef.current = true;
+    setEditingPlayerId(nextPlayer.id);
+    setTempName(nextPlayer.name || '');
+
+    setTimeout(() => {
+      isTabSwitchingRef.current = false;
+    }, 150);
   };
 
   // Cập nhật tên người chơi:
@@ -91,7 +140,13 @@ export default function ScoreInputTable({
     }
     if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
 
+    // Bỏ qua sự kiện blur nếu đang chuyển nhanh bằng phím Tab
+    if (isTabSwitchingRef.current) {
+      return;
+    }
+
     blurTimerRef.current = setTimeout(() => {
+      if (isTabSwitchingRef.current) return;
       const finalName = tempName.trim();
       if (finalName) {
         saveKnownPlayer(finalName);
@@ -347,7 +402,10 @@ export default function ScoreInputTable({
                         }}
                         onBlur={() => handleInputBlur(player.id)}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
+                          if (e.key === 'Tab') {
+                            e.preventDefault();
+                            handleSwitchToPlayer(player.id, e.shiftKey);
+                          } else if (e.key === 'Enter') {
                             e.preventDefault();
                             handleNameSave(player.id, tempName);
                             inputRef.current?.blur();
