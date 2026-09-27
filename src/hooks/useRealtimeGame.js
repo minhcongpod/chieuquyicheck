@@ -1,16 +1,26 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { SAMPLE_DAILY_LEDGER } from '../constants/sampleLedger';
+import { db, isFirebaseConfigured } from '../firebase';
+import {
+  doc,
+  collection,
+  onSnapshot,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  serverTimestamp
+} from 'firebase/firestore';
 
 const INITIAL_PLAYERS = [
-  { id: 'p1', name: '', color: '#f4e950' },
-  { id: 'p2', name: '', color: '#66ff33' },
-  { id: 'p3', name: '', color: '#16e4ff' },
-  { id: 'p4', name: '', color: '#c073ff' },
-  { id: 'p5', name: '', color: '#fd6161' }
+  { id: 'p1', name: '', color: '#f4e950' }, // Vàng
+  { id: 'p2', name: '', color: '#66ff33' }, // Xanh lá
+  { id: 'p3', name: '', color: '#16e4ff' }, // Cyan
+  { id: 'p4', name: '', color: '#c073ff' }, // Tím
+  { id: 'p5', name: '', color: '#fd6161' }  // Đỏ
 ];
 
-// Hàm bắn 1 đợt pháo hoa ăn mừng khi chốt ván
+// Bắn pháo hoa ăn mừng khi chốt ván hoặc chốt sổ
 export function fireConfetti() {
   try {
     confetti({
@@ -23,36 +33,50 @@ export function fireConfetti() {
   }
 }
 
+function getOrCreateDeviceId() {
+  if (typeof window === 'undefined') return 'server';
+  try {
+    let id = localStorage.getItem('cq_device_id');
+    if (!id) {
+      id = 'dev_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+      localStorage.setItem('cq_device_id', id);
+    }
+    return id;
+  } catch (e) {
+    return 'dev_fallback_' + Date.now();
+  }
+}
+
 export function useRealtimeGame() {
-  // Lấy roomId và cờ View-Only từ URL:
-  // - Hỗ trợ đường dẫn riêng: /view/:roomId (vd: /view/1, /view/nhom1, hoặc /view)
-  // - Hỗ trợ query param: ?view=1 hoặc ?mode=view
-  // - Hỗ trợ đường dẫn phòng thông thường: /1, /nhom1 (hoặc mặc định 'default')
+  // Trích xuất roomId và chế độ View-Only (hỗ trợ cả query params, hash và subpath)
   const [{ roomId, isForcedViewOnly }] = useState(() => {
     if (typeof window !== 'undefined') {
-      const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
       const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
+
       const viewParam = params.get('view') || params.get('mode');
-      
       const isForcedView = (
         viewParam === 'true' ||
         viewParam === '1' ||
         viewParam === 'view' ||
-        pathname.startsWith('view/') ||
-        pathname === 'view'
+        hash.startsWith('view') ||
+        pathname.includes('view')
       );
 
       let extractedRoom = 'default';
-      if (pathname.startsWith('view/')) {
-        const afterView = pathname.slice(5).replace(/^\/+|\/+$/g, '');
-        if (afterView) extractedRoom = decodeURIComponent(afterView);
-      } else if (pathname === 'view') {
-        const r = params.get('room');
-        if (r && r.trim() !== '') extractedRoom = r.trim();
-      } else if (pathname && pathname !== '') {
-        extractedRoom = decodeURIComponent(pathname);
-      } else if (params.get('room') && params.get('room').trim() !== '') {
+
+      if (params.get('room') && params.get('room').trim() !== '') {
         extractedRoom = params.get('room').trim();
+      } else if (hash) {
+        const parts = hash.replace(/^view\/?/, '').split('/');
+        if (parts[0] && parts[0].trim() !== '') extractedRoom = decodeURIComponent(parts[0].trim());
+      } else if (pathname && pathname !== '' && !pathname.endsWith('index.html')) {
+        const parts = pathname.split('/');
+        const lastPart = parts[parts.length - 1];
+        if (lastPart && lastPart !== 'view' && lastPart !== 'chieuquyicheck') {
+          extractedRoom = decodeURIComponent(lastPart);
+        }
       }
 
       return { roomId: extractedRoom, isForcedViewOnly: Boolean(isForcedView) };
@@ -65,12 +89,9 @@ export function useRealtimeGame() {
       const saved = localStorage.getItem(`cq_players_${roomId}`);
       if (saved) {
         const parsed = JSON.parse(saved);
-        // Xóa bỏ hoàn toàn các tên mặc định gán sẵn cũ (A, B, C, D, E)
         return parsed.map((p, idx) => {
           const legacyDefault = String.fromCharCode(65 + idx);
-          if (p.name === legacyDefault) {
-            return { ...p, name: '' };
-          }
+          if (p.name === legacyDefault) return { ...p, name: '' };
           return p;
         });
       }
@@ -108,230 +129,310 @@ export function useRealtimeGame() {
   const roleRef = useRef(isViewOnly ? 'view_only' : role);
   roleRef.current = isViewOnly ? 'view_only' : role;
 
-  const socketRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
+  const prevHistoryLenRef = useRef(history.length);
+  const prevLedgerLenRef = useRef(dailyLedger.length);
 
-function getOrCreateDeviceId() {
-  if (typeof window === 'undefined') return 'server';
-  try {
-    let id = localStorage.getItem('cq_device_id');
-    if (!id) {
-      id = 'dev_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
-      localStorage.setItem('cq_device_id', id);
-    }
-    return id;
-  } catch (e) {
-    return 'dev_fallback_' + Date.now();
-  }
-}
-
-  // Gửi tin nhắn qua WebSocket an toàn
-  const sendMessage = useCallback((type, payload) => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type, payload }));
-    }
-  }, []);
-
-  // Kết nối WebSocket
+  // Lắng nghe dữ liệu thời gian thực từ Firebase Firestore
   useEffect(() => {
-    let isMounted = true;
-    const deviceId = getOrCreateDeviceId();
-
-    function connect() {
-      if (typeof window === 'undefined') return;
-
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const wsUrl = `${protocol}//${window.location.host}/ws?room=${encodeURIComponent(roomId)}&deviceId=${encodeURIComponent(deviceId)}${isForcedViewOnly ? '&viewOnly=1' : ''}`;
-
-      const ws = new WebSocket(wsUrl);
-      socketRef.current = ws;
-
-      ws.onopen = () => {
-        if (!isMounted) return;
-        setIsConnected(true);
-        console.log(`[ChieuQuy Sync] Đã kết nối phòng "${roomId}" (Device: ${deviceId}, ViewOnly: ${isForcedViewOnly})`);
-      };
-
-      ws.onmessage = (event) => {
-        if (!isMounted) return;
-        try {
-          const data = JSON.parse(event.data);
-          const { type, payload, actionType, count } = data;
-
-          if (type === 'INIT_STATE') {
-            if (payload.players) setPlayers(payload.players);
-            if (payload.history) setHistory(payload.history);
-            if (payload.roundDeltas) setRoundDeltas(payload.roundDeltas);
-            if (payload.dailyLedger) setDailyLedger(payload.dailyLedger);
-            if (!isForcedViewOnly) {
-              if (data.role) setRole(data.role);
-              if (data.slotIndex !== undefined) setSlotIndex(data.slotIndex);
-            }
-            // Lưu cache offline
-            localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(payload.players || []));
-            localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(payload.history || []));
-            if (payload.dailyLedger) localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(payload.dailyLedger));
-          } else if (type === 'ROLE_ASSIGNMENT') {
-            if (!isForcedViewOnly) {
-              if (payload?.role) setRole(payload.role);
-              if (payload?.slotIndex !== undefined) setSlotIndex(payload.slotIndex);
-            }
-            console.log(`[ChieuQuy Sync] Phân quyền phòng: ${payload?.role} (Slot: ${payload?.slotIndex})`);
-          } else if (type === 'STATE_UPDATE') {
-            if (payload.players) setPlayers(payload.players);
-            if (payload.history) setHistory(payload.history);
-            if (payload.roundDeltas !== undefined) setRoundDeltas(payload.roundDeltas);
-            if (payload.dailyLedger !== undefined) {
-              setDailyLedger(payload.dailyLedger);
-              localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(payload.dailyLedger));
-            }
-
-            // Bắn pháo hoa ăn mừng khi chốt ván mới hoặc chốt sổ
-            if (actionType === 'CONFIRM_ROUND' || actionType === 'ADD_LEDGER_ENTRY') {
-              fireConfetti();
-            }
-
-            // Lưu cache
-            localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(payload.players || []));
-            localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(payload.history || []));
-          } else if (type === 'ROOM_USERS_COUNT') {
-            if (count !== undefined) setUserCount(count);
-          }
-        } catch (err) {
-          console.error('[ChieuQuy Sync] Lỗi nhận tin nhắn:', err);
-        }
-      };
-
-      ws.onclose = () => {
-        if (!isMounted) return;
-        setIsConnected(false);
-        // Tự động kết nối lại sau 2 giây
-        reconnectTimeoutRef.current = setTimeout(() => {
-          if (isMounted) connect();
-        }, 2000);
-      };
-
-      ws.onerror = (err) => {
-        console.error('[ChieuQuy Sync] Lỗi kết nối WebSocket:', err);
-        ws.close();
-      };
+    if (!isFirebaseConfigured || !db) {
+      setIsConnected(false);
+      console.log('[Firebase Sync] Chạy chế độ Offline/Local (Chưa cấu hình Firebase)');
+      return;
     }
 
-    connect();
+    const roomRef = doc(db, 'rooms', roomId);
+    let isInitialMount = true;
 
-    // Heartbeat ping mỗi 15s để giữ kết nối trên mobile
-    const pingInterval = setInterval(() => {
-      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.send(JSON.stringify({ type: 'PING' }));
+    // 1. Khởi tạo / Lắng nghe document phòng
+    const unsubscribeRoom = onSnapshot(roomRef, (snapshot) => {
+      setIsConnected(true);
+
+      if (!snapshot.exists()) {
+        // Nếu phòng chưa có trên Firestore, tạo mới với state ban đầu
+        setDoc(roomRef, {
+          roomId,
+          players: INITIAL_PLAYERS,
+          history: [],
+          roundDeltas: {},
+          dailyLedger: SAMPLE_DAILY_LEDGER,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }, { merge: true }).catch(err => console.error('[Firebase] Lỗi tạo phòng mới:', err));
+        return;
       }
-    }, 15000);
 
-    // Giải phóng ngay socket khi người dùng đóng tab / điều hướng trang
+      const data = snapshot.data();
+      if (!data) return;
+
+      if (data.players) {
+        setPlayers(data.players);
+        localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(data.players));
+      }
+
+      if (data.history) {
+        // Nếu có ván mới được chốt từ máy khác -> bắn pháo hoa
+        if (!isInitialMount && data.history.length > prevHistoryLenRef.current) {
+          fireConfetti();
+        }
+        prevHistoryLenRef.current = data.history.length;
+        setHistory(data.history);
+        localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(data.history));
+      }
+
+      if (data.roundDeltas !== undefined) {
+        setRoundDeltas(data.roundDeltas || {});
+      }
+
+      if (data.dailyLedger !== undefined) {
+        if (!isInitialMount && data.dailyLedger.length > prevLedgerLenRef.current) {
+          fireConfetti();
+        }
+        prevLedgerLenRef.current = data.dailyLedger.length;
+        setDailyLedger(data.dailyLedger);
+        localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(data.dailyLedger));
+      }
+
+      isInitialMount = false;
+    }, (error) => {
+      console.error('[Firebase] Lỗi kết nối Firestore phòng:', error);
+      setIsConnected(false);
+    });
+
+    // 2. Cơ chế phân quyền (Presence): 2 máy đầu tiên là Active, máy thứ 3 trở đi là View-Only
+    const deviceId = getOrCreateDeviceId();
+    const presenceRef = doc(db, 'rooms', roomId, 'presence', deviceId);
+    const presenceCol = collection(db, 'rooms', roomId, 'presence');
+    const joinedAt = Date.now();
+
+    const updateHeartbeat = () => {
+      setDoc(presenceRef, {
+        deviceId,
+        joinedAt,
+        lastSeen: Date.now(),
+        isExplicitViewOnly: Boolean(isForcedViewOnly)
+      }, { merge: true }).catch(e => console.error('[Presence] Heartbeat error:', e));
+    };
+
+    updateHeartbeat();
+    const heartbeatInterval = setInterval(updateHeartbeat, 10000);
+
+    const unsubscribePresence = onSnapshot(presenceCol, (snapshot) => {
+      const now = Date.now();
+      const activeDevices = [];
+
+      snapshot.forEach(docSnap => {
+        const d = docSnap.data();
+        // Chỉ đếm thiết bị online trong 30 giây gần nhất
+        if (d && (now - (d.lastSeen || 0) < 30000)) {
+          activeDevices.push(d);
+        }
+      });
+
+      setUserCount(Math.max(1, activeDevices.length));
+
+      if (isForcedViewOnly) {
+        setRole('view_only');
+        setSlotIndex(null);
+        return;
+      }
+
+      // Lọc danh sách thiết bị không phải view-only cố định, sắp xếp theo thời điểm vào (FIFO)
+      const eligibleForActive = activeDevices
+        .filter(d => !d.isExplicitViewOnly)
+        .sort((a, b) => (a.joinedAt || 0) - (b.joinedAt || 0));
+
+      const myIndex = eligibleForActive.findIndex(d => d.deviceId === deviceId);
+
+      if (myIndex !== -1 && myIndex < 2) {
+        setRole('active');
+        setSlotIndex(myIndex + 1);
+      } else {
+        setRole('view_only');
+        setSlotIndex(null);
+      }
+    }, (err) => {
+      console.warn('[Presence] Lỗi lắng nghe presence:', err);
+    });
+
     const handleBeforeUnload = () => {
-      if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-        socketRef.current.close(1000, 'Tab closed');
-      }
+      deleteDoc(presenceRef).catch(() => {});
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
     return () => {
-      isMounted = false;
-      clearInterval(pingInterval);
+      clearInterval(heartbeatInterval);
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (socketRef.current) socketRef.current.close();
+      deleteDoc(presenceRef).catch(() => {});
+      unsubscribeRoom();
+      unsubscribePresence();
     };
-  }, [roomId]);
+  }, [roomId, isForcedViewOnly]);
 
-  // Các hàm điều khiển đồng bộ (chặn nếu ở quyền View-Only)
-  const updatePlayerName = useCallback((id, newName) => {
+  // Các thao tác cập nhật dữ liệu lên Firebase Firestore
+  const updatePlayerName = useCallback(async (id, newName) => {
     if (roleRef.current === 'view_only') return;
-    // Cập nhật lạc quan trên máy mình ngay lập tức
-    setPlayers(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
-    sendMessage('UPDATE_PLAYER_NAME', { id, name: newName });
-  }, [sendMessage]);
+    const nextPlayers = players.map(p => p.id === id ? { ...p, name: newName } : p);
+    setPlayers(nextPlayers);
+    localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(nextPlayers));
 
-  const updateRoundDeltas = useCallback((newDeltasOrUpdater) => {
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          players: nextPlayers,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('[Firebase] Lỗi updatePlayerName:', e);
+      }
+    }
+  }, [roomId, players]);
+
+  const updateRoundDeltas = useCallback(async (newDeltasOrUpdater) => {
     if (roleRef.current === 'view_only') return;
     setRoundDeltas(prev => {
       const next = typeof newDeltasOrUpdater === 'function' ? newDeltasOrUpdater(prev) : newDeltasOrUpdater;
-      sendMessage('UPDATE_DELTAS', { roundDeltas: next });
+      if (isFirebaseConfigured && db) {
+        updateDoc(doc(db, 'rooms', roomId), {
+          roundDeltas: next,
+          updatedAt: Date.now()
+        }).catch(e => console.error('[Firebase] Lỗi updateRoundDeltas:', e));
+      }
       return next;
     });
-  }, [sendMessage]);
+  }, [roomId]);
 
-  const confirmRound = useCallback((newRound) => {
+  const confirmRound = useCallback(async (newRound) => {
     if (roleRef.current === 'view_only') return;
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      sendMessage('CONFIRM_ROUND', { newRound });
-    } else {
-      // Fallback offline nếu mất kết nối
-      setHistory(prev => {
-        const next = [...prev, newRound];
-        localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(next));
-        return next;
-      });
-      setRoundDeltas({});
-      fireConfetti();
-    }
-  }, [roomId, sendMessage]);
-
-  const undoRound = useCallback(() => {
-    if (roleRef.current === 'view_only') return;
-    sendMessage('UNDO_ROUND', {});
-  }, [sendMessage]);
-
-  const resetGame = useCallback(() => {
-    if (roleRef.current === 'view_only') return;
-    sendMessage('RESET_GAME', {});
-    // Cập nhật ngay lập tức tại máy này: reset toàn bộ tên người chơi về chuỗi rỗng "" và điểm về 0
-    setPlayers(prev => {
-      const next = prev.map(p => ({ ...p, name: '' }));
-      localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(next));
-      return next;
-    });
-    setHistory(() => {
-      localStorage.setItem(`cq_history_${roomId}`, JSON.stringify([]));
-      return [];
-    });
+    const nextHistory = [...history, newRound];
+    setHistory(nextHistory);
     setRoundDeltas({});
-  }, [roomId, sendMessage]);
-
-  const addLedgerEntry = useCallback((entry) => {
-    if (roleRef.current === 'view_only') return;
-    sendMessage('ADD_LEDGER_ENTRY', { entry });
-    setDailyLedger(prev => {
-      const next = [entry, ...prev];
-      localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(next));
-      return next;
-    });
+    localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(nextHistory));
     fireConfetti();
-  }, [roomId, sendMessage]);
 
-  const setDailyLedgerData = useCallback((newLedger) => {
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          history: nextHistory,
+          roundDeltas: {},
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('[Firebase] Lỗi confirmRound:', e);
+      }
+    }
+  }, [roomId, history]);
+
+  const undoRound = useCallback(async () => {
     if (roleRef.current === 'view_only') return;
-    sendMessage('SET_DAILY_LEDGER', { dailyLedger: newLedger });
+    if (history.length === 0) return;
+    const nextHistory = history.slice(0, -1);
+    setHistory(nextHistory);
+    localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(nextHistory));
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          history: nextHistory,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('[Firebase] Lỗi undoRound:', e);
+      }
+    }
+  }, [roomId, history]);
+
+  const resetGame = useCallback(async () => {
+    if (roleRef.current === 'view_only') return;
+    const resetPlayers = players.map(p => ({ ...p, name: '' }));
+    setPlayers(resetPlayers);
+    setHistory([]);
+    setRoundDeltas({});
+    setDailyLedger([]);
+    localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(resetPlayers));
+    localStorage.setItem(`cq_history_${roomId}`, JSON.stringify([]));
+    localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify([]));
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          players: resetPlayers,
+          history: [],
+          roundDeltas: {},
+          dailyLedger: [],
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('[Firebase] Lỗi resetGame:', e);
+      }
+    }
+  }, [roomId, players]);
+
+  const addLedgerEntry = useCallback(async (entry) => {
+    if (roleRef.current === 'view_only') return;
+    const nextLedger = [entry, ...(dailyLedger || [])];
+    setDailyLedger(nextLedger);
+    localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(nextLedger));
+    fireConfetti();
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          dailyLedger: nextLedger,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('[Firebase] Lỗi addLedgerEntry:', e);
+      }
+    }
+  }, [roomId, dailyLedger]);
+
+  const setDailyLedgerData = useCallback(async (newLedger) => {
+    if (roleRef.current === 'view_only') return;
     setDailyLedger(newLedger);
     localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(newLedger));
     fireConfetti();
-  }, [roomId, sendMessage]);
 
-  const deleteLedgerEntry = useCallback((entryId) => {
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          dailyLedger: newLedger,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('[Firebase] Lỗi setDailyLedgerData:', e);
+      }
+    }
+  }, [roomId]);
+
+  const deleteLedgerEntry = useCallback(async (entryId) => {
     if (roleRef.current === 'view_only') return;
-    setDailyLedger(prev => {
-      const next = prev.filter(e => e.id !== entryId);
-      sendMessage('SET_DAILY_LEDGER', { dailyLedger: next });
-      localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(next));
-      return next;
-    });
-  }, [roomId, sendMessage]);
+    const nextLedger = (dailyLedger || []).filter(e => e.id !== entryId);
+    setDailyLedger(nextLedger);
+    localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(nextLedger));
+
+    if (isFirebaseConfigured && db) {
+      try {
+        await updateDoc(doc(db, 'rooms', roomId), {
+          dailyLedger: nextLedger,
+          updatedAt: Date.now()
+        });
+      } catch (e) {
+        console.error('[Firebase] Lỗi deleteLedgerEntry:', e);
+      }
+    }
+  }, [roomId, dailyLedger]);
+
+  // Tạo liên kết chia sẻ an toàn không phụ thuộc backend
+  const baseUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname.split('?')[0].replace(/\/+$/, '')}`
+    : '';
 
   const viewOnlyUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/view/${roomId === 'default' ? '' : roomId}`.replace(/\/+$/, '') || `${window.location.origin}/view`
+    ? `${baseUrl}?${roomId === 'default' ? '' : `room=${encodeURIComponent(roomId)}&`}view=1`
     : `/view/${roomId}`;
 
   const roomUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/${roomId === 'default' ? '' : roomId}`.replace(/\/+$/, '') || `${window.location.origin}/`
+    ? (roomId === 'default' ? `${baseUrl}/` : `${baseUrl}?room=${encodeURIComponent(roomId)}`)
     : `/${roomId}`;
 
   return {
@@ -358,4 +459,3 @@ function getOrCreateDeviceId() {
     deleteLedgerEntry
   };
 }
-

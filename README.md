@@ -1,17 +1,20 @@
 # 🏆 CHIẾU QUỶ ICHECK
 
-Ứng dụng web tính điểm Sâm Lốc / Chiếu Quỷ chuyên nghiệp, chuẩn xác 100% theo thiết kế Figma, hỗ trợ đồng bộ thời gian thực (Real-time Multi-Device Sync) trên mọi thiết bị qua mạng nội bộ LAN hoặc Internet.
+Ứng dụng web tính điểm Sâm Lốc / Chiếu Quỷ chuyên nghiệp, chuẩn xác 100% theo thiết kế Figma, hỗ trợ đồng bộ thời gian thực (Real-time Multi-Device Sync) trên mọi thiết bị qua nền tảng Google Firebase và GitHub Pages.
 
-🔗 **Production URL (Render)**: [https://chieuquyicheck.onrender.com](https://chieuquyicheck.onrender.com)
+🔗 **Production URL (GitHub Pages)**: [https://minhcongpod.github.io/chieuquyicheck/](https://minhcongpod.github.io/chieuquyicheck/)
 
 ---
 
 ## 🌟 Tính Năng Nổi Bật
 
-1. **Đồng bộ thời gian thực (Realtime Multi-Device Sync)**:
-   - Tất cả các máy/điện thoại mở cùng một link sẽ hiển thị và cập nhật điểm số tức thì với độ trễ < 10ms.
+1. **Đồng bộ thời gian thực không cần Render (Firebase Realtime & Presence)**:
+   - Tất cả các máy/điện thoại mở cùng một link sẽ hiển thị và cập nhật điểm số tức thì với độ trễ siêu thấp (< 50ms) qua Google Cloud Firestore.
+   - Hoàn toàn loại bỏ hiện tượng máy chủ ngủ (sleep/cold start) của Render.
    - Hỗ trợ nhiều phòng chơi riêng biệt qua query parameter `?room=ten_phong` (mặc định là `default`).
-   - Tự động lưu trữ lịch sử và trạng thái vào ổ cứng (`data/rooms/*.json`) và bộ nhớ đệm `localStorage` của trình duyệt.
+   - Phân quyền tự động: 2 máy kết nối đầu tiên được quyền Active (sửa điểm), từ máy thứ 3 trở đi chuyển sang chế độ View-Only (chỉ xem).
+   - Hỗ trợ link chia sẻ View-Only riêng biệt (`?view=1` hoặc `?mode=view`).
+   - Tự động lưu trữ offline và phục hồi ngay lập tức qua `localStorage`.
 
 2. **Giao diện & Trải nghiệm người dùng (UX) chuẩn Figma**:
    - Thiết kế chuẩn tỉ lệ di động 390px, màu sắc nhận diện người chơi sắc nét, tương thích mọi kích thước màn hình (iPhone SE, iPhone 14/15/16 Pro Max, iPad, PC).
@@ -44,12 +47,11 @@
 
 ```text
 chieuquyicheck/
-├── data/
-│   └── rooms/                  # Lưu trữ dữ liệu các phòng chơi (JSON)
+├── .github/
+│   └── workflows/
+│       └── deploy.yml          # Tự động build & deploy lên GitHub Pages
 ├── dist/                       # Bản build production tối ưu
 ├── public/                     # Tài nguyên tĩnh (Ảnh nền, Mã QR MoMo)
-├── server/
-│   └── syncManager.js          # WebSocket Realtime Sync Server & Quản lý phòng
 ├── src/
 │   ├── components/
 │   │   ├── ActionToolbar.jsx   # Thanh công cụ: Chốt ván, Hoàn tác, Thống kê, QR
@@ -62,46 +64,21 @@ chieuquyicheck/
 │   ├── constants/
 │   │   └── sampleLedger.js     # Hằng số bảng màu và danh sách người chơi
 │   ├── hooks/
-│   │   └── useRealtimeGame.js  # Custom Hook quản lý WebSocket & Offline Fallback
+│   │   └── useRealtimeGame.js  # Custom Hook quản lý Firebase Firestore Sync & Presence
+│   ├── firebase.js             # Cấu hình khởi tạo Google Firebase
 │   ├── App.jsx                 # Component trung tâm điều phối toàn bộ ứng dụng
 │   ├── main.jsx                # Điểm khởi động React 18
 │   └── style.css               # Toàn bộ CSS phong cách Figma & Responsive Safe Area
 ├── index.html                  # File HTML chính
-├── package.json                # Dependencies sạch & Scripts
-├── server.js                   # Node.js Express + WebSocket Server cho Production
-└── vite.config.js              # Cấu hình Vite Dev Server
+├── package.json                # Dependencies sạch & Scripts (không cần express, ws)
+└── vite.config.js              # Cấu hình Vite với base relative
 ```
 
 ---
 
-## 🚀 Hướng Dẫn Cài Đặt & Chạy Ứng Dụng
+## 🚀 Hướng Dẫn Cấu Hình Firebase
 
-### 1. Cài đặt thư viện
-```bash
-npm install
-```
-
-### 2. Chế độ Phát triển (Development)
-Khởi động Vite Dev Server kèm WebSocket Realtime:
-```bash
-npm run dev
-```
-- Mở trên máy tính: `http://localhost:3000`
-- Mở trên điện thoại cùng Wi-Fi: `http://<IP_MÁY_TÍNH>:3000`
-
-### 3. Đóng gói & Chạy Bản Production
-```bash
-# 1. Build mã nguồn React ra thư mục dist
-npm run build
-
-# 2. Khởi chạy Server Production (Express + WebSocket)
-npm start
-```
-Server sẽ lắng nghe tại cổng `PORT` (mặc định 3000).
-
----
-
-## 🌐 Triển Khai Trực Tuyến
-
-Ứng dụng được triển khai tự động (Continuous Deployment) từ nhánh `main` lên nền tảng Render:
-- **Địa chỉ truy cập**: [https://chieuquyicheck.onrender.com](https://chieuquyicheck.onrender.com)
+Để kết nối đồng bộ thời gian thực:
+1. Vào [Firebase Console](https://console.firebase.google.com), tạo một Web Project (hoặc dùng project đã có).
+2. Bật dịch vụ **Cloud Firestore Database** (chọn chế độ Test mode hoặc thêm Security Rules cho phép read/write).
+3. Copy đoạn mã cấu hình `firebaseConfig` và dán vào file [src/firebase.js](file:///Users/pod/Library/CloudStorage/GoogleDrive-minhcong.pod@gmail.com/My%20Drive/ICHECK/chieuquyicheck/src/firebase.js) hoặc tạo file `.env` với các biến tương ứng.
