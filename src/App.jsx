@@ -226,6 +226,29 @@ export default function App() {
     setCurrentKeypadValue('');
   };
 
+  // Hiệu ứng phát sáng / nhấn phím ảo khi gõ từ bàn phím vật lý
+  const [pressedKey, setPressedKey] = useState(null);
+  const pressedKeyTimerRef = useRef(null);
+
+  const triggerKeyFeedback = useCallback((key) => {
+    if (pressedKeyTimerRef.current) clearTimeout(pressedKeyTimerRef.current);
+    setPressedKey(key);
+    pressedKeyTimerRef.current = setTimeout(() => {
+      setPressedKey(null);
+    }, 160);
+  }, []);
+
+  useEffect(() => {
+    const handleKeyUp = () => {
+      if (pressedKeyTimerRef.current) clearTimeout(pressedKeyTimerRef.current);
+      pressedKeyTimerRef.current = setTimeout(() => {
+        setPressedKey(null);
+      }, 50);
+    };
+    window.addEventListener('keyup', handleKeyUp);
+    return () => window.removeEventListener('keyup', handleKeyUp);
+  }, []);
+
   // ⌨️ Lắng nghe sự kiện bàn phím cứng trên PC/Laptop để nhập điểm siêu tốc
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -245,6 +268,7 @@ export default function App() {
         // Phím số từ 0 đến 9 (cả hàng số chính và Numpad)
         if (/^[0-9]$/.test(e.key)) {
           e.preventDefault();
+          triggerKeyFeedback(e.key);
           handleKeypadNumber(e.key);
           return;
         }
@@ -284,6 +308,7 @@ export default function App() {
         // Phím Backspace: Xóa lùi ký tự cuối cùng
         if (e.key === 'Backspace') {
           e.preventDefault();
+          triggerKeyFeedback('backspace');
           handleKeypadBackspace();
           return;
         }
@@ -291,6 +316,7 @@ export default function App() {
         // Phím Escape (Esc): Hủy thao tác nhập và thoát (tương đương nút 'X' đỏ)
         if (e.key === 'Escape') {
           e.preventDefault();
+          triggerKeyFeedback('cancel');
           handleKeypadCancel();
           return;
         }
@@ -500,6 +526,7 @@ export default function App() {
           onNumberClick={handleKeypadNumber}
           onBackspace={handleKeypadBackspace}
           onCancel={handleKeypadCancel}
+          pressedKey={pressedKey}
         />
       )}
 
