@@ -563,7 +563,6 @@ export default function App() {
         isViewOnly={isViewOnly}
         viewOnlyUrl={viewOnlyUrl}
         isAutoBalanced={isAutoBalanceEligible}
-        isKeyboardOpen={isKeyboardOpen}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Ẩn hoàn toàn khi mở bàn phím để đỡ rối mắt) */}

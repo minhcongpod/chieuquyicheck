@@ -410,16 +410,6 @@ td {
   z-index: 101;
   user-select: none;
   flex-shrink: 0;
-  overflow: hidden;
-  transition: height 0.22s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.18s ease;
-}
-
-/* Ẩn hoàn toàn action toolbar khi bàn phím số đang mở */
-.action-toolbar.is-keyboard-open {
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
 }
 
 
