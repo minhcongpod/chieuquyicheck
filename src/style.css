@@ -363,7 +363,6 @@ td {
   animation: pulseAutoBalance 1.8s infinite ease-in-out;
   color: #000000;
   font-weight: 900;
-  border-left: 2px dashed rgba(0, 0, 0, 0.22);
 }
 
 @keyframes pulseAutoBalance {
