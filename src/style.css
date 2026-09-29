@@ -331,12 +331,12 @@ td {
 .player-btn-plus.small-text,
 .player-btn-minus.size-2digits,
 .player-btn-plus.size-2digits {
-  font-size: 30px;
+  font-size: 24px;
 }
 
 .player-btn-minus.size-3digits,
 .player-btn-plus.size-3digits {
-  font-size: 25px;
+  font-size: 24px;
   letter-spacing: -0.5px;
 }
 

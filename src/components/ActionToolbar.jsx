@@ -121,19 +121,11 @@ export default function ActionToolbar({
     );
   }
 
-  // Format hiển thị tổng điểm: 0, +30, -30
-  let formattedSum = '0';
-  if (sumTotal > 0) {
-    formattedSum = `+${sumTotal}`;
-  } else if (sumTotal < 0) {
-    formattedSum = `${sumTotal}`;
-  }
-
   return (
     <div className="action-toolbar" ref={toolbarRef}>
       {/* 1. KHU VỰC TRÁI: Chiếm toàn bộ độ rộng còn lại (flex: 1, tương đương nút chốt ván xanh lá) */}
       <div className="toolbar-left-slot">
-        {/* Nút Chốt Ván kèm Tổng Điểm Kiểm Tra (Tự động bật sáng khi đủ điều kiện hoặc cân bằng điểm) */}
+        {/* Nút Chốt Ván (Tự động bật sáng khi đủ điều kiện hoặc cân bằng điểm) */}
         <button
           type="button"
           className={`toolbar-btn toolbar-btn-confirm ${confirmMode ? 'slide-left-out' : 'slide-in'} ${isAutoBalanced ? 'is-auto-balanced' : ''}`}
@@ -146,8 +138,7 @@ export default function ActionToolbar({
           }
           tabIndex={confirmMode || !canConfirm ? -1 : 0}
         >
-          <span className="confirm-sum-text">{formattedSum}</span>
-          <CheckmarkIcon width={28} height={28} className="confirm-sum-check" color="#000000" />
+          <CheckmarkIcon width={32} height={32} className="confirm-sum-check" color="#000000" />
         </button>
 
         {/* Nút hành động đang được kích hoạt (Quay lại) - Hiển thị chữ BACK */}
