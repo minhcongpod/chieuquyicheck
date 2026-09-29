@@ -38,7 +38,8 @@ export default function ScoreInputTable({
   onOpenKeyboard,
   dailyLedger = [],
   activeKeypad = null,
-  isViewOnly = false
+  isViewOnly = false,
+  autoBalanceInfo = null
 }) {
   const [editingPlayerId, setEditingPlayerId] = useState(null);
   const [tempName, setTempName] = useState('');
@@ -341,10 +342,14 @@ export default function ScoreInputTable({
           // Điểm tổng tích luỹ ván trước (giữ nguyên cho đến khi bấm tích xanh chốt ván)
           const displayScore = cumulativeScores[player.id] || 0;
 
-          // Hiển thị số điểm trừ / cộng trên 2 nút thao tác dựa trên roundDeltas
           const delta = roundDeltas[player.id];
           let minusText = '–';
           let plusText = '+';
+
+          const isAutoBalanceTarget = Boolean(
+            autoBalanceInfo &&
+            autoBalanceInfo.playerId === player.id
+          );
 
           if (delta !== undefined && delta !== 0) {
             if (delta < 0) {
@@ -352,6 +357,8 @@ export default function ScoreInputTable({
             } else {
               plusText = `+${delta}`;
             }
+          } else if (isAutoBalanceTarget && autoBalanceInfo.score > 0) {
+            plusText = `+${autoBalanceInfo.score}`;
           }
 
           // Kiểm tra xem nút - hoặc + của người này có đang được chọn/focus để nhập điểm không
@@ -433,10 +440,16 @@ export default function ScoreInputTable({
 
                 {/* Điểm Tổng Tích Luỹ */}
                 <div className="player-score-box">
-                  {isViewOnly && delta !== undefined && delta !== 0 && (
-                    <span className={`view-live-delta ${delta > 0 ? 'is-plus' : 'is-minus'}`}>
-                      {delta > 0 ? `+${delta}` : delta}
-                    </span>
+                  {isViewOnly && (
+                    (delta !== undefined && delta !== 0) ? (
+                      <span className={`view-live-delta ${delta > 0 ? 'is-plus' : 'is-minus'}`}>
+                        {delta > 0 ? `+${delta}` : delta}
+                      </span>
+                    ) : (isAutoBalanceTarget && autoBalanceInfo.score > 0) ? (
+                      <span className="view-live-delta is-plus is-auto-preview" title="Dự kiến tự động cộng dồn">
+                        +{autoBalanceInfo.score}
+                      </span>
+                    ) : null
                   )}
                   <span
                     className={`player-score-text ${
@@ -474,12 +487,18 @@ export default function ScoreInputTable({
                   {/* Nút Cộng (+) - Bấm mở bàn phím phép cộng */}
                   <button
                     type="button"
-                    className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${getBtnSizeClass(plusText)}`}
+                    className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${
+                      isAutoBalanceTarget && (!delta || delta === 0) ? 'is-auto-balanced' : ''
+                    } ${getBtnSizeClass(plusText)}`}
                     onClick={(e) => {
                       e.currentTarget.blur();
                       onOpenKeyboard(player, '+');
                     }}
-                    title="Cộng điểm"
+                    title={
+                      isAutoBalanceTarget && (!delta || delta === 0)
+                        ? `Điểm còn thiếu tự động bù: +${autoBalanceInfo.score}`
+                        : "Cộng điểm"
+                    }
                   >
                     <span className="player-btn-content">
                       <span className="player-btn-symbol">{plusText}</span>

@@ -357,10 +357,28 @@ export default function DailyStatsDrawer({
               </button>
             </div>
 
-            {/* Danh sách các ô thứ tự lần chốt sổ (#6, #5... hoặc thùng rác) */}
+            {/* Danh sách các ô ngày lưu kết quả (Ví dụ: 29/9 hoặc thùng rác khi bấm để xoá) */}
             <div className="stats-fixed-body">
               {sortedLedger.map((entry, idx) => {
-                const roundLabel = entry.label || (entry.roundIndex ? `#${entry.roundIndex}` : (entry.dateStr || `#${sortedLedger.length - idx}`));
+                // Hiển thị ngày lưu kết quả (Ví dụ: 29/9) thay vì số thứ tự #1, #2...
+                let roundLabel;
+                if (entry.timestamp) {
+                  const d = new Date(entry.timestamp);
+                  if (!isNaN(d.getTime())) {
+                    roundLabel = `${d.getDate()}/${d.getMonth() + 1}`;
+                  }
+                }
+                if (!roundLabel) {
+                  if (entry.dateStr && !entry.dateStr.startsWith('#')) {
+                    roundLabel = entry.dateStr;
+                  } else if (entry.label && !entry.label.startsWith('#')) {
+                    roundLabel = entry.label;
+                  } else {
+                    const now = new Date();
+                    roundLabel = `${now.getDate()}/${now.getMonth() + 1}`;
+                  }
+                }
+
                 const isDeleting = !isViewOnly && pendingDeleteId === entry.id;
 
                 return (
@@ -395,8 +413,8 @@ export default function DailyStatsDrawer({
                           }
                         }}
                         style={isViewOnly ? { cursor: 'default' } : undefined}
-                        title={isViewOnly ? roundLabel : `Bấm để xoá ${roundLabel}`}
-                        aria-label={roundLabel}
+                        title={isViewOnly ? `Ngày ${roundLabel}` : `Bấm để xoá kết quả ngày ${roundLabel}`}
+                        aria-label={`Ngày ${roundLabel}`}
                       >
                         {roundLabel}
                       </button>

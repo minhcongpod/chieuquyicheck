@@ -358,6 +358,23 @@ td {
   padding-left: 5px;
 }
 
+/* Hiệu ứng hiển thị số điểm còn thiếu tự động tính toán bù cho người chơi còn lại */
+.player-btn-plus.is-auto-balanced {
+  animation: pulseAutoBalance 1.8s infinite ease-in-out;
+  color: #000000;
+  font-weight: 900;
+  border-left: 2px dashed rgba(0, 0, 0, 0.22);
+}
+
+@keyframes pulseAutoBalance {
+  0%, 100% {
+    background-color: rgba(255, 255, 255, 0.24);
+  }
+  50% {
+    background-color: rgba(255, 255, 255, 0.52);
+  }
+}
+
 .player-btn-content {
   display: inline-flex;
   align-items: center;
@@ -474,6 +491,26 @@ td {
 .toolbar-btn-confirm:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+  box-shadow: none;
+}
+
+.toolbar-btn-confirm:not(:disabled) {
+  opacity: 1;
+  box-shadow: 0 0 16px rgba(102, 255, 51, 0.45);
+}
+
+/* Hiệu ứng bật sáng rực rỡ khi tự động cân bằng điểm ván đấu */
+.toolbar-btn-confirm.is-auto-balanced:not(:disabled) {
+  animation: glowConfirmGreen 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes glowConfirmGreen {
+  from {
+    box-shadow: 0 0 12px rgba(102, 255, 51, 0.45);
+  }
+  to {
+    box-shadow: 0 0 24px rgba(102, 255, 51, 0.85);
+  }
 }
 
 /* Nút hành động đang kích hoạt (Reset hoặc Undo, cùng chiều ngang với nút tích xanh) */
@@ -1761,13 +1798,13 @@ td {
   background-color: #4a181b !important;
 }
 
-/* Nút bấm vào thứ tự lần chốt sổ (#1, #2...) */
+/* Nút bấm vào ngày lưu kết quả (Ví dụ: 29/9) */
 .stats-round-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
-  font-size: 14px;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 13px;
+  font-weight: 700;
   width: 100%;
   height: 100%;
   min-height: 40px;
@@ -1775,10 +1812,12 @@ td {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 0;
+  padding: 0 2px;
   outline: none;
   font-family: inherit;
   transition: color 0.15s ease, transform 0.15s ease;
+  white-space: nowrap;
+  letter-spacing: -0.2px;
 }
 
 .stats-round-btn:hover {
@@ -2136,4 +2175,9 @@ td {
     opacity: 0.75;
     transform: scale(0.97);
   }
+}
+
+.view-live-delta.is-auto-preview {
+  border-style: dashed;
+  opacity: 0.9;
 }

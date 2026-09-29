@@ -202,21 +202,96 @@ export default function App() {
     setCurrentKeypadValue('');
   };
 
-  // Kiểm tra điều kiện chốt ván: Tổng điểm bằng 0 và có ít nhất 1 người có điểm khác 0
+  // 🎯 QUY TẮC TỰ ĐỘNG BẬT SÁNG NÚT TÍCH XANH & CỘNG DỒN ĐIỂM CÒN THIẾU
+  // Dựa trên số lượng người chơi có tên trong bàn (loại bỏ các hàng trống không có tên)
+  const namedPlayers = useMemo(() => {
+    return players.filter(p => (p.name || '').trim() !== '');
+  }, [players]);
+
+  const numNamed = namedPlayers.length;
+
+  // Danh sách người chơi có tên được nhập điểm âm (< 0)
+  const negativeNamedPlayers = useMemo(() => {
+    return namedPlayers.filter(p => {
+      const delta = roundDeltas[p.id];
+      return delta !== undefined && typeof delta === 'number' && delta < 0;
+    });
+  }, [namedPlayers, roundDeltas]);
+
+  // Kiểm tra điều kiện tự động cân bằng điểm (Auto-balance):
+  // Bàn 2 người: đúng 1 người điểm âm
+  // Bàn 3 người: đúng 2 người điểm âm
+  // Bàn 4 người: đúng 3 người điểm âm
+  // Bàn 5 người: đúng 4 người điểm âm
+  // -> Quy tắc chung: có đúng (numNamed - 1) người điểm âm trong tổng số numNamed người có tên (với numNamed >= 2)
+  const isAutoBalanceEligible = useMemo(() => {
+    if (numNamed < 2 || numNamed > 5) return false;
+    return negativeNamedPlayers.length === (numNamed - 1);
+  }, [numNamed, negativeNamedPlayers]);
+
+  // Người chơi còn lại duy nhất chưa nhập điểm âm để nhận tổng điểm bù dương
+  const remainingPlayer = useMemo(() => {
+    if (!isAutoBalanceEligible) return null;
+    return namedPlayers.find(p => !negativeNamedPlayers.some(neg => neg.id === p.id)) || null;
+  }, [isAutoBalanceEligible, namedPlayers, negativeNamedPlayers]);
+
+  // Tổng điểm âm của các người chơi thua
+  const sumNegativePoints = useMemo(() => {
+    if (!isAutoBalanceEligible) return 0;
+    return negativeNamedPlayers.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
+  }, [isAutoBalanceEligible, negativeNamedPlayers, roundDeltas]);
+
+  // Điểm dương bù đắp cho người chơi còn lại: đảo dấu thành dương để tổng ván = 0
+  const autoBalancedPositiveScore = useMemo(() => {
+    return isAutoBalanceEligible ? -sumNegativePoints : 0;
+  }, [isAutoBalanceEligible, sumNegativePoints]);
+
+  const autoBalanceInfo = useMemo(() => {
+    if (!isAutoBalanceEligible || !remainingPlayer) return null;
+    return {
+      playerId: remainingPlayer.id,
+      score: autoBalancedPositiveScore
+    };
+  }, [isAutoBalanceEligible, remainingPlayer, autoBalancedPositiveScore]);
+
+  // Kiểm tra điều kiện chốt ván:
+  // 1. Thủ công: Tổng điểm đã bằng 0 và có ít nhất 1 người nhập điểm khác 0
+  // 2. Tự động: Đủ điều kiện tự động cân bằng (N - 1 người điểm âm)
   const currentSumTotal = players.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
   const hasEnteredScore = Object.values(roundDeltas).some(val => val !== undefined && val !== 0);
-  const canConfirmRound = currentSumTotal === 0 && hasEnteredScore;
+  const isManuallyBalanced = currentSumTotal === 0 && hasEnteredScore;
+  const canConfirmRound = isManuallyBalanced || isAutoBalanceEligible;
+
+  // Tổng điểm hiển thị trên thanh ActionToolbar (hiển thị 0 khi tự động cân bằng điểm)
+  const effectiveSumTotal = isAutoBalanceEligible ? 0 : currentSumTotal;
 
   // Chốt ván và lưu điểm vào lịch sử, phát sóng đồng bộ cho toàn bộ máy
   const handleConfirmRound = () => {
     if (!canConfirmRound) return;
+
+    // Chuẩn bị điểm số của từng người chơi cho ván đấu
+    const finalScores = { ...roundDeltas };
+
+    // Nếu đủ điều kiện tự động cân bằng: gán tổng điểm dương bù cho người chơi còn lại
+    if (isAutoBalanceEligible && remainingPlayer) {
+      finalScores[remainingPlayer.id] = autoBalancedPositiveScore;
+    }
+
+    // Loại bỏ điểm rác nếu có trên các hàng trống không có tên
+    if (numNamed > 0) {
+      players.forEach(p => {
+        if (!p.name || !p.name.trim()) {
+          delete finalScores[p.id];
+        }
+      });
+    }
 
     // Tạo ván mới và phát sóng đồng bộ
     const nextRoundNumber = history.length + 1;
     const newRound = {
       id: `round-${Date.now()}`,
       roundNumber: nextRoundNumber,
-      scores: { ...roundDeltas },
+      scores: finalScores,
       timestamp: Date.now()
     };
 
@@ -390,7 +465,9 @@ export default function App() {
   // - Thêm cột mới vào bên phải cho người mới: Nếu chưa có trong Master List, đẩy vào cuối mảng để xuất hiện ở ngoài cùng bên phải
   const handleChotSo = () => {
     const nextRoundIndex = (dailyLedger?.length || 0) + 1;
-    const label = `#${nextRoundIndex}`;
+    const now = new Date();
+    const dateLabel = `${now.getDate()}/${now.getMonth() + 1}`;
+    const label = dateLabel;
 
     // 1. Quét Master List hiện tại từ dailyLedger
     const masterListNames = [];
@@ -444,6 +521,7 @@ export default function App() {
       id: `ledger-${Date.now()}`,
       roundIndex: nextRoundIndex,
       label,
+      dateStr: dateLabel,
       timestamp: Date.now(),
       playersInfo,
       scores: sessionScores
@@ -469,11 +547,12 @@ export default function App() {
         onUpdatePlayerName={handleUpdatePlayerName}
         onOpenKeyboard={handleOpenKeyboard}
         isViewOnly={isViewOnly}
+        autoBalanceInfo={autoBalanceInfo}
       />
 
       {/* 2. Hàng 4 nút chức năng: Tích xanh - Quay lại - Thống kê - QR code (Hoặc nút VIEW ONLY nếu ở chế độ xem) */}
       <ActionToolbar
-        sumTotal={currentSumTotal}
+        sumTotal={effectiveSumTotal}
         canConfirm={canConfirmRound}
         onConfirmRound={handleConfirmRound}
         onUndoConfirm={handleUndoConfirm}
@@ -483,6 +562,7 @@ export default function App() {
         hasLedger={Boolean(dailyLedger && dailyLedger.length > 0)}
         isViewOnly={isViewOnly}
         viewOnlyUrl={viewOnlyUrl}
+        isAutoBalanced={isAutoBalanceEligible}
       />
 
       {/* 3. Bảng lịch sử điểm mỗi ván đấu (Ẩn hoàn toàn khi mở bàn phím để đỡ rối mắt) */}

@@ -12,7 +12,8 @@ export default function ActionToolbar({
   canUndo = false,
   hasLedger = false,
   isViewOnly = false,
-  viewOnlyUrl = ''
+  viewOnlyUrl = '',
+  isAutoBalanced = false
 }) {
   // Trạng thái trượt xác nhận inline: null | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
@@ -132,13 +133,17 @@ export default function ActionToolbar({
     <div className="action-toolbar" ref={toolbarRef}>
       {/* 1. KHU VỰC TRÁI: Chiếm toàn bộ độ rộng còn lại (flex: 1, tương đương nút chốt ván xanh lá) */}
       <div className="toolbar-left-slot">
-        {/* Nút Chốt Ván kèm Tổng Điểm Kiểm Tra (Disable khi tổng chưa bằng 0 hoặc chưa nhập điểm) */}
+        {/* Nút Chốt Ván kèm Tổng Điểm Kiểm Tra (Tự động bật sáng khi đủ điều kiện hoặc cân bằng điểm) */}
         <button
           type="button"
-          className={`toolbar-btn toolbar-btn-confirm ${confirmMode ? 'slide-left-out' : 'slide-in'}`}
+          className={`toolbar-btn toolbar-btn-confirm ${confirmMode ? 'slide-left-out' : 'slide-in'} ${isAutoBalanced ? 'is-auto-balanced' : ''}`}
           onClick={confirmMode || !canConfirm ? undefined : onConfirmRound}
           disabled={!canConfirm}
-          title={canConfirm ? "Chốt ván và lưu lịch sử" : "Tổng điểm phải bằng 0 để chốt ván"}
+          title={
+            canConfirm
+              ? (isAutoBalanced ? "Tự động cộng dồn điểm cân bằng (0) và chốt ván" : "Chốt ván và lưu lịch sử")
+              : "Tổng điểm phải bằng 0 để chốt ván"
+          }
           tabIndex={confirmMode || !canConfirm ? -1 : 0}
         >
           <span className="confirm-sum-text">{formattedSum}</span>
