@@ -13,7 +13,8 @@ export default function ActionToolbar({
   hasLedger = false,
   isViewOnly = false,
   viewOnlyUrl = '',
-  isAutoBalanced = false
+  isAutoBalanced = false,
+  isKeyboardOpen = false
 }) {
   // Trạng thái trượt xác nhận inline: null | 'undo'
   const [confirmMode, setConfirmMode] = useState(null);
@@ -73,7 +74,7 @@ export default function ActionToolbar({
   // Nếu đang ở chế độ View-Only: Hiển thị nút VIEW ONLY bên trái và 2 nút Thống kê, QR bên phải
   if (isViewOnly) {
     return (
-      <div className="action-toolbar is-view-only" ref={toolbarRef}>
+      <div className={`action-toolbar is-view-only${isKeyboardOpen ? ' is-keyboard-open' : ''}`} ref={toolbarRef}>
         {/* KHU VỰC TRÁI: Nút VIEW ONLY (Bấm vào để sao chép liên kết View-Only) */}
         <div className="toolbar-left-slot">
           <div
@@ -122,7 +123,7 @@ export default function ActionToolbar({
   }
 
   return (
-    <div className="action-toolbar" ref={toolbarRef}>
+    <div className={`action-toolbar${isKeyboardOpen ? ' is-keyboard-open' : ''}`} ref={toolbarRef}>
       {/* 1. KHU VỰC TRÁI: Chiếm toàn bộ độ rộng còn lại (flex: 1, tương đương nút chốt ván xanh lá) */}
       <div className="toolbar-left-slot">
         {/* Nút Chốt Ván (Tự động bật sáng khi đủ điều kiện hoặc cân bằng điểm) */}
