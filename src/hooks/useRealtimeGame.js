@@ -502,10 +502,8 @@ export function useRealtimeGame() {
     setPlayers(resetPlayers);
     setHistory([]);
     setRoundDeltas({});
-    setDailyLedger([]);
     localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(resetPlayers));
     localStorage.setItem(`cq_history_${roomId}`, JSON.stringify([]));
-    localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify([]));
 
     if (isFirebaseConfigured && db) {
       try {
@@ -513,7 +511,6 @@ export function useRealtimeGame() {
           players: resetPlayers,
           history: [],
           roundDeltas: {},
-          dailyLedger: [],
           updatedAt: Date.now()
         });
       } catch (e) {
