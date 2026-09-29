@@ -218,45 +218,79 @@ export default function App() {
     });
   }, [namedPlayers, roundDeltas]);
 
-  // Kiểm tra điều kiện tự động cân bằng điểm (Auto-balance):
-  // Bàn 2 người: đúng 1 người điểm âm
-  // Bàn 3 người: đúng 2 người điểm âm
-  // Bàn 4 người: đúng 3 người điểm âm
-  // Bàn 5 người: đúng 4 người điểm âm
-  // -> Quy tắc chung: có đúng (numNamed - 1) người điểm âm trong tổng số numNamed người có tên (với numNamed >= 2)
-  const isAutoBalanceEligible = useMemo(() => {
-    if (numNamed < 2 || numNamed > 5) return false;
-    return negativeNamedPlayers.length === (numNamed - 1);
-  }, [numNamed, negativeNamedPlayers]);
+  // Danh sách người chơi có tên được nhập điểm dương (> 0)
+  const positiveNamedPlayers = useMemo(() => {
+    return namedPlayers.filter(p => {
+      const delta = roundDeltas[p.id];
+      return delta !== undefined && typeof delta === 'number' && delta > 0;
+    });
+  }, [namedPlayers, roundDeltas]);
 
-  // Người chơi còn lại duy nhất chưa nhập điểm âm để nhận tổng điểm bù dương
+  // TH1: Quy tắc tự động cân bằng khi có (numNamed - 1) người điểm âm (Bàn 2 đến 5 người)
+  // và người còn lại chưa nhập điểm
+  const isNegativeAutoBalance = useMemo(() => {
+    if (numNamed < 2 || numNamed > 5) return false;
+    if (negativeNamedPlayers.length !== numNamed - 1) return false;
+    const remaining = namedPlayers.find(p => !negativeNamedPlayers.some(neg => neg.id === p.id));
+    if (!remaining) return false;
+    const remainingDelta = roundDeltas[remaining.id];
+    return remainingDelta === undefined || remainingDelta === 0;
+  }, [numNamed, negativeNamedPlayers, namedPlayers, roundDeltas]);
+
+  // TH2: Bổ sung cho Bàn 2 người chơi: 1 trong 2 người nhập điểm dương (> 0), người còn lại chưa nhập điểm
+  const isTwoPlayerPositiveAutoBalance = useMemo(() => {
+    if (numNamed !== 2) return false;
+    if (positiveNamedPlayers.length !== 1) return false;
+    const posPlayer = positiveNamedPlayers[0];
+    const remaining = namedPlayers.find(p => p.id !== posPlayer.id);
+    if (!remaining) return false;
+    const remainingDelta = roundDeltas[remaining.id];
+    return remainingDelta === undefined || remainingDelta === 0;
+  }, [numNamed, positiveNamedPlayers, namedPlayers, roundDeltas]);
+
+  // Đủ điều kiện tự động cân bằng điểm
+  const isAutoBalanceEligible = isNegativeAutoBalance || isTwoPlayerPositiveAutoBalance;
+
+  // Người chơi còn lại nhận điểm tự động bù
   const remainingPlayer = useMemo(() => {
     if (!isAutoBalanceEligible) return null;
-    return namedPlayers.find(p => !negativeNamedPlayers.some(neg => neg.id === p.id)) || null;
-  }, [isAutoBalanceEligible, namedPlayers, negativeNamedPlayers]);
+    if (isTwoPlayerPositiveAutoBalance) {
+      const posPlayer = positiveNamedPlayers[0];
+      return namedPlayers.find(p => p.id !== posPlayer.id) || null;
+    }
+    if (isNegativeAutoBalance) {
+      return namedPlayers.find(p => !negativeNamedPlayers.some(neg => neg.id === p.id)) || null;
+    }
+    return null;
+  }, [isAutoBalanceEligible, isTwoPlayerPositiveAutoBalance, isNegativeAutoBalance, positiveNamedPlayers, namedPlayers, negativeNamedPlayers]);
 
-  // Tổng điểm âm của các người chơi thua
-  const sumNegativePoints = useMemo(() => {
+  // Điểm tự động bù cho người chơi còn lại:
+  // - Nếu N-1 người âm: tổng điểm âm đảo dấu thành dương (+)
+  // - Nếu bàn 2 người có 1 người dương: điểm dương đảo dấu thành âm (-)
+  const autoBalancedScore = useMemo(() => {
     if (!isAutoBalanceEligible) return 0;
-    return negativeNamedPlayers.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
-  }, [isAutoBalanceEligible, negativeNamedPlayers, roundDeltas]);
-
-  // Điểm dương bù đắp cho người chơi còn lại: đảo dấu thành dương để tổng ván = 0
-  const autoBalancedPositiveScore = useMemo(() => {
-    return isAutoBalanceEligible ? -sumNegativePoints : 0;
-  }, [isAutoBalanceEligible, sumNegativePoints]);
+    if (isTwoPlayerPositiveAutoBalance) {
+      const posScore = roundDeltas[positiveNamedPlayers[0]?.id] || 0;
+      return -posScore;
+    }
+    if (isNegativeAutoBalance) {
+      const sumNeg = negativeNamedPlayers.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
+      return -sumNeg;
+    }
+    return 0;
+  }, [isAutoBalanceEligible, isTwoPlayerPositiveAutoBalance, isNegativeAutoBalance, positiveNamedPlayers, roundDeltas, negativeNamedPlayers]);
 
   const autoBalanceInfo = useMemo(() => {
     if (!isAutoBalanceEligible || !remainingPlayer) return null;
     return {
       playerId: remainingPlayer.id,
-      score: autoBalancedPositiveScore
+      score: autoBalancedScore
     };
-  }, [isAutoBalanceEligible, remainingPlayer, autoBalancedPositiveScore]);
+  }, [isAutoBalanceEligible, remainingPlayer, autoBalancedScore]);
 
   // Kiểm tra điều kiện chốt ván:
   // 1. Thủ công: Tổng điểm đã bằng 0 và có ít nhất 1 người nhập điểm khác 0
-  // 2. Tự động: Đủ điều kiện tự động cân bằng (N - 1 người điểm âm)
+  // 2. Tự động: Đủ điều kiện tự động cân bằng (N - 1 người âm hoặc bàn 2 người có 1 người dương)
   const currentSumTotal = players.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
   const hasEnteredScore = Object.values(roundDeltas).some(val => val !== undefined && val !== 0);
   const isManuallyBalanced = currentSumTotal === 0 && hasEnteredScore;
@@ -272,9 +306,9 @@ export default function App() {
     // Chuẩn bị điểm số của từng người chơi cho ván đấu
     const finalScores = { ...roundDeltas };
 
-    // Nếu đủ điều kiện tự động cân bằng: gán tổng điểm dương bù cho người chơi còn lại
+    // Nếu đủ điều kiện tự động cân bằng: gán tổng điểm bù cho người chơi còn lại
     if (isAutoBalanceEligible && remainingPlayer) {
-      finalScores[remainingPlayer.id] = autoBalancedPositiveScore;
+      finalScores[remainingPlayer.id] = autoBalancedScore;
     }
 
     // Loại bỏ điểm rác nếu có trên các hàng trống không có tên

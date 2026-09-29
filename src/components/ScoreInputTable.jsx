@@ -359,6 +359,8 @@ export default function ScoreInputTable({
             }
           } else if (isAutoBalanceTarget && autoBalanceInfo.score > 0) {
             plusText = `+${autoBalanceInfo.score}`;
+          } else if (isAutoBalanceTarget && autoBalanceInfo.score < 0) {
+            minusText = `–${Math.abs(autoBalanceInfo.score)}`;
           }
 
           // Kiểm tra xem nút - hoặc + của người này có đang được chọn/focus để nhập điểm không
@@ -445,9 +447,12 @@ export default function ScoreInputTable({
                       <span className={`view-live-delta ${delta > 0 ? 'is-plus' : 'is-minus'}`}>
                         {delta > 0 ? `+${delta}` : delta}
                       </span>
-                    ) : (isAutoBalanceTarget && autoBalanceInfo.score > 0) ? (
-                      <span className="view-live-delta is-plus is-auto-preview" title="Dự kiến tự động cộng dồn">
-                        +{autoBalanceInfo.score}
+                    ) : (isAutoBalanceTarget && autoBalanceInfo.score !== 0) ? (
+                      <span
+                        className={`view-live-delta ${autoBalanceInfo.score > 0 ? 'is-plus' : 'is-minus'} is-auto-preview`}
+                        title="Dự kiến tự động cộng dồn"
+                      >
+                        {autoBalanceInfo.score > 0 ? `+${autoBalanceInfo.score}` : `–${Math.abs(autoBalanceInfo.score)}`}
                       </span>
                     ) : null
                   )}
@@ -471,12 +476,20 @@ export default function ScoreInputTable({
                   {/* Nút Trừ (-) - Bấm mở bàn phím phép trừ */}
                   <button
                     type="button"
-                    className={`player-btn-minus ${isMinusActive ? 'is-active' : ''} ${getBtnSizeClass(minusText)}`}
+                    className={`player-btn-minus ${isMinusActive ? 'is-active' : ''} ${
+                      isAutoBalanceTarget && (!delta || delta === 0) && autoBalanceInfo.score < 0
+                        ? 'is-auto-balanced'
+                        : ''
+                    } ${getBtnSizeClass(minusText)}`}
                     onClick={(e) => {
                       e.currentTarget.blur();
                       onOpenKeyboard(player, '-');
                     }}
-                    title="Trừ điểm"
+                    title={
+                      isAutoBalanceTarget && (!delta || delta === 0) && autoBalanceInfo.score < 0
+                        ? `Điểm còn thiếu tự động bù: –${Math.abs(autoBalanceInfo.score)}`
+                        : "Trừ điểm"
+                    }
                   >
                     <span className="player-btn-content">
                       <span className="player-btn-symbol">{minusText}</span>
@@ -488,14 +501,16 @@ export default function ScoreInputTable({
                   <button
                     type="button"
                     className={`player-btn-plus ${isPlusActive ? 'is-active' : ''} ${
-                      isAutoBalanceTarget && (!delta || delta === 0) ? 'is-auto-balanced' : ''
+                      isAutoBalanceTarget && (!delta || delta === 0) && autoBalanceInfo.score > 0
+                        ? 'is-auto-balanced'
+                        : ''
                     } ${getBtnSizeClass(plusText)}`}
                     onClick={(e) => {
                       e.currentTarget.blur();
                       onOpenKeyboard(player, '+');
                     }}
                     title={
-                      isAutoBalanceTarget && (!delta || delta === 0)
+                      isAutoBalanceTarget && (!delta || delta === 0) && autoBalanceInfo.score > 0
                         ? `Điểm còn thiếu tự động bù: +${autoBalanceInfo.score}`
                         : "Cộng điểm"
                     }
