@@ -71,13 +71,13 @@ export default function App() {
     }
   }, []);
 
-  // Tự động tắt bàn phím khi bất kỳ bảng nào (Thống kê, Lịch sử phóng to, QR) đang mở
+  // Tự động tắt bàn phím khi bất kỳ bảng nào (Thống kê, Lịch sử phóng to, QR) đang mở hoặc ở chế độ View-Only
   useEffect(() => {
-    if (isDailyStatsOpen || isHistoryExpanded || isQrModalOpen) {
+    if (isDailyStatsOpen || isHistoryExpanded || isQrModalOpen || isViewOnly) {
       setActiveKeypad(prev => (prev !== null ? null : prev));
       setCurrentKeypadValue(prev => (prev !== '' ? '' : prev));
     }
-  }, [isDailyStatsOpen, isHistoryExpanded, isQrModalOpen]);
+  }, [isDailyStatsOpen, isHistoryExpanded, isQrModalOpen, isViewOnly]);
 
   // Tính tổng điểm tích luỹ qua tất cả các ván đấu đã hoàn thành
   const cumulativeScores = players.reduce((acc, player) => {

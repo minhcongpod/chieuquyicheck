@@ -23,9 +23,10 @@ const INITIAL_PLAYERS = [
 ];
 
 // Cấu hình nhịp tim và thời gian phát hiện mất kết nối
-const HEARTBEAT_INTERVAL_MS = 3000;
-const PRESENCE_TIMEOUT_MS = 8000; // 8 giây timeout để kịp thời nhường quyền khi mất kết nối
-const MAX_EDITORS = 2; // Giới hạn tối đa đúng 2 người chỉnh sửa
+const HEARTBEAT_INTERVAL_MS = 2500; // Gửi nhịp tim mỗi 2.5s để duy trì kết nối
+const PRESENCE_TIMEOUT_MS = 6000;   // 6s timeout để kịp thời nhường quyền khi mất kết nối / đóng tab
+const RECONCILE_INTERVAL_MS = 2000; // 2s định kỳ rà soát và điều phối slot trống
+const MAX_EDITORS = 2;              // Giới hạn tối đa đúng 2 người chỉnh sửa
 
 // Bắn pháo hoa ăn mừng khi chốt ván hoặc chốt sổ
 export function fireConfetti() {
@@ -40,20 +41,25 @@ export function fireConfetti() {
   }
 }
 
-// Client ID & thời điểm vào phòng duy nhất cho mỗi tab/thiết bị để quản lý thứ tự FIFO
+// Client ID & thời điểm vào phòng duy nhất cho mỗi tab/thiết bị để quản lý thứ tự FIFO chuẩn xác
 function getOrCreateClientSession(roomId) {
   if (typeof window === 'undefined') return { clientId: 'server', joinedAt: Date.now() };
   try {
-    let id = sessionStorage.getItem('cq_client_id');
+    // Đảm bảo mỗi tab có window.name riêng biệt, tránh dùng chung session khi Duplicate Tab
+    if (!window.name || !window.name.startsWith('cq_tab_')) {
+      window.name = 'cq_tab_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
+    }
+    const tabKey = window.name;
+    let id = sessionStorage.getItem(`cq_id_${tabKey}`);
     if (!id) {
       id = 'client_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now();
-      sessionStorage.setItem('cq_client_id', id);
+      sessionStorage.setItem(`cq_id_${tabKey}`, id);
     }
-    let joinedAtStr = sessionStorage.getItem(`cq_joined_${roomId}`);
+    let joinedAtStr = sessionStorage.getItem(`cq_joined_${roomId}_${tabKey}`);
     let joinedAt = joinedAtStr ? parseInt(joinedAtStr, 10) : 0;
     if (!joinedAt || isNaN(joinedAt)) {
       joinedAt = Date.now();
-      sessionStorage.setItem(`cq_joined_${roomId}`, String(joinedAt));
+      sessionStorage.setItem(`cq_joined_${roomId}_${tabKey}`, String(joinedAt));
     }
     return { clientId: id, joinedAt };
   } catch (e) {
@@ -180,9 +186,10 @@ export function useRealtimeGame() {
     const reconcileEditors = async (onlineList = presenceCache, roomData = latestRoomData) => {
       if (!isFirebaseConfigured || !db || isForcedViewOnly) return;
       if (isReconciling) return;
+      if (!roomData) return;
 
       const now = Date.now();
-      // 1. Lọc danh sách người chơi online (heartbeat < 8s) và không phải view-only bắt buộc
+      // 1. Lọc danh sách người chơi online (heartbeat < PRESENCE_TIMEOUT_MS) và không phải view-only bắt buộc
       const eligibleOnline = (onlineList || []).filter(item => {
         return (now - (item.lastSeen || 0) < PRESENCE_TIMEOUT_MS) && !item.isExplicitViewOnly;
       });
@@ -196,10 +203,10 @@ export function useRealtimeGame() {
       const onlineClientIds = new Set(eligibleOnline.map(u => u.clientId));
       const currentSlots = Array.isArray(roomData?.activeSlots) ? roomData.activeSlots : [];
 
-      // 3. Giữ lại những editor trong activeSlots vẫn đang online
-      const nextSlots = currentSlots.filter(id => onlineClientIds.has(id));
+      // 3. Giữ lại những editor trong activeSlots vẫn đang online (tối đa 2 người)
+      const nextSlots = currentSlots.filter(id => onlineClientIds.has(id)).slice(0, MAX_EDITORS);
 
-      // 4. Nếu thiếu slot (dưới 2 người) -> Tự động nhấc người chơi online sớm nhất chưa có slot lên
+      // 4. Nếu thiếu slot (dưới 2 người) -> Tự động nhấc người chơi online sớm nhất (FIFO) chưa có slot lên
       for (const candidate of eligibleOnline) {
         if (nextSlots.length >= MAX_EDITORS) break;
         if (!nextSlots.includes(candidate.clientId)) {
@@ -215,7 +222,7 @@ export function useRealtimeGame() {
 
       if (!slotsChanged) return;
 
-      // 6. Điều kiện thực thi: Chỉ máy đang nằm trong slot (cũ hoặc mới) mới gửi transaction để tránh xung đột
+      // 6. Điều kiện thực thi: Chỉ máy có liên quan (nằm trong currentSlots hoặc nextSlots) mới gửi transaction để tránh xung đột
       const isConcerned = nextSlots.includes(clientId) || currentSlots.includes(clientId);
       if (!isConcerned) return;
 
@@ -228,7 +235,7 @@ export function useRealtimeGame() {
           const freshSlots = Array.isArray(freshData.activeSlots) ? freshData.activeSlots : [];
 
           // Tính toán lại với freshSlots từ Firestore
-          const validFreshSlots = freshSlots.filter(id => onlineClientIds.has(id));
+          const validFreshSlots = freshSlots.filter(id => onlineClientIds.has(id)).slice(0, MAX_EDITORS);
           for (const candidate of eligibleOnline) {
             if (validFreshSlots.length >= MAX_EDITORS) break;
             if (!validFreshSlots.includes(candidate.clientId)) {
@@ -369,10 +376,11 @@ export function useRealtimeGame() {
       const onlineCount = list.filter(d => now - (d.lastSeen || 0) < PRESENCE_TIMEOUT_MS).length;
       setUserCount(Math.max(1, onlineCount));
 
-      // Dọn dẹp các presence documents quá cũ (> 45s) để giữ Firestore sạch sẽ
-      if (latestRoomData?.activeSlots?.[0] === clientId) {
+      // Dọn dẹp các presence documents quá cũ (> 30s) để giữ Firestore sạch sẽ
+      const firstActiveOnline = (latestRoomData?.activeSlots || []).find(id => list.some(d => d.clientId === id && now - (d.lastSeen || 0) < PRESENCE_TIMEOUT_MS));
+      if (firstActiveOnline === clientId || (!firstActiveOnline && list[0]?.clientId === clientId)) {
         list.forEach(d => {
-          if (now - (d.lastSeen || 0) > 45000 && d.clientId !== clientId) {
+          if (now - (d.lastSeen || 0) > 30000 && d.clientId !== clientId) {
             deleteDoc(doc(db, 'rooms', roomId, 'presence', d.clientId)).catch(() => {});
           }
         });
@@ -386,7 +394,7 @@ export function useRealtimeGame() {
     // 4. Timer định kỳ kiểm tra heartbeat timeout phòng trường hợp snapshot không kích hoạt
     const reconcileInterval = setInterval(() => {
       reconcileEditors(presenceCache, latestRoomData);
-    }, 3500);
+    }, RECONCILE_INTERVAL_MS);
 
     // 5. Gửi heartbeat ngay khi quay lại tab (un-minimize hoặc mở màn hình điện thoại)
     const handleVisibilityOrFocus = () => {
@@ -401,10 +409,12 @@ export function useRealtimeGame() {
 
     // 6. Thoát nhanh: Giải phóng ngay slot và presence khi tắt tab / đóng trình duyệt
     const handleExit = () => {
-      deleteDoc(presenceRef).catch(() => {});
-      updateDoc(roomRef, {
-        activeSlots: arrayRemove(clientId)
-      }).catch(() => {});
+      try {
+        deleteDoc(presenceRef).catch(() => {});
+        updateDoc(roomRef, {
+          activeSlots: arrayRemove(clientId)
+        }).catch(() => {});
+      } catch (e) {}
     };
     window.addEventListener('beforeunload', handleExit);
     window.addEventListener('pagehide', handleExit);
