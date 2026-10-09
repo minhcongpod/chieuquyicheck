@@ -8,6 +8,58 @@ import { QrTransferModal } from './components/Modals';
 import { useRealtimeGame } from './hooks/useRealtimeGame';
 import './style.css';
 
+/**
+ * 🎯 QUY TẮC TỰ ĐỘNG ĐIỀN ĐIỂM PHẠT CHO CÁC NGƯỜI CHƠI CÒN LẠI KHI CÓ 1 NGƯỜI THẮNG SÂM:
+ * Dựa trên tổng số người chơi có tên trong bàn (loại bỏ các hàng trống):
+ * - Bàn 3 người chơi: Khi 1 người nhận +40 -> tự động điền -20 vào 2 người còn lại (tổng cân bằng = 0)
+ * - Bàn 4 người chơi: Khi 1 người nhận +60 -> tự động điền -20 vào 3 người còn lại (tổng cân bằng = 0)
+ * - Bàn 5 người chơi: Khi 1 người nhận +80 -> tự động điền -20 vào 4 người còn lại (tổng cân bằng = 0)
+ * Khi người thắng Sâm thay đổi điểm hoặc hủy/xóa, tự động dọn dẹp các điểm -20 đã tự điền.
+ */
+function applySamAutoFill(prevDeltas, targetPlayerId, newSignedVal, namedPlayers) {
+  const updated = { ...prevDeltas };
+  const numNamed = (namedPlayers || []).length;
+
+  const isSamWin = (score) => {
+    if (numNamed === 3 && score === 40) return true;
+    if (numNamed === 4 && score === 60) return true;
+    if (numNamed === 5 && score === 80) return true;
+    return false;
+  };
+
+  const wasPreviousSam = isSamWin(prevDeltas[targetPlayerId]);
+
+  if (newSignedVal === undefined || newSignedVal === null || newSignedVal === 0) {
+    delete updated[targetPlayerId];
+  } else {
+    updated[targetPlayerId] = newSignedVal;
+  }
+
+  if (isSamWin(newSignedVal)) {
+    // Tự động điền giá trị điểm âm -20 vào ô của các người chơi còn lại có tên trong bàn
+    namedPlayers.forEach(p => {
+      if (p.id !== targetPlayerId) {
+        updated[p.id] = -20;
+      }
+    });
+    // Loại bỏ điểm của người không có tên trong bàn (nếu có)
+    Object.keys(updated).forEach(id => {
+      if (!namedPlayers.some(p => p.id === id)) {
+        delete updated[id];
+      }
+    });
+  } else if (wasPreviousSam && !isSamWin(newSignedVal)) {
+    // Nếu trước đó là Thắng Sâm mà nay bị thay đổi/xóa/hủy, tự động xóa điểm âm -20 đã tự điền
+    namedPlayers.forEach(p => {
+      if (p.id !== targetPlayerId && updated[p.id] === -20) {
+        delete updated[p.id];
+      }
+    });
+  }
+
+  return updated;
+}
+
 export default function App() {
   const {
     roomId,
@@ -88,6 +140,14 @@ export default function App() {
     return acc;
   }, {});
 
+  // 🎯 QUY TẮC TỰ ĐỘNG BẬT SÁNG NÚT TÍCH XANH & CỘNG DỒN ĐIỂM CÒN THIẾU
+  // Dựa trên số lượng người chơi có tên trong bàn (loại bỏ các hàng trống không có tên)
+  const namedPlayers = useMemo(() => {
+    return players.filter(p => (p.name || '').trim() !== '');
+  }, [players]);
+
+  const numNamed = namedPlayers.length;
+
   // Kiểm tra có bất kỳ thay đổi nào để cho phép Reset (Disable khi chưa có thay đổi nào)
   const canReset = useMemo(() => {
     // 1. Đã có ván đấu trong lịch sử
@@ -103,13 +163,8 @@ export default function App() {
       return true;
     }
 
-    // 4. Có tên người chơi đã được nhập (khác rỗng)
-    if (players && players.some(p => (p.name || '').trim() !== '')) {
-      return true;
-    }
-
     return false;
-  }, [history, roundDeltas, cumulativeScores, players]);
+  }, [history, roundDeltas, cumulativeScores]);
 
   // Cập nhật tên người chơi (đồng bộ realtime)
   const handleUpdatePlayerName = (id, newName) => {
@@ -131,10 +186,7 @@ export default function App() {
       const num = Math.abs(existingDelta);
       const updatedDelta = mode === '+' ? num : -num;
       if (updatedDelta !== existingDelta) {
-        updateRoundDeltas(prev => ({
-          ...prev,
-          [player.id]: updatedDelta
-        }));
+        updateRoundDeltas(prev => applySamAutoFill(prev, player.id, updatedDelta, namedPlayers));
       }
       setCurrentKeypadValue(String(num));
     } else {
@@ -143,7 +195,7 @@ export default function App() {
   };
 
   // Xử lý bấm số trên bàn phím: Cập nhật trực tiếp điểm vào roundDeltas và phát sóng realtime
-  const handleKeypadNumber = (digit) => {
+  const handleKeypadNumber = useCallback((digit) => {
     if (!activeKeypad || digit === '') return;
     setCurrentKeypadValue(prev => {
       let nextVal;
@@ -157,58 +209,36 @@ export default function App() {
 
       const num = parseInt(nextVal, 10);
       const signedVal = activeKeypad.mode === '+' ? num : -num;
-      updateRoundDeltas(prevDeltas => ({
-        ...prevDeltas,
-        [activeKeypad.player.id]: signedVal
-      }));
+      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, signedVal, namedPlayers));
 
       return nextVal;
     });
-  };
+  }, [activeKeypad, namedPlayers, updateRoundDeltas]);
 
   // Xử lý bấm phím Xóa (Backspace): Cập nhật trực tiếp điểm và phát sóng realtime
-  const handleKeypadBackspace = () => {
+  const handleKeypadBackspace = useCallback(() => {
     if (!activeKeypad) return;
     setCurrentKeypadValue(prev => {
       if (prev.length <= 1) {
-        updateRoundDeltas(prevDeltas => {
-          const updated = { ...prevDeltas };
-          delete updated[activeKeypad.player.id];
-          return updated;
-        });
+        updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, null, namedPlayers));
         return '';
       }
       const nextVal = prev.slice(0, -1);
       const num = parseInt(nextVal, 10);
       const signedVal = activeKeypad.mode === '+' ? num : -num;
-      updateRoundDeltas(prevDeltas => ({
-        ...prevDeltas,
-        [activeKeypad.player.id]: signedVal
-      }));
+      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, signedVal, namedPlayers));
       return nextVal;
     });
-  };
+  }, [activeKeypad, namedPlayers, updateRoundDeltas]);
 
   // Hủy thao tác nhập [✕ màu đỏ]: Xóa dữ liệu tạm, hoàn nguyên ô về + hoặc -, thoát focus và đóng bàn phím
-  const handleKeypadCancel = () => {
+  const handleKeypadCancel = useCallback(() => {
     if (activeKeypad && activeKeypad.player) {
-      updateRoundDeltas(prevDeltas => {
-        const updated = { ...prevDeltas };
-        delete updated[activeKeypad.player.id];
-        return updated;
-      });
+      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, null, namedPlayers));
     }
     setActiveKeypad(null);
     setCurrentKeypadValue('');
-  };
-
-  // 🎯 QUY TẮC TỰ ĐỘNG BẬT SÁNG NÚT TÍCH XANH & CỘNG DỒN ĐIỂM CÒN THIẾU
-  // Dựa trên số lượng người chơi có tên trong bàn (loại bỏ các hàng trống không có tên)
-  const namedPlayers = useMemo(() => {
-    return players.filter(p => (p.name || '').trim() !== '');
-  }, [players]);
-
-  const numNamed = namedPlayers.length;
+  }, [activeKeypad, namedPlayers, updateRoundDeltas]);
 
   // Danh sách người chơi có tên được nhập điểm âm (< 0)
   const negativeNamedPlayers = useMemo(() => {
@@ -388,10 +418,7 @@ export default function App() {
             setActiveKeypad(prev => ({ ...prev, mode: '-' }));
             const num = parseInt(currentKeypadValue, 10);
             if (!isNaN(num) && num !== 0) {
-              updateRoundDeltas(prev => ({
-                ...prev,
-                [activeKeypad.player.id]: -num
-              }));
+              updateRoundDeltas(prev => applySamAutoFill(prev, activeKeypad.player.id, -num, namedPlayers));
             }
           }
           return;
@@ -404,10 +431,7 @@ export default function App() {
             setActiveKeypad(prev => ({ ...prev, mode: '+' }));
             const num = parseInt(currentKeypadValue, 10);
             if (!isNaN(num) && num !== 0) {
-              updateRoundDeltas(prev => ({
-                ...prev,
-                [activeKeypad.player.id]: num
-              }));
+              updateRoundDeltas(prev => applySamAutoFill(prev, activeKeypad.player.id, num, namedPlayers));
             }
           }
           return;
@@ -472,6 +496,7 @@ export default function App() {
     isQrModalOpen,
     canConfirmRound,
     players,
+    namedPlayers,
     handleKeypadNumber,
     handleKeypadBackspace,
     handleKeypadCancel,

@@ -323,17 +323,14 @@ export function useRealtimeGame() {
   }, [roomId, history]);
 
   const resetGame = useCallback(async () => {
-    const resetPlayers = players.map(p => ({ ...p, name: '' }));
-    setPlayers(resetPlayers);
+    // Giữ nguyên tên người chơi, chỉ reset lịch sử điểm và điểm ván hiện tại về 0
     setHistory([]);
     setRoundDeltas({});
-    localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(resetPlayers));
     localStorage.setItem(`cq_history_${roomId}`, JSON.stringify([]));
 
     if (isFirebaseConfigured && db) {
       try {
         await updateDoc(doc(db, 'rooms', roomId), {
-          players: resetPlayers,
           history: [],
           roundDeltas: {},
           updatedAt: Date.now()
@@ -342,7 +339,7 @@ export function useRealtimeGame() {
         console.error('[Firebase] Lỗi resetGame:', e);
       }
     }
-  }, [roomId, players]);
+  }, [roomId]);
 
   const addLedgerEntry = useCallback(async (entry) => {
     const nextLedger = [entry, ...(dailyLedger || [])];
