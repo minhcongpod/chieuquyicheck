@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { CopyIcon, CheckIcon, ExternalLinkIcon, DownloadQrIcon, LoadingSpinnerIcon } from './Icons';
+import qrMomoUrl from '../assets/qr-momo.jpg';
 
 /**
  * Popup Chuyển Khoản Quỹ Chiếu Quỷ (MoMo QR)
- * Cho phép xem mã QR, sao chép liên kết, mở trực tiếp hoặc tải ảnh về máy.
+ * Cho phép xem mã QR, mở liên kết trực tiếp, sao chép ảnh QR hoặc tải ảnh về máy.
  */
 export function QrTransferModal({ isOpen, onClose }) {
   const [copiedImage, setCopiedImage] = useState(false);
@@ -31,7 +32,7 @@ export function QrTransferModal({ isOpen, onClose }) {
       const img = document.querySelector('.qr-image-display') || new Image();
       if (!img.complete) {
         img.crossOrigin = 'anonymous';
-        if (!img.src) img.src = '/qr-momo.jpg';
+        if (!img.src) img.src = qrMomoUrl;
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
@@ -39,8 +40,8 @@ export function QrTransferModal({ isOpen, onClose }) {
       }
 
       const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth || img.width || 500;
-      canvas.height = img.naturalHeight || img.height || 500;
+      canvas.width = img.naturalWidth || img.width || 1024;
+      canvas.height = img.naturalHeight || img.height || 1024;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(img, 0, 0);
 
@@ -63,7 +64,7 @@ export function QrTransferModal({ isOpen, onClose }) {
   const handleSaveQr = async () => {
     try {
       setDownloading(true);
-      const response = await fetch('/qr-momo.jpg');
+      const response = await fetch(qrMomoUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -78,7 +79,7 @@ export function QrTransferModal({ isOpen, onClose }) {
     } catch (err) {
       setDownloading(false);
       const a = document.createElement('a');
-      a.href = '/qr-momo.jpg';
+      a.href = qrMomoUrl;
       a.download = 'QR_QUY_CHIEU_QUY.jpg';
       a.target = '_blank';
       a.click();
@@ -91,7 +92,7 @@ export function QrTransferModal({ isOpen, onClose }) {
         {/* Khung mã QR MoMo */}
         <div className="qr-image-container">
           <img
-            src="/qr-momo.jpg"
+            src={qrMomoUrl}
             alt="Mã QR Quỹ Chiếu Quỷ"
             className="qr-image-display"
           />
