@@ -666,6 +666,11 @@ td {
   flex-shrink: 0;
 }
 
+.toolbar-btn-confirm:not(.has-sum) svg.confirm-sum-check {
+  width: 32px;
+  height: 32px;
+}
+
 .toolbar-btn-confirm-yes svg,
 .toolbar-btn-confirm-no svg {
   width: 32px;
@@ -1505,6 +1510,7 @@ td {
 }
 
 .modal-btn-open-link,
+.modal-btn-copy-qr,
 .modal-btn-save-qr {
   flex: 1;
   background-color: #999999;
@@ -1519,6 +1525,7 @@ td {
 }
 
 .modal-btn-open-link:active,
+.modal-btn-copy-qr:active,
 .modal-btn-save-qr:active {
   transform: scale(0.95);
   opacity: 0.8;

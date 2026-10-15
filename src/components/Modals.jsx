@@ -6,7 +6,7 @@ import { CopyIcon, CheckIcon, ExternalLinkIcon, DownloadQrIcon, LoadingSpinnerIc
  * Cho phép xem mã QR, sao chép liên kết, mở trực tiếp hoặc tải ảnh về máy.
  */
 export function QrTransferModal({ isOpen, onClose }) {
-  const [copied, setCopied] = useState(false);
+  const [copiedImage, setCopiedImage] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
@@ -22,16 +22,42 @@ export function QrTransferModal({ isOpen, onClose }) {
 
   const momoUrl = 'https://quy.momo.vn/v2/O2HWggyJjd?cover=6749';
 
-  const handleCopyLink = () => {
-    if (navigator?.clipboard?.writeText) {
-      navigator.clipboard.writeText(momoUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   const handleOpenLink = () => {
     window.open(momoUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCopyQrImage = async () => {
+    try {
+      const img = document.querySelector('.qr-image-display') || new Image();
+      if (!img.complete) {
+        img.crossOrigin = 'anonymous';
+        if (!img.src) img.src = '/qr-momo.jpg';
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+      }
+
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth || img.width || 500;
+      canvas.height = img.naturalHeight || img.height || 500;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+
+      const pngBlob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+      if (pngBlob && navigator?.clipboard?.write && window.ClipboardItem) {
+        await navigator.clipboard.write([
+          new ClipboardItem({ 'image/png': pngBlob })
+        ]);
+        setCopiedImage(true);
+        setTimeout(() => setCopiedImage(false), 2000);
+      } else {
+        handleSaveQr();
+      }
+    } catch (err) {
+      console.error('Failed to copy QR image to clipboard:', err);
+      handleSaveQr();
+    }
   };
 
   const handleSaveQr = async () => {
@@ -71,40 +97,40 @@ export function QrTransferModal({ isOpen, onClose }) {
           />
         </div>
 
-        {/* Thông tin đường link quỹ kèm icon copy màu trắng bên cạnh */}
+        {/* Thông tin đường link quỹ kèm icon mở link trực tiếp trong tab mới */}
         <div
           className="qr-link-box"
-          onClick={handleCopyLink}
-          title="Bấm để sao chép liên kết"
+          onClick={handleOpenLink}
+          title="Bấm để mở trực tiếp đường link QR trong tab mới"
         >
           <span className="qr-link-url">{momoUrl}</span>
           <button
             type="button"
             className="qr-copy-btn"
-            aria-label="Sao chép"
+            aria-label="Mở link trong tab mới"
             onClick={(e) => {
               e.stopPropagation();
-              handleCopyLink();
+              handleOpenLink();
             }}
           >
-            {copied ? (
-              <CheckIcon width={20} height={20} color="#66ff33" />
-            ) : (
-              <CopyIcon width={20} height={20} color="#ffffff" />
-            )}
+            <ExternalLinkIcon width={20} height={20} color="#ffffff" />
           </button>
         </div>
 
-        {/* Nút Mở đường link và Lưu QR */}
+        {/* Nút Sao chép ảnh QR và Lưu QR */}
         <div className="modal-qr-actions">
           <button
             type="button"
-            className="modal-btn modal-btn-open-link"
-            onClick={handleOpenLink}
-            title="Mở đường link"
-            aria-label="Mở đường link"
+            className="modal-btn modal-btn-copy-qr"
+            onClick={handleCopyQrImage}
+            title={copiedImage ? "Đã sao chép ảnh QR vào clipboard!" : "Sao chép ảnh QR code vào clipboard"}
+            aria-label="Sao chép ảnh QR"
           >
-            <ExternalLinkIcon width={24} height={24} color="#000000" />
+            {copiedImage ? (
+              <CheckIcon width={24} height={24} color="#000000" />
+            ) : (
+              <CopyIcon width={24} height={24} color="#000000" />
+            )}
           </button>
           <button
             type="button"

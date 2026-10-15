@@ -121,6 +121,10 @@ export default function ActionToolbar({
     );
   }
 
+  // Format tổng điểm hiển thị nếu khác 0 (+30, -20)
+  const displaySum = Number(sumTotal) || 0;
+  const formattedSum = displaySum > 0 ? `+${displaySum}` : `${displaySum}`;
+
   return (
     <div className="action-toolbar" ref={toolbarRef}>
       {/* 1. KHU VỰC TRÁI: Chiếm toàn bộ độ rộng còn lại (flex: 1, tương đương nút chốt ván xanh lá) */}
@@ -128,7 +132,7 @@ export default function ActionToolbar({
         {/* Nút Chốt Ván (Tự động bật sáng khi đủ điều kiện hoặc cân bằng điểm) */}
         <button
           type="button"
-          className={`toolbar-btn toolbar-btn-confirm ${confirmMode ? 'slide-left-out' : 'slide-in'} ${isAutoBalanced ? 'is-auto-balanced' : ''}`}
+          className={`toolbar-btn toolbar-btn-confirm ${confirmMode ? 'slide-left-out' : 'slide-in'} ${isAutoBalanced ? 'is-auto-balanced' : ''} ${displaySum !== 0 ? 'has-sum' : ''}`}
           onClick={confirmMode || !canConfirm ? undefined : onConfirmRound}
           disabled={!canConfirm}
           title={
@@ -138,7 +142,10 @@ export default function ActionToolbar({
           }
           tabIndex={confirmMode || !canConfirm ? -1 : 0}
         >
-          <CheckmarkIcon width={32} height={32} className="confirm-sum-check" color="#000000" />
+          {displaySum !== 0 && (
+            <span className="confirm-sum-text">{formattedSum}</span>
+          )}
+          <CheckmarkIcon width={displaySum !== 0 ? 28 : 32} height={displaySum !== 0 ? 28 : 32} className="confirm-sum-check" color="#000000" />
         </button>
 
         {/* Nút hành động đang được kích hoạt (Quay lại) - Hiển thị chữ BACK */}
