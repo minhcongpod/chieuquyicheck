@@ -136,6 +136,7 @@ function HistoryTableContent({
   const handleExecuteReset = () => {
     if (onResetConfirm) onResetConfirm();
     setIsResetConfirming(false);
+    if (onToggle) onToggle(); // Đóng bottom sheet lại và ra màn hình chính như nút SAVE
   };
 
   // Hủy bỏ thao tác Reset
