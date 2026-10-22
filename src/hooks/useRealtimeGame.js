@@ -53,14 +53,11 @@ export function isSamRound(round) {
 }
 
 /**
- * Hiệu ứng pháo hoa (Fireworks Animation) nở và bắn rực rỡ đồng thời từ 4 góc màn hình
- * (trên-trái, trên-phải, dưới-trái, dưới-phải) kéo dài 2.5 giây khi chốt thành công ván Sâm.
+ * Hiệu ứng pháo hoa (Fireworks Animation) khi chốt thành công ván Sâm:
+ * Bắn đồng thời từ 4 góc màn hình cùng một lúc, mỗi góc nở đúng 1 quả pháo hoa rực rỡ hướng vào trung tâm.
  */
 export function fireSamFireworks() {
   try {
-    const duration = 2500; // Thời gian hiển thị 2.5 giây
-    const animationEnd = Date.now() + duration;
-
     // Bộ màu lễ hội rực rỡ, lấp lánh và có độ tương phản cao
     const samColors = [
       '#ffd700', // Vàng hoàng kim
@@ -73,75 +70,61 @@ export function fireSamFireworks() {
       '#ffea00'  // Vàng chanh
     ];
 
-    const fireFromFourCorners = (particleCount = 28) => {
-      // 1. Góc trên - trái (bắn chéo xuống trung tâm màn hình)
-      confetti({
-        particleCount,
-        angle: 315 + (Math.random() * 20 - 10),
-        spread: 70,
-        startVelocity: 48 + Math.random() * 15,
-        origin: { x: 0, y: 0 },
-        colors: samColors,
-        zIndex: 99999,
-        disableForReducedMotion: true
-      });
+    // 1. Góc trên - trái: 1 quả pháo hoa bắn chéo xuống trung tâm màn hình
+    confetti({
+      particleCount: 85,
+      angle: 315,
+      spread: 80,
+      startVelocity: 48,
+      origin: { x: 0, y: 0 },
+      colors: samColors,
+      gravity: 0.85,
+      ticks: 220,
+      zIndex: 99999,
+      disableForReducedMotion: true
+    });
 
-      // 2. Góc trên - phải (bắn chéo xuống trung tâm màn hình)
-      confetti({
-        particleCount,
-        angle: 225 + (Math.random() * 20 - 10),
-        spread: 70,
-        startVelocity: 48 + Math.random() * 15,
-        origin: { x: 1, y: 0 },
-        colors: samColors,
-        zIndex: 99999,
-        disableForReducedMotion: true
-      });
+    // 2. Góc trên - phải: 1 quả pháo hoa bắn chéo xuống trung tâm màn hình
+    confetti({
+      particleCount: 85,
+      angle: 225,
+      spread: 80,
+      startVelocity: 48,
+      origin: { x: 1, y: 0 },
+      colors: samColors,
+      gravity: 0.85,
+      ticks: 220,
+      zIndex: 99999,
+      disableForReducedMotion: true
+    });
 
-      // 3. Góc dưới - trái (bắn vút lên trung tâm màn hình)
-      confetti({
-        particleCount: Math.round(particleCount * 1.15),
-        angle: 55 + (Math.random() * 20 - 10),
-        spread: 75,
-        startVelocity: 58 + Math.random() * 15,
-        origin: { x: 0, y: 1 },
-        colors: samColors,
-        zIndex: 99999,
-        disableForReducedMotion: true
-      });
+    // 3. Góc dưới - trái: 1 quả pháo hoa bắn vút lên trung tâm màn hình
+    confetti({
+      particleCount: 95,
+      angle: 50,
+      spread: 85,
+      startVelocity: 58,
+      origin: { x: 0, y: 1 },
+      colors: samColors,
+      gravity: 0.85,
+      ticks: 240,
+      zIndex: 99999,
+      disableForReducedMotion: true
+    });
 
-      // 4. Góc dưới - phải (bắn vút lên trung tâm màn hình)
-      confetti({
-        particleCount: Math.round(particleCount * 1.15),
-        angle: 125 + (Math.random() * 20 - 10),
-        spread: 75,
-        startVelocity: 58 + Math.random() * 15,
-        origin: { x: 1, y: 1 },
-        colors: samColors,
-        zIndex: 99999,
-        disableForReducedMotion: true
-      });
-    };
-
-    // Bắn đợt mở màn mạnh mẽ ngay khi chốt ván
-    fireFromFourCorners(40);
-
-    // Bắn liên tiếp các loạt pháo hoa trong 2.5 giây
-    const interval = setInterval(() => {
-      const timeLeft = animationEnd - Date.now();
-
-      if (timeLeft <= 0) {
-        clearInterval(interval);
-        return;
-      }
-
-      // Giảm dần mật độ hạt về cuối để kết thúc tự nhiên
-      const progress = Math.max(0.3, timeLeft / duration);
-      const count = Math.max(16, Math.floor(32 * progress));
-
-      fireFromFourCorners(count);
-    }, 280);
-
+    // 4. Góc dưới - phải: 1 quả pháo hoa bắn vút lên trung tâm màn hình
+    confetti({
+      particleCount: 95,
+      angle: 130,
+      spread: 85,
+      startVelocity: 58,
+      origin: { x: 1, y: 1 },
+      colors: samColors,
+      gravity: 0.85,
+      ticks: 240,
+      zIndex: 99999,
+      disableForReducedMotion: true
+    });
   } catch (e) {
     console.error('Confetti error in fireSamFireworks:', e);
   }
