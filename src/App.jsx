@@ -5,6 +5,7 @@ import HistoryTable from './components/HistoryTable';
 import Keyboard from './components/Keyboard';
 import DailyStatsDrawer from './components/DailyStatsDrawer';
 import { QrTransferModal } from './components/Modals';
+import SamEffectOverlay from './components/SamEffectOverlay';
 import { useRealtimeGame } from './hooks/useRealtimeGame';
 import './style.css';
 
@@ -80,8 +81,19 @@ export default function App() {
     resetGame,
     addLedgerEntry,
     setDailyLedgerData,
-    deleteLedgerEntry
+    deleteLedgerEntry,
+    samCelebration,
+    triggerSamCelebration,
+    closeSamCelebration
   } = useRealtimeGame();
+
+  // Cho phép kiểm tra và kích hoạt nhanh hiệu ứng Sâm từ dev console hoặc nút bấm
+  useEffect(() => {
+    window.triggerSamCelebration = triggerSamCelebration;
+    return () => {
+      delete window.triggerSamCelebration;
+    };
+  }, [triggerSamCelebration]);
 
   // Trạng thái bàn phím số (Keyboard) của máy này
   const [activeKeypad, setActiveKeypad] = useState(null); // { player, index, mode: '+' | '-' }
@@ -642,6 +654,7 @@ export default function App() {
         onResetConfirm={handleResetConfirm}
         onExpandChange={handleHistoryExpandChange}
         isViewOnly={isViewOnly}
+        onTriggerSamCelebration={triggerSamCelebration}
       />
 
       {/* Vùng mờ nền khi mở bàn phím (Blur Background) - Chạm vào để đóng bàn phím */}
@@ -678,6 +691,14 @@ export default function App() {
       <QrTransferModal
         isOpen={isQrModalOpen}
         onClose={() => setIsQrModalOpen(false)}
+      />
+
+      {/* 7. Hiệu ứng hoạt ảnh bùng nổ khi hô Sâm thành công */}
+      <SamEffectOverlay
+        isOpen={samCelebration.isOpen}
+        winnerName={samCelebration.winnerName}
+        points={samCelebration.points}
+        onClose={closeSamCelebration}
       />
     </div>
   );

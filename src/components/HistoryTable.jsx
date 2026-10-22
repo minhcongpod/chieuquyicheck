@@ -99,7 +99,8 @@ function HistoryTableContent({
   onResetConfirm,
   sortMode = 'score',
   onToggleSort,
-  isViewOnly = false
+  isViewOnly = false,
+  onTriggerSamCelebration
 }) {
   // Trạng thái trượt xác nhận Reset inline trong footer
   const [isResetConfirming, setIsResetConfirming] = useState(false);
@@ -243,12 +244,25 @@ function HistoryTableContent({
         <div className="history-expanded-footer">
           {/* 1. Dòng SÂM */}
           <div className="history-stat-row">
-            <div className="history-stat-label text-sam">SÂM</div>
+            <div
+              className="history-stat-label text-sam"
+              style={{ cursor: onTriggerSamCelebration ? 'pointer' : 'default' }}
+              onClick={() => onTriggerSamCelebration && onTriggerSamCelebration('CHIẾU QUỲ', 60)}
+              title="Bấm để xem lại hiệu ứng Sâm"
+            >
+              SÂM
+            </div>
             <div className="history-stat-cells">
               {sortedPlayers.map((player) => {
                 const count = samCount[player.id] || 0;
                 return (
-                  <div key={player.id} className="history-stat-cell">
+                  <div
+                    key={player.id}
+                    className="history-stat-cell"
+                    style={{ cursor: count > 0 && onTriggerSamCelebration ? 'pointer' : 'default' }}
+                    onClick={() => count > 0 && onTriggerSamCelebration && onTriggerSamCelebration(player.name, 60)}
+                    title={count > 0 ? `Bấm để xem lại hiệu ứng Sâm của ${player.name}` : undefined}
+                  >
                     {count > 0 ? (
                       <span className="stat-num text-sam">{count}</span>
                     ) : (
@@ -367,7 +381,8 @@ export default function HistoryTable({
   onResetConfirm,
   onExpandChange,
   isHidden = false,
-  isViewOnly = false
+  isViewOnly = false,
+  onTriggerSamCelebration
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -618,6 +633,7 @@ export default function HistoryTable({
           sortMode={sortMode}
           onToggleSort={handleToggleSort}
           isViewOnly={isViewOnly}
+          onTriggerSamCelebration={onTriggerSamCelebration}
         />
       </div>
     </>

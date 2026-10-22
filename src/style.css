@@ -2175,3 +2175,425 @@ td {
     transform: scale(0.97);
   }
 }
+
+/* ==========================================================================
+   HIỆU ỨNG HOẠT ẢNH BÙNG NỔ HÔ SÂM THÀNH CÔNG (SÂM CELEBRATION EFFECT)
+   - Flash chớp sáng toàn màn hình
+   - Zoom out & Scale down cực nhanh (0.45s) kèm cubic-bezier nảy uy lực
+   - Vòng xoay tốc độ cao hãm phanh (RPM Spin & Deceleration)
+   - Rung giật màn hình (Screen Shake) 0.2s ngay khoảnh khắc va đập
+   - Tỏa hào quang vàng kim (Golden Glow) rực rỡ trên viền kim loại & các ngôi sao
+   - Duy trì chiêm ngưỡng ~1.5s và tự động fade out trở về bảng điểm
+   ========================================================================== */
+
+.sam-celebration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at center, rgba(6, 32, 16, 0.9) 0%, rgba(2, 12, 6, 0.97) 100%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  cursor: pointer;
+  user-select: none;
+  overflow: hidden;
+  animation: samBackdropIn 0.2s ease-out forwards;
+}
+
+.sam-celebration-overlay.is-fading-out {
+  animation: samBackdropOut 0.45s ease-in forwards;
+}
+
+/* 1. Tia chớp sáng trắng / vàng lóe lên toàn màn hình */
+.sam-screen-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: radial-gradient(circle at center, #ffffff 15%, #ffe600 45%, rgba(255, 215, 0, 0.4) 70%, transparent 100%);
+  opacity: 0;
+  animation: samFlashBoom 0.45s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+/* 2. Khung rung giật toàn màn hình (Screen Shake) */
+.sam-shake-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: samScreenShake 0.22s ease-in-out 0.45s;
+}
+
+/* 3. Vòng hào quang xoay tốc độ cao & giảm tốc dần (RPM Dial & Speed Spin) */
+.sam-speed-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(340px, 85vw, 550px);
+  height: clamp(340px, 85vw, 550px);
+  margin-top: -20px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px dashed rgba(255, 220, 100, 0.6);
+  box-shadow: 0 0 35px rgba(255, 215, 0, 0.5), inset 0 0 35px rgba(255, 215, 0, 0.4);
+  pointer-events: none;
+  opacity: 0;
+  animation: samRingDecelerate 1.2s cubic-bezier(0.12, 0.8, 0.25, 1) forwards;
+}
+
+.sam-speed-ring-inner {
+  width: clamp(280px, 72vw, 460px);
+  height: clamp(280px, 72vw, 460px);
+  border: 1.5px solid rgba(255, 245, 180, 0.7);
+  box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
+  animation: samRingDecelerateReverse 1.2s cubic-bezier(0.12, 0.8, 0.25, 1) forwards;
+}
+
+/* 4. Sóng xung kích bùng nổ khi va đập (Shockwave) */
+.sam-shockwave {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100px;
+  height: 100px;
+  margin-top: -20px;
+  transform: translate(-50%, -50%) scale(0.2);
+  border-radius: 50%;
+  border: 4px solid rgba(255, 240, 120, 0.95);
+  box-shadow: 0 0 40px #ffd700, inset 0 0 30px #ffea00;
+  pointer-events: none;
+  opacity: 0;
+  animation: samShockwavePulse 0.7s cubic-bezier(0.1, 0.8, 0.3, 1) 0.45s forwards;
+}
+
+.sam-shockwave-second {
+  border-color: rgba(255, 255, 255, 0.9);
+  animation-delay: 0.52s;
+  animation-duration: 0.8s;
+}
+
+/* 5. Khối Logo Sâm & chuyển động zoom out bứt tốc */
+.sam-logo-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(2.6) rotate(-50deg);
+  animation: samLogoSlam 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+             samLogoFloat 2s ease-in-out 0.45s infinite alternate;
+  z-index: 5;
+}
+
+/* Hào quang vàng kim bùng sáng phía sau logo khi hạ cánh */
+.sam-logo-backglow {
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 10%, rgba(255, 150, 0, 0.45) 45%, transparent 75%);
+  filter: blur(25px);
+  opacity: 0;
+  pointer-events: none;
+  animation: samBackglowBurst 0.6s ease-out 0.45s forwards,
+             samBackglowPulse 1.6s ease-in-out 1.05s infinite alternate;
+}
+
+/* Ảnh Logo Sâm Chiếu Quỳ Icheck */
+.sam-logo-img {
+  width: clamp(260px, 68vw, 420px);
+  max-height: 52vh;
+  object-fit: contain;
+  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.8));
+  animation: samGlowIntense 0.5s ease-out 0.45s forwards,
+             samGlowShimmer 2s ease-in-out 0.95s infinite alternate;
+}
+
+/* Các điểm sáng lấp lánh (Sparkles) trên 5 ngôi sao & vương miện */
+.sam-sparkle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  background: #ffffff;
+  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
+  box-shadow: 0 0 12px #ffffff, 0 0 25px #ffd700;
+  opacity: 0;
+  pointer-events: none;
+  animation: samSparkleTwinkle 1.4s ease-in-out 0.5s infinite alternate;
+}
+
+.sam-sparkle-1 { top: 21%; left: 28%; animation-delay: 0.5s; }
+.sam-sparkle-2 { top: 18%; left: 38%; animation-delay: 0.65s; }
+.sam-sparkle-3 { top: 15%; left: 50%; width: 18px; height: 18px; animation-delay: 0.45s; }
+.sam-sparkle-4 { top: 18%; right: 38%; animation-delay: 0.75s; }
+.sam-sparkle-5 { top: 21%; right: 28%; animation-delay: 0.6s; }
+.sam-sparkle-crown { top: 48%; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; animation-delay: 0.55s; }
+
+/* 6. Banner chúc mừng bên dưới Logo */
+.sam-title-banner {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  opacity: 0;
+  transform: translateY(20px) scale(0.9);
+  animation: samBannerPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.52s forwards;
+  z-index: 6;
+}
+
+.sam-title-main {
+  font-size: clamp(22px, 5.8vw, 32px);
+  font-weight: 900;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #ffffff 0%, #ffe875 40%, #f59e0b 80%, #b45309 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 16px rgba(245, 158, 11, 0.7));
+  text-align: center;
+}
+
+.sam-winner-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 18px;
+  border-radius: 999px;
+  background: rgba(180, 83, 9, 0.35);
+  border: 1.5px solid rgba(251, 191, 36, 0.75);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 18px rgba(245, 158, 11, 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.sam-winner-crown {
+  font-size: 18px;
+}
+
+.sam-winner-name {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: clamp(14px, 3.8vw, 18px);
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.sam-winner-pts {
+  color: #34d399;
+  font-weight: 900;
+  font-size: clamp(14px, 3.8vw, 18px);
+  text-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
+}
+
+/* ==========================================================================
+   KEYFRAME ANIMATIONS DÀNH CHO SÂM
+   ========================================================================== */
+
+/* Lóe sáng tia chớp (Flash Boom) */
+@keyframes samFlashBoom {
+  0% {
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Thu nhỏ & Bứt tốc nảy trung tâm (Zoom Out & Scale Down & Slam) */
+@keyframes samLogoSlam {
+  0% {
+    opacity: 0;
+    transform: scale(2.6) rotate(-50deg);
+  }
+  30% {
+    opacity: 0.9;
+  }
+  85% {
+    transform: scale(0.96) rotate(3deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Rung màn hình 0.22s dồn dập ngay khoảnh khắc va đập */
+@keyframes samScreenShake {
+  0% { transform: translate(0, 0) rotate(0deg); }
+  15% { transform: translate(-9px, 7px) rotate(-1.5deg); }
+  30% { transform: translate(8px, -6px) rotate(1.2deg); }
+  45% { transform: translate(-6px, -5px) rotate(-0.8deg); }
+  60% { transform: translate(6px, 4px) rotate(0.8deg); }
+  75% { transform: translate(-3px, 2px) rotate(-0.4deg); }
+  90% { transform: translate(2px, -1px) rotate(0.2deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+/* Vòng xoay tốc độ cao & giảm tốc dần (Spin High RPM -> Slow -> Stop) */
+@keyframes samRingDecelerate {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.6);
+  }
+  20% {
+    opacity: 0.85;
+  }
+  60% {
+    transform: translate(-50%, -50%) rotate(380deg) scale(1.05);
+  }
+  85% {
+    transform: translate(-50%, -50%) rotate(440deg) scale(0.99);
+  }
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) rotate(460deg) scale(1);
+  }
+}
+
+@keyframes samRingDecelerateReverse {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1.4);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  60% {
+    transform: translate(-50%, -50%) rotate(-320deg) scale(1.03);
+  }
+  100% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) rotate(-380deg) scale(1);
+  }
+}
+
+/* Sóng xung kích bùng nổ khi va đập */
+@keyframes samShockwavePulse {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  60% {
+    opacity: 0.75;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(2.8);
+  }
+}
+
+/* Hào quang bùng nổ phía sau logo */
+@keyframes samBackglowBurst {
+  0% {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  100% {
+    opacity: 0.9;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes samBackglowPulse {
+  0% {
+    transform: scale(1.05);
+    opacity: 0.75;
+  }
+  100% {
+    transform: scale(1.18);
+    opacity: 0.95;
+  }
+}
+
+/* Đèn hào quang tỏa sáng rực rỡ trên Logo (Golden Glow) */
+@keyframes samGlowIntense {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(255, 215, 0, 0));
+  }
+  100% {
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.95))
+            drop-shadow(0 0 55px rgba(245, 158, 11, 0.85))
+            drop-shadow(0 0 90px rgba(255, 255, 255, 0.65));
+  }
+}
+
+@keyframes samGlowShimmer {
+  0% {
+    filter: drop-shadow(0 0 25px rgba(255, 215, 0, 0.95))
+            drop-shadow(0 0 55px rgba(245, 158, 11, 0.85))
+            drop-shadow(0 0 90px rgba(255, 255, 255, 0.65));
+  }
+  100% {
+    filter: drop-shadow(0 0 35px rgba(255, 235, 100, 1))
+            drop-shadow(0 0 75px rgba(245, 158, 11, 0.95))
+            drop-shadow(0 0 115px rgba(255, 255, 255, 0.8));
+  }
+}
+
+/* Chuyển động thở nhẹ của logo khi dừng ở trung tâm */
+@keyframes samLogoFloat {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    transform: scale(1.025) translateY(-5px);
+  }
+}
+
+/* Lấp lánh ánh sao */
+@keyframes samSparkleTwinkle {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.5) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3) rotate(45deg);
+  }
+  100% {
+    opacity: 0.4;
+    transform: scale(0.7) rotate(90deg);
+  }
+}
+
+/* Banner người thắng trồi lên */
+@keyframes samBannerPop {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.85);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Hoạt ảnh mờ dần kết thúc trả lại bảng điểm */
+@keyframes samBackdropOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+    filter: blur(6px);
+  }
+}
+
+@keyframes samBackdropIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

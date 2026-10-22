@@ -53,6 +53,39 @@ export function isSamRound(round) {
 }
 
 /**
+ * Xác định thông tin người hô Sâm thành công trong ván đấu
+ */
+export function getSamWinnerInfo(round, players = []) {
+  if (!round || !round.scores) return null;
+  const SAM_POINTS = [40, 60, 80];
+  // 1. Tìm người có điểm dương (+40, +60, +80) - Người hô Sâm thành công
+  for (const [playerId, score] of Object.entries(round.scores)) {
+    const num = typeof score === 'number' ? score : Number(score);
+    if (SAM_POINTS.includes(num)) {
+      const p = players.find(item => item.id === playerId);
+      return {
+        playerId,
+        name: p?.name || '',
+        points: num
+      };
+    }
+  }
+  // 2. Trường hợp đền Sâm: Người có điểm dương cao nhất
+  for (const [playerId, score] of Object.entries(round.scores)) {
+    const num = typeof score === 'number' ? score : Number(score);
+    if (num > 0) {
+      const p = players.find(item => item.id === playerId);
+      return {
+        playerId,
+        name: p?.name || '',
+        points: num
+      };
+    }
+  }
+  return null;
+}
+
+/**
  * Hiệu ứng pháo hoa (Fireworks Animation) khi chốt thành công ván Sâm:
  * Bắn đồng thời từ 4 góc màn hình cùng một lúc, mỗi góc nở đúng 1 quả pháo hoa rực rỡ hướng vào trung tâm.
  */
@@ -222,6 +255,25 @@ export function useRealtimeGame() {
   const prevHistoryLenRef = useRef(history.length);
   const prevLedgerLenRef = useRef(dailyLedger.length);
 
+  // Trạng thái hiệu ứng hiển thị Sâm toàn màn hình
+  const [samCelebration, setSamCelebration] = useState({
+    isOpen: false,
+    winnerName: '',
+    points: 0
+  });
+
+  const triggerSamCelebration = useCallback((winnerName = '', points = 0) => {
+    setSamCelebration({
+      isOpen: true,
+      winnerName,
+      points
+    });
+  }, []);
+
+  const closeSamCelebration = useCallback(() => {
+    setSamCelebration(prev => ({ ...prev, isOpen: false }));
+  }, []);
+
   // Lắng nghe dữ liệu thời gian thực từ Firebase Firestore
   useEffect(() => {
     if (!isFirebaseConfigured || !db) {
@@ -266,7 +318,9 @@ export function useRealtimeGame() {
         if (!isInitialMount && data.history.length > prevHistoryLenRef.current) {
           const newestRound = data.history[data.history.length - 1];
           if (isSamRound(newestRound)) {
-            fireSamFireworks();
+            const currentPlayers = data.players || players;
+            const winner = getSamWinnerInfo(newestRound, currentPlayers);
+            triggerSamCelebration(winner?.name || '', winner?.points || 0);
           } else {
             fireConfetti();
           }
@@ -391,7 +445,8 @@ export function useRealtimeGame() {
     setRoundDeltas({});
     localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(nextHistory));
     if (isSamRound(newRound)) {
-      fireSamFireworks();
+      const winner = getSamWinnerInfo(newRound, players);
+      triggerSamCelebration(winner?.name || '', winner?.points || 0);
     } else {
       fireConfetti();
     }
@@ -549,6 +604,9 @@ export function useRealtimeGame() {
     resetGame,
     addLedgerEntry,
     setDailyLedgerData,
-    deleteLedgerEntry
+    deleteLedgerEntry,
+    samCelebration,
+    triggerSamCelebration,
+    closeSamCelebration
   };
 }
