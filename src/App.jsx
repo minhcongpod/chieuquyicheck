@@ -341,21 +341,26 @@ export default function App() {
       finalScores[remainingPlayer.id] = autoBalancedScore;
     }
 
+    // Sao chép lại chính xác các giá trị người chơi thực tế đang nhập (draft inputs)
+    const cleanRawDeltas = { ...roundDeltas };
+
     // Loại bỏ điểm rác nếu có trên các hàng trống không có tên
     if (numNamed > 0) {
       players.forEach(p => {
         if (!p.name || !p.name.trim()) {
           delete finalScores[p.id];
+          delete cleanRawDeltas[p.id];
         }
       });
     }
 
-    // Tạo ván mới và phát sóng đồng bộ
+    // Tạo ván mới và phát sóng đồng bộ (lưu cả finalScores và rawDeltas)
     const nextRoundNumber = history.length + 1;
     const newRound = {
       id: `round-${Date.now()}`,
       roundNumber: nextRoundNumber,
       scores: finalScores,
+      rawDeltas: cleanRawDeltas,
       timestamp: Date.now()
     };
 
@@ -512,10 +517,12 @@ export default function App() {
     setCurrentKeypadValue('');
   };
 
-  // Xử lý xác nhận Hoàn tác (Undo) (đồng bộ realtime)
+  // Xử lý Hoàn tác (Undo) theo cơ chế Khôi phục trạng thái (Restore Input State) (đồng bộ realtime)
   const handleUndoConfirm = () => {
     if (history.length === 0) return;
     undoRound();
+    setActiveKeypad(null);
+    setCurrentKeypadValue('');
   };
 
   // Xử lý khi bấm nút "CHỐT SỔ" tại Bảng lịch sử điểm:
@@ -615,6 +622,7 @@ export default function App() {
         canConfirm={canConfirmRound}
         onConfirmRound={handleConfirmRound}
         onUndoConfirm={handleUndoConfirm}
+        onUndoClick={handleUndoConfirm}
         onLedgerClick={handleOpenDailyStats}
         onQrClick={handleOpenQrModal}
         canUndo={history.length > 0}

@@ -30,13 +30,19 @@ export default function ActionToolbar({
     }
   };
 
-  // Kích hoạt chế độ trượt xác nhận hoàn tác
+  // Kích hoạt chế độ hoàn tác theo cơ chế Khôi phục trạng thái (Restore Input State)
   const handleTriggerMode = (mode) => {
     if (mode === 'undo' && !canUndo) return;
 
-    if (mode === 'undo' && onUndoClick && !onUndoConfirm) {
-      onUndoClick();
-      return;
+    if (mode === 'undo') {
+      if (onUndoClick) {
+        onUndoClick();
+        return;
+      }
+      if (onUndoConfirm) {
+        onUndoConfirm();
+        return;
+      }
     }
 
     setConfirmMode(mode);

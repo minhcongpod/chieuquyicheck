@@ -22,7 +22,7 @@ const INITIAL_PLAYERS = [
 const HEARTBEAT_INTERVAL_MS = 5000;
 const PRESENCE_TIMEOUT_MS = 15000;
 
-// Bắn pháo hoa ăn mừng khi chốt ván hoặc chốt sổ
+// Bắn pháo hoa ăn mừng khi chốt ván thông thường hoặc chốt sổ
 export function fireConfetti() {
   try {
     confetti({
@@ -32,6 +32,118 @@ export function fireConfetti() {
     });
   } catch (e) {
     console.error('Confetti error:', e);
+  }
+}
+
+/**
+ * Kiểm tra xem ván đấu vừa chốt có liên quan đến điểm Sâm hoặc đền Sâm hay không:
+ * Các mức điểm Sâm quy ước theo số lượng người chơi:
+ * - Bàn 3 người: ±40 điểm (thắng sâm +40, đền sâm -40)
+ * - Bàn 4 người: ±60 điểm (thắng sâm +60, đền sâm -60)
+ * - Bàn 5 người: ±80 điểm (thắng sâm +80, đền sâm -80)
+ */
+export function isSamRound(round) {
+  if (!round || !round.scores) return false;
+  const SAM_POINTS = [40, 60, 80];
+  const scores = Object.values(round.scores);
+  return scores.some(score => {
+    const num = typeof score === 'number' ? score : Number(score);
+    return !isNaN(num) && SAM_POINTS.includes(Math.abs(num));
+  });
+}
+
+/**
+ * Hiệu ứng pháo hoa (Fireworks Animation) nở và bắn rực rỡ đồng thời từ 4 góc màn hình
+ * (trên-trái, trên-phải, dưới-trái, dưới-phải) kéo dài 2.5 giây khi chốt thành công ván Sâm.
+ */
+export function fireSamFireworks() {
+  try {
+    const duration = 2500; // Thời gian hiển thị 2.5 giây
+    const animationEnd = Date.now() + duration;
+
+    // Bộ màu lễ hội rực rỡ, lấp lánh và có độ tương phản cao
+    const samColors = [
+      '#ffd700', // Vàng hoàng kim
+      '#ff0055', // Đỏ hồng neon
+      '#00f0ff', // Cyan rực sáng
+      '#a855f7', // Tím neon
+      '#39ff14', // Xanh lá laser
+      '#ff7700', // Cam lửa
+      '#ffffff', // Ánh bạc lấp lánh
+      '#ffea00'  // Vàng chanh
+    ];
+
+    const fireFromFourCorners = (particleCount = 28) => {
+      // 1. Góc trên - trái (bắn chéo xuống trung tâm màn hình)
+      confetti({
+        particleCount,
+        angle: 315 + (Math.random() * 20 - 10),
+        spread: 70,
+        startVelocity: 48 + Math.random() * 15,
+        origin: { x: 0, y: 0 },
+        colors: samColors,
+        zIndex: 99999,
+        disableForReducedMotion: true
+      });
+
+      // 2. Góc trên - phải (bắn chéo xuống trung tâm màn hình)
+      confetti({
+        particleCount,
+        angle: 225 + (Math.random() * 20 - 10),
+        spread: 70,
+        startVelocity: 48 + Math.random() * 15,
+        origin: { x: 1, y: 0 },
+        colors: samColors,
+        zIndex: 99999,
+        disableForReducedMotion: true
+      });
+
+      // 3. Góc dưới - trái (bắn vút lên trung tâm màn hình)
+      confetti({
+        particleCount: Math.round(particleCount * 1.15),
+        angle: 55 + (Math.random() * 20 - 10),
+        spread: 75,
+        startVelocity: 58 + Math.random() * 15,
+        origin: { x: 0, y: 1 },
+        colors: samColors,
+        zIndex: 99999,
+        disableForReducedMotion: true
+      });
+
+      // 4. Góc dưới - phải (bắn vút lên trung tâm màn hình)
+      confetti({
+        particleCount: Math.round(particleCount * 1.15),
+        angle: 125 + (Math.random() * 20 - 10),
+        spread: 75,
+        startVelocity: 58 + Math.random() * 15,
+        origin: { x: 1, y: 1 },
+        colors: samColors,
+        zIndex: 99999,
+        disableForReducedMotion: true
+      });
+    };
+
+    // Bắn đợt mở màn mạnh mẽ ngay khi chốt ván
+    fireFromFourCorners(40);
+
+    // Bắn liên tiếp các loạt pháo hoa trong 2.5 giây
+    const interval = setInterval(() => {
+      const timeLeft = animationEnd - Date.now();
+
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        return;
+      }
+
+      // Giảm dần mật độ hạt về cuối để kết thúc tự nhiên
+      const progress = Math.max(0.3, timeLeft / duration);
+      const count = Math.max(16, Math.floor(32 * progress));
+
+      fireFromFourCorners(count);
+    }, 280);
+
+  } catch (e) {
+    console.error('Confetti error in fireSamFireworks:', e);
   }
 }
 
@@ -169,7 +281,12 @@ export function useRealtimeGame() {
 
       if (data.history) {
         if (!isInitialMount && data.history.length > prevHistoryLenRef.current) {
-          fireConfetti();
+          const newestRound = data.history[data.history.length - 1];
+          if (isSamRound(newestRound)) {
+            fireSamFireworks();
+          } else {
+            fireConfetti();
+          }
         }
         prevHistoryLenRef.current = data.history.length;
         setHistory(data.history);
@@ -286,10 +403,15 @@ export function useRealtimeGame() {
 
   const confirmRound = useCallback(async (newRound) => {
     const nextHistory = [...history, newRound];
+    prevHistoryLenRef.current = nextHistory.length;
     setHistory(nextHistory);
     setRoundDeltas({});
     localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(nextHistory));
-    fireConfetti();
+    if (isSamRound(newRound)) {
+      fireSamFireworks();
+    } else {
+      fireConfetti();
+    }
 
     if (isFirebaseConfigured && db) {
       try {
@@ -306,14 +428,34 @@ export function useRealtimeGame() {
 
   const undoRound = useCallback(async () => {
     if (history.length === 0) return;
+    const lastRound = history[history.length - 1];
+    let restoredDeltas = (lastRound && lastRound.rawDeltas)
+      ? { ...lastRound.rawDeltas }
+      : { ...((lastRound && lastRound.scores) || {}) };
+
+    // Đối với các ván cũ chưa lưu rawDeltas: Nếu có (N-1) người âm và 1 người dương với tổng = 0,
+    // loại bỏ người dương để cơ chế tự động cân bằng (auto-balance) hoạt động trơn tru khi người dùng sửa điểm.
+    if (!lastRound?.rawDeltas && lastRound?.scores) {
+      const scoreEntries = Object.entries(restoredDeltas);
+      const positiveEntries = scoreEntries.filter(([_, score]) => typeof score === 'number' && score > 0);
+      const negativeEntries = scoreEntries.filter(([_, score]) => typeof score === 'number' && score < 0);
+      const sum = scoreEntries.reduce((s, [_, v]) => s + (typeof v === 'number' ? v : 0), 0);
+      if (sum === 0 && positiveEntries.length === 1 && negativeEntries.length > 0) {
+        const [posId] = positiveEntries[0];
+        delete restoredDeltas[posId];
+      }
+    }
+
     const nextHistory = history.slice(0, -1);
     setHistory(nextHistory);
+    setRoundDeltas(restoredDeltas);
     localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(nextHistory));
 
     if (isFirebaseConfigured && db) {
       try {
         await updateDoc(doc(db, 'rooms', roomId), {
           history: nextHistory,
+          roundDeltas: restoredDeltas,
           updatedAt: Date.now()
         });
       } catch (e) {
