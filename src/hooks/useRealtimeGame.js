@@ -28,7 +28,8 @@ export function fireConfetti() {
     confetti({
       particleCount: 70,
       spread: 70,
-      origin: { y: 0.6 }
+      origin: { y: 0.6 },
+      zIndex: 10000005
     });
   } catch (e) {
     console.error('Confetti error:', e);
@@ -87,7 +88,7 @@ export function getSamWinnerInfo(round, players = []) {
 
 /**
  * Hiệu ứng pháo hoa (Fireworks Animation) khi chốt thành công ván Sâm:
- * Bắn đồng thời từ 4 góc màn hình cùng một lúc, mỗi góc nở đúng 1 quả pháo hoa rực rỡ hướng vào trung tâm.
+ * Bắn đồng thời từ 2 bên sườn màn hình hướng vào trung tâm, hiển thị bên trên logo Sâm.
  */
 export function fireSamFireworks() {
   try {
@@ -103,31 +104,31 @@ export function fireSamFireworks() {
       '#ffea00'  // Vàng chanh
     ];
 
-    // 1. Bên trái: pháo hoa bắn vút lên chéo sang phải
+    // 1. Bên trái: pháo hoa bắn vút lên chéo sang phải (hiển thị đè lên trên logo Sâm)
     confetti({
-      particleCount: 100,
+      particleCount: 110,
       angle: 55,
-      spread: 70,
-      startVelocity: 55,
+      spread: 75,
+      startVelocity: 58,
       origin: { x: 0, y: 0.7 },
       colors: samColors,
       gravity: 0.85,
       ticks: 240,
-      zIndex: 99999,
+      zIndex: 10000005,
       disableForReducedMotion: true
     });
 
-    // 2. Bên phải: pháo hoa bắn vút lên chéo sang trái
+    // 2. Bên phải: pháo hoa bắn vút lên chéo sang trái (hiển thị đè lên trên logo Sâm)
     confetti({
-      particleCount: 100,
+      particleCount: 110,
       angle: 125,
-      spread: 70,
-      startVelocity: 55,
+      spread: 75,
+      startVelocity: 58,
       origin: { x: 1, y: 0.7 },
       colors: samColors,
       gravity: 0.85,
       ticks: 240,
-      zIndex: 99999,
+      zIndex: 10000005,
       disableForReducedMotion: true
     });
   } catch (e) {
