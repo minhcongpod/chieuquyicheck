@@ -1427,7 +1427,7 @@ td {
   gap: 6px;
   background-color: rgba(0, 0, 0, 0.7);
   padding: 4px;
-  border-radius: 8px;
+  border-radius: 0;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-sizing: border-box;
 }
@@ -1441,7 +1441,7 @@ td {
   font-weight: 800;
   letter-spacing: 0.5px;
   border: none;
-  border-radius: 6px;
+  border-radius: 0;
   cursor: pointer;
   transition: all 0.18s ease;
   white-space: nowrap;
