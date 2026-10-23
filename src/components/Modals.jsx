@@ -176,7 +176,8 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
                 )}
               </button>
             </div>
-
+            {/* Placeholder giữ chiều cao bằng tab QUỸ CHIẾU QUỶ */}
+            <div className="modal-qr-actions-placeholder" />
 
           </>
         ) : (

@@ -1546,6 +1546,13 @@ td {
   width: 100%;
 }
 
+/* Giữ cố định chiều cao modal khi tab VÀO CHIẼU không có nút */
+.modal-qr-actions-placeholder {
+  width: 100%;
+  height: 48px;
+  flex-shrink: 0;
+}
+
 .modal-btn-open-link,
 .modal-btn-copy-qr,
 .modal-btn-save-qr {
