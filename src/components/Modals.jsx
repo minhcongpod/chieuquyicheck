@@ -131,14 +131,14 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
             className={`modal-qr-tab-btn ${activeTab === 'room' ? 'active' : ''}`}
             onClick={() => setActiveTab('room')}
           >
-            VÀO BÀN CHƠI
+            CHƠI MỚI
           </button>
           <button
             type="button"
             className={`modal-qr-tab-btn ${activeTab === 'momo' ? 'active' : ''}`}
             onClick={() => setActiveTab('momo')}
           >
-            NỘP QUỸ MOMO
+            QUỸ CHIẾU QUỶ
           </button>
         </div>
 
@@ -177,35 +177,7 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
               </button>
             </div>
 
-            {/* Nhóm nút: Sao chép link và Mở link trong tab mới */}
-            <div className="modal-qr-actions">
-              <button
-                type="button"
-                className="modal-btn modal-btn-copy-qr"
-                onClick={() => handleCopyText(targetRoomUrl)}
-                title={copiedLink ? "Đã sao chép link!" : "Sao chép link xem điểm chung"}
-                aria-label="Sao chép link"
-              >
-                {copiedLink ? (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800 }}>
-                    <CheckIcon width={20} height={20} color="#000000" /> ĐÃ SAO CHÉP
-                  </span>
-                ) : (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800 }}>
-                    <CopyIcon width={20} height={20} color="#000000" /> SAO CHÉP LINK
-                  </span>
-                )}
-              </button>
-              <button
-                type="button"
-                className="modal-btn modal-btn-open-link"
-                onClick={() => handleOpenLink(targetRoomUrl)}
-                title="Mở link trong tab mới"
-                aria-label="Mở link"
-              >
-                <ExternalLinkIcon width={22} height={22} color="#000000" />
-              </button>
-            </div>
+
           </>
         ) : (
           <>
@@ -238,36 +210,7 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
               </button>
             </div>
 
-            {/* Nút Sao chép ảnh QR và Lưu QR MoMo */}
-            <div className="modal-qr-actions">
-              <button
-                type="button"
-                className="modal-btn modal-btn-copy-qr"
-                onClick={handleCopyQrImage}
-                title={copiedImage ? "Đã sao chép ảnh QR vào clipboard!" : "Sao chép ảnh QR code vào clipboard"}
-                aria-label="Sao chép ảnh QR"
-              >
-                {copiedImage ? (
-                  <CheckIcon width={24} height={24} color="#000000" />
-                ) : (
-                  <CopyIcon width={24} height={24} color="#000000" />
-                )}
-              </button>
-              <button
-                type="button"
-                className="modal-btn modal-btn-save-qr"
-                onClick={handleSaveQr}
-                title="Lưu QR"
-                aria-label="Lưu QR"
-                disabled={downloading}
-              >
-                {downloading ? (
-                  <LoadingSpinnerIcon width={24} height={24} color="#000000" />
-                ) : (
-                  <DownloadQrIcon width={24} height={24} color="#000000" />
-                )}
-              </button>
-            </div>
+
           </>
         )}
       </div>
