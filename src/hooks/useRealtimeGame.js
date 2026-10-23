@@ -152,29 +152,21 @@ function getOrCreateDeviceId() {
 }
 
 export function useRealtimeGame() {
-  // Trích xuất roomId từ URL (mặc định 'default')
+  // Trích xuất roomId từ URL (mặc định 'default' dùng chung cho tất cả mọi người)
   const [roomId] = useState(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
-      const hash = window.location.hash.replace(/^#\/?/, '');
-      const pathname = window.location.pathname.replace(/^\/+|\/+$/g, '');
-
-      let extractedRoom = 'default';
-
-      if (params.get('room') && params.get('room').trim() !== '') {
-        extractedRoom = params.get('room').trim();
-      } else if (hash) {
-        const parts = hash.split('/');
-        if (parts[0] && parts[0].trim() !== '') extractedRoom = decodeURIComponent(parts[0].trim());
-      } else if (pathname && pathname !== '' && !pathname.endsWith('index.html')) {
-        const parts = pathname.split('/');
-        const lastPart = parts[parts.length - 1];
-        if (lastPart && lastPart !== 'chieuquyicheck') {
-          extractedRoom = decodeURIComponent(lastPart);
-        }
+      const roomParam = params.get('room');
+      if (roomParam && roomParam.trim() !== '') {
+        return roomParam.trim();
       }
 
-      return extractedRoom;
+      // Hỗ trợ dạng hash rõ ràng: #room=abc hoặc #/room/abc
+      const hash = window.location.hash.replace(/^#\/?/, '');
+      if (hash.startsWith('room=')) {
+        const val = hash.replace('room=', '').trim();
+        if (val) return decodeURIComponent(val);
+      }
     }
     return 'default';
   });

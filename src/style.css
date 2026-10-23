@@ -1420,6 +1420,43 @@ td {
   box-sizing: border-box;
 }
 
+/* Thanh chuyển đổi 2 Tab: Vào Bàn Chơi vs Nộp Quỹ MoMo */
+.modal-qr-tabs {
+  display: flex;
+  width: 100%;
+  gap: 6px;
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-sizing: border-box;
+}
+
+.modal-qr-tab-btn {
+  flex: 1;
+  padding: 9px 4px;
+  background: transparent;
+  color: #aaaaaa;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.modal-qr-tab-btn:hover {
+  color: #ffffff;
+}
+
+.modal-qr-tab-btn.active {
+  background-color: #66ff33;
+  color: #000000;
+  box-shadow: 0 2px 10px rgba(102, 255, 51, 0.35);
+}
+
 /* Khung hiển thị ảnh QR: Chiều ngang bằng chính xác 2 nút và ô link, tỷ lệ vuông vức */
 .qr-image-container {
   width: 100%;
@@ -2193,9 +2230,7 @@ td {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at center, rgba(6, 32, 16, 0.9) 0%, rgba(2, 12, 6, 0.97) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: radial-gradient(circle at center, rgba(6, 32, 16, 0.94) 0%, rgba(2, 12, 6, 0.98) 100%);
   cursor: pointer;
   user-select: none;
   overflow: hidden;
@@ -2309,9 +2344,7 @@ td {
   width: clamp(260px, 68vw, 420px);
   max-height: 52vh;
   object-fit: contain;
-  filter: drop-shadow(0 15px 30px rgba(0, 0, 0, 0.8));
-  animation: samGlowIntense 0.5s ease-out 0.45s forwards,
-             samGlowShimmer 2s ease-in-out 0.95s infinite alternate;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.75));
 }
 
 /* Các điểm sáng lấp lánh (Sparkles) trên 5 ngôi sao & vương miện */
@@ -2514,7 +2547,6 @@ td {
   100% {
     opacity: 0;
     transform: scale(0.95);
-    filter: blur(6px);
   }
 }
 

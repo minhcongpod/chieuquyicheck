@@ -3,10 +3,13 @@ import { CopyIcon, CheckIcon, ExternalLinkIcon, DownloadQrIcon, LoadingSpinnerIc
 import qrMomoUrl from '../assets/qr-momo.jpg';
 
 /**
- * Popup Chuyển Khoản Quỹ Chiếu Quỷ (MoMo QR)
- * Cho phép xem mã QR, mở liên kết trực tiếp, sao chép ảnh QR hoặc tải ảnh về máy.
+ * Popup Mã QR: Hỗ trợ 2 chế độ:
+ * 1. Chia sẻ link bàn chơi (để tất cả mọi người quét mã hoặc sao chép link cùng xem điểm trên Firebase)
+ * 2. Chuyển khoản Quỹ Chiếu Quỷ (MoMo QR)
  */
-export function QrTransferModal({ isOpen, onClose }) {
+export function QrTransferModal({ isOpen, onClose, roomUrl }) {
+  const [activeTab, setActiveTab] = useState('room'); // 'room' | 'momo'
+  const [copiedLink, setCopiedLink] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
@@ -21,10 +24,37 @@ export function QrTransferModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
+  // Đường link bàn chơi chuẩn chính thức
+  const targetRoomUrl = roomUrl || (typeof window !== 'undefined'
+    ? `${window.location.origin}${window.location.pathname.replace(/\/+$/, '')}/`
+    : 'https://minhcongpod.github.io/chieuquyicheck/');
+
+  // QR Code động cho link bàn chơi
+  const roomQrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=360x360&margin=10&data=${encodeURIComponent(targetRoomUrl)}`;
+
   const momoUrl = 'https://quy.momo.vn/v2/O2HWggyJjd?cover=6749';
 
-  const handleOpenLink = () => {
-    window.open(momoUrl, '_blank', 'noopener,noreferrer');
+  const handleOpenLink = (url) => {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleCopyText = async (text) => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (err) {
+      console.error('Lỗi sao chép link:', err);
+    }
   };
 
   const handleCopyQrImage = async () => {
@@ -64,13 +94,17 @@ export function QrTransferModal({ isOpen, onClose }) {
   const handleSaveQr = async () => {
     try {
       setDownloading(true);
-      const response = await fetch(qrMomoUrl);
+      const isMomo = activeTab === 'momo';
+      const downloadUrl = isMomo ? qrMomoUrl : roomQrCodeUrl;
+      const fileName = isMomo ? 'QR_QUY_CHIEU_QUY.jpg' : 'QR_BAN_CHIEU_QUY.png';
+
+      const response = await fetch(downloadUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = 'QR_QUY_CHIEU_QUY.jpg';
+      a.download = fileName;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -78,9 +112,10 @@ export function QrTransferModal({ isOpen, onClose }) {
       setTimeout(() => setDownloading(false), 1500);
     } catch (err) {
       setDownloading(false);
+      const isMomo = activeTab === 'momo';
       const a = document.createElement('a');
-      a.href = qrMomoUrl;
-      a.download = 'QR_QUY_CHIEU_QUY.jpg';
+      a.href = isMomo ? qrMomoUrl : roomQrCodeUrl;
+      a.download = isMomo ? 'QR_QUY_CHIEU_QUY.jpg' : 'QR_BAN_CHIEU_QUY.png';
       a.target = '_blank';
       a.click();
     }
@@ -89,65 +124,152 @@ export function QrTransferModal({ isOpen, onClose }) {
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-card modal-qr-card" onClick={(e) => e.stopPropagation()}>
-        {/* Khung mã QR MoMo */}
-        <div className="qr-image-container">
-          <img
-            src={qrMomoUrl}
-            alt="Mã QR Quỹ Chiếu Quỷ"
-            className="qr-image-display"
-          />
-        </div>
-
-        {/* Thông tin đường link quỹ kèm icon mở link trực tiếp trong tab mới */}
-        <div
-          className="qr-link-box"
-          onClick={handleOpenLink}
-          title="Bấm để mở trực tiếp đường link QR trong tab mới"
-        >
-          <span className="qr-link-url">{momoUrl}</span>
+        {/* Thanh chuyển đổi Tab: Vào Bàn Chơi vs Nộp Quỹ MoMo */}
+        <div className="modal-qr-tabs">
           <button
             type="button"
-            className="qr-copy-btn"
-            aria-label="Mở link trong tab mới"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleOpenLink();
-            }}
+            className={`modal-qr-tab-btn ${activeTab === 'room' ? 'active' : ''}`}
+            onClick={() => setActiveTab('room')}
           >
-            <ExternalLinkIcon width={20} height={20} color="#ffffff" />
+            VÀO BÀN CHƠI
+          </button>
+          <button
+            type="button"
+            className={`modal-qr-tab-btn ${activeTab === 'momo' ? 'active' : ''}`}
+            onClick={() => setActiveTab('momo')}
+          >
+            NỘP QUỸ MOMO
           </button>
         </div>
 
-        {/* Nút Sao chép ảnh QR và Lưu QR */}
-        <div className="modal-qr-actions">
-          <button
-            type="button"
-            className="modal-btn modal-btn-copy-qr"
-            onClick={handleCopyQrImage}
-            title={copiedImage ? "Đã sao chép ảnh QR vào clipboard!" : "Sao chép ảnh QR code vào clipboard"}
-            aria-label="Sao chép ảnh QR"
-          >
-            {copiedImage ? (
-              <CheckIcon width={24} height={24} color="#000000" />
-            ) : (
-              <CopyIcon width={24} height={24} color="#000000" />
-            )}
-          </button>
-          <button
-            type="button"
-            className="modal-btn modal-btn-save-qr"
-            onClick={handleSaveQr}
-            title="Lưu QR"
-            aria-label="Lưu QR"
-            disabled={downloading}
-          >
-            {downloading ? (
-              <LoadingSpinnerIcon width={24} height={24} color="#000000" />
-            ) : (
-              <DownloadQrIcon width={24} height={24} color="#000000" />
-            )}
-          </button>
-        </div>
+        {activeTab === 'room' ? (
+          <>
+            {/* Khung mã QR link bàn chơi để mọi người quét camera vào xem điểm chung */}
+            <div className="qr-image-container">
+              <img
+                src={roomQrCodeUrl}
+                alt="Mã QR Vào Bàn Chiếu Quỷ"
+                className="qr-image-display"
+              />
+            </div>
+
+            {/* Thông tin đường link bàn chơi */}
+            <div
+              className="qr-link-box"
+              onClick={() => handleCopyText(targetRoomUrl)}
+              title="Bấm để sao chép link bàn chơi"
+            >
+              <span className="qr-link-url">{targetRoomUrl}</span>
+              <button
+                type="button"
+                className="qr-copy-btn"
+                aria-label="Sao chép link bàn chơi"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCopyText(targetRoomUrl);
+                }}
+              >
+                {copiedLink ? (
+                  <CheckIcon width={18} height={18} color="#66ff33" />
+                ) : (
+                  <CopyIcon width={18} height={18} color="#ffffff" />
+                )}
+              </button>
+            </div>
+
+            {/* Nhóm nút: Sao chép link và Mở link trong tab mới */}
+            <div className="modal-qr-actions">
+              <button
+                type="button"
+                className="modal-btn modal-btn-copy-qr"
+                onClick={() => handleCopyText(targetRoomUrl)}
+                title={copiedLink ? "Đã sao chép link!" : "Sao chép link xem điểm chung"}
+                aria-label="Sao chép link"
+              >
+                {copiedLink ? (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800 }}>
+                    <CheckIcon width={20} height={20} color="#000000" /> ĐÃ SAO CHÉP
+                  </span>
+                ) : (
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 800 }}>
+                    <CopyIcon width={20} height={20} color="#000000" /> SAO CHÉP LINK
+                  </span>
+                )}
+              </button>
+              <button
+                type="button"
+                className="modal-btn modal-btn-open-link"
+                onClick={() => handleOpenLink(targetRoomUrl)}
+                title="Mở link trong tab mới"
+                aria-label="Mở link"
+              >
+                <ExternalLinkIcon width={22} height={22} color="#000000" />
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Khung mã QR MoMo chuyển tiền quỹ */}
+            <div className="qr-image-container">
+              <img
+                src={qrMomoUrl}
+                alt="Mã QR Quỹ Chiếu Quỷ"
+                className="qr-image-display"
+              />
+            </div>
+
+            {/* Thông tin đường link quỹ */}
+            <div
+              className="qr-link-box"
+              onClick={() => handleOpenLink(momoUrl)}
+              title="Bấm để mở trực tiếp đường link QR trong tab mới"
+            >
+              <span className="qr-link-url">{momoUrl}</span>
+              <button
+                type="button"
+                className="qr-copy-btn"
+                aria-label="Mở link trong tab mới"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenLink(momoUrl);
+                }}
+              >
+                <ExternalLinkIcon width={20} height={20} color="#ffffff" />
+              </button>
+            </div>
+
+            {/* Nút Sao chép ảnh QR và Lưu QR MoMo */}
+            <div className="modal-qr-actions">
+              <button
+                type="button"
+                className="modal-btn modal-btn-copy-qr"
+                onClick={handleCopyQrImage}
+                title={copiedImage ? "Đã sao chép ảnh QR vào clipboard!" : "Sao chép ảnh QR code vào clipboard"}
+                aria-label="Sao chép ảnh QR"
+              >
+                {copiedImage ? (
+                  <CheckIcon width={24} height={24} color="#000000" />
+                ) : (
+                  <CopyIcon width={24} height={24} color="#000000" />
+                )}
+              </button>
+              <button
+                type="button"
+                className="modal-btn modal-btn-save-qr"
+                onClick={handleSaveQr}
+                title="Lưu QR"
+                aria-label="Lưu QR"
+                disabled={downloading}
+              >
+                {downloading ? (
+                  <LoadingSpinnerIcon width={24} height={24} color="#000000" />
+                ) : (
+                  <DownloadQrIcon width={24} height={24} color="#000000" />
+                )}
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

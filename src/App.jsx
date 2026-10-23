@@ -74,6 +74,7 @@ export default function App() {
     isViewOnly,
     slotIndex,
     viewOnlyUrl,
+    roomUrl,
     updatePlayerName,
     updateRoundDeltas,
     confirmRound,
@@ -687,10 +688,11 @@ export default function App() {
         isViewOnly={isViewOnly}
       />
 
-      {/* 6. Cửa sổ Popup Mã QR Quỹ Chiếu Quỷ (dự phòng) */}
+      {/* 6. Cửa sổ Popup Mã QR Quỹ Chiếu Quỷ & Link Bàn Chơi */}
       <QrTransferModal
         isOpen={isQrModalOpen}
         onClose={() => setIsQrModalOpen(false)}
+        roomUrl={roomUrl}
       />
 
       {/* 7. Hiệu ứng hoạt ảnh bùng nổ khi hô Sâm thành công */}
