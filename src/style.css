@@ -2315,80 +2315,9 @@ td {
 }
 
 /* Các điểm sáng lấp lánh (Sparkles) trên 5 ngôi sao & vương miện */
-.sam-sparkle {
-  position: absolute;
-  width: 14px;
-  height: 14px;
-  background: #ffffff;
-  clip-path: polygon(50% 0%, 65% 35%, 100% 50%, 65% 65%, 50% 100%, 35% 65%, 0% 50%, 35% 35%);
-  box-shadow: 0 0 12px #ffffff, 0 0 25px #ffd700;
-  opacity: 0;
-  pointer-events: none;
-  animation: samSparkleTwinkle 1.4s ease-in-out 0.5s infinite alternate;
-}
+/* Sparkle effects removed */
 
-.sam-sparkle-1 { top: 21%; left: 28%; animation-delay: 0.5s; }
-.sam-sparkle-2 { top: 18%; left: 38%; animation-delay: 0.65s; }
-.sam-sparkle-3 { top: 15%; left: 50%; width: 18px; height: 18px; animation-delay: 0.45s; }
-.sam-sparkle-4 { top: 18%; right: 38%; animation-delay: 0.75s; }
-.sam-sparkle-5 { top: 21%; right: 28%; animation-delay: 0.6s; }
-.sam-sparkle-crown { top: 48%; left: 50%; transform: translateX(-50%); width: 16px; height: 16px; animation-delay: 0.55s; }
-
-/* 6. Banner chúc mừng bên dưới Logo */
-.sam-title-banner {
-  margin-top: 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  opacity: 0;
-  transform: translateY(20px) scale(0.9);
-  animation: samBannerPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.52s forwards;
-  z-index: 6;
-}
-
-.sam-title-main {
-  font-size: clamp(22px, 5.8vw, 32px);
-  font-weight: 900;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  background: linear-gradient(180deg, #ffffff 0%, #ffe875 40%, #f59e0b 80%, #b45309 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.8)) drop-shadow(0 0 16px rgba(245, 158, 11, 0.7));
-  text-align: center;
-}
-
-.sam-winner-sub {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 18px;
-  border-radius: 999px;
-  background: rgba(180, 83, 9, 0.35);
-  border: 1.5px solid rgba(251, 191, 36, 0.75);
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 18px rgba(245, 158, 11, 0.4);
-  backdrop-filter: blur(6px);
-}
-
-.sam-winner-crown {
-  font-size: 18px;
-}
-
-.sam-winner-name {
-  color: #ffffff;
-  font-weight: 800;
-  font-size: clamp(14px, 3.8vw, 18px);
-  letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
-}
-
-.sam-winner-pts {
-  color: #34d399;
-  font-weight: 900;
-  font-size: clamp(14px, 3.8vw, 18px);
-  text-shadow: 0 0 8px rgba(52, 211, 153, 0.6);
-}
+/* Title banner and winner info removed */
 
 /* ==========================================================================
    KEYFRAME ANIMATIONS DÀNH CHO SÂM

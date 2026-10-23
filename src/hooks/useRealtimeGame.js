@@ -103,41 +103,13 @@ export function fireSamFireworks() {
       '#ffea00'  // Vàng chanh
     ];
 
-    // 1. Góc trên - trái: 1 quả pháo hoa bắn chéo xuống trung tâm màn hình
+    // 1. Bên trái: pháo hoa bắn vút lên chéo sang phải
     confetti({
-      particleCount: 85,
-      angle: 315,
-      spread: 80,
-      startVelocity: 48,
-      origin: { x: 0, y: 0 },
-      colors: samColors,
-      gravity: 0.85,
-      ticks: 220,
-      zIndex: 99999,
-      disableForReducedMotion: true
-    });
-
-    // 2. Góc trên - phải: 1 quả pháo hoa bắn chéo xuống trung tâm màn hình
-    confetti({
-      particleCount: 85,
-      angle: 225,
-      spread: 80,
-      startVelocity: 48,
-      origin: { x: 1, y: 0 },
-      colors: samColors,
-      gravity: 0.85,
-      ticks: 220,
-      zIndex: 99999,
-      disableForReducedMotion: true
-    });
-
-    // 3. Góc dưới - trái: 1 quả pháo hoa bắn vút lên trung tâm màn hình
-    confetti({
-      particleCount: 95,
-      angle: 50,
-      spread: 85,
-      startVelocity: 58,
-      origin: { x: 0, y: 1 },
+      particleCount: 100,
+      angle: 55,
+      spread: 70,
+      startVelocity: 55,
+      origin: { x: 0, y: 0.7 },
       colors: samColors,
       gravity: 0.85,
       ticks: 240,
@@ -145,13 +117,13 @@ export function fireSamFireworks() {
       disableForReducedMotion: true
     });
 
-    // 4. Góc dưới - phải: 1 quả pháo hoa bắn vút lên trung tâm màn hình
+    // 2. Bên phải: pháo hoa bắn vút lên chéo sang trái
     confetti({
-      particleCount: 95,
-      angle: 130,
-      spread: 85,
-      startVelocity: 58,
-      origin: { x: 1, y: 1 },
+      particleCount: 100,
+      angle: 125,
+      spread: 70,
+      startVelocity: 55,
+      origin: { x: 1, y: 0.7 },
       colors: samColors,
       gravity: 0.85,
       ticks: 240,

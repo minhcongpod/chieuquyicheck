@@ -8,7 +8,7 @@ import { playSamCelebrationSound } from '../utils/samAudio';
  * 1. Khởi đầu: Logo ở scale 2.6, xoay nghiêng, opacity 0, màn hình lóe sáng tia chớp trắng/vàng.
  * 2. Thu nhỏ & bứt tốc (0.45s): Thu nhỏ nhanh chóng về giữa (scale 1), dùng cubic-bezier nảy mạnh mẽ.
  * 3. Va đập & Rung màn hình (0.2s): Shockwave nở bung, màn hình rung chuyển, logo tỏa hào quang vàng chói lọi.
- * 4. Duy trì 1.5s: Hiển thị rực rỡ cùng hiệu ứng ánh sao lấp lánh và pháo hoa 4 góc.
+ * 4. Duy trì 1.5s: Hiển thị rực rỡ cùng pháo hoa 2 bên trái phải.
  * 5. Tự động mờ dần (fade out) và kết thúc để trở lại bảng điểm.
  */
 export default function SamEffectOverlay({
@@ -37,7 +37,7 @@ export default function SamEffectOverlay({
     // 1. Âm thanh bứt tốc & va đập siêu thực
     playSamCelebrationSound();
 
-    // 2. Ngay khoảnh khắc logo va đập vào giữa (0.45s), bắn pháo hoa từ 4 góc
+    // 2. Ngay khoảnh khắc logo va đập vào giữa (0.45s), bắn pháo hoa từ 2 bên
     const fireworksTimer = setTimeout(() => {
       fireSamFireworks();
     }, 450);
@@ -103,26 +103,6 @@ export default function SamEffectOverlay({
             className="sam-logo-img"
             draggable={false}
           />
-
-          {/* Các điểm phát sáng lấp lánh trên 5 ngôi sao & vương miện (Sparkle Flares) */}
-          <div className="sam-sparkle sam-sparkle-1" />
-          <div className="sam-sparkle sam-sparkle-2" />
-          <div className="sam-sparkle sam-sparkle-3" />
-          <div className="sam-sparkle sam-sparkle-4" />
-          <div className="sam-sparkle sam-sparkle-5" />
-          <div className="sam-sparkle sam-sparkle-crown" />
-        </div>
-
-        {/* Banner thông báo người chiến thắng */}
-        <div className="sam-title-banner">
-          <div className="sam-title-main">HÔ SÂM THÀNH CÔNG!</div>
-          {winnerName && (
-            <div className="sam-winner-sub">
-              <span className="sam-winner-crown">👑</span>
-              <span className="sam-winner-name">{winnerName}</span>
-              {points > 0 && <span className="sam-winner-pts">+{points}</span>}
-            </div>
-          )}
         </div>
       </div>
     </div>
