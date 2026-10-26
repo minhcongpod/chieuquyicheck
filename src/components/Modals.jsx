@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { CopyIcon, CheckIcon } from './Icons';
 import qrMomoUrl from '../assets/qr-momo.jpg';
 
+// Số ký tự cuối link luôn hiển thị (dấu … nằm ở giữa)
+const LINK_TAIL_LENGTH = 12;
+
 /**
  * Popup Mã QR: Hỗ trợ 2 chế độ:
  * 1. Vào Chiếu: Quét mã QR hoặc sao chép link bàn chơi để cùng xem điểm trên Firebase
@@ -89,7 +92,11 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
               onClick={() => handleCopyText(targetRoomUrl)}
               title="Bấm để sao chép link bàn chơi"
             >
-              <span className="qr-link-url">{targetRoomUrl}</span>
+              {/* Rút gọn ở giữa: giữ phần đầu + phần đuôi link (vd .../vip) */}
+              <span className="qr-link-url">
+                <span className="qr-link-url-head">{targetRoomUrl.slice(0, -LINK_TAIL_LENGTH)}</span>
+                <span className="qr-link-url-tail">{targetRoomUrl.slice(-LINK_TAIL_LENGTH)}</span>
+              </span>
               <button
                 type="button"
                 className="qr-copy-btn"

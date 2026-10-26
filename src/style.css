@@ -1509,12 +1509,23 @@ td {
   color: #66ff33;
   white-space: nowrap;
   overflow: hidden;
-  text-overflow: ellipsis;
   user-select: text;
   text-align: left;
   font-family: monospace;
   flex: 1;
   min-width: 0;
+  display: flex;
+}
+
+/* Phần đầu link co lại với dấu …, phần đuôi giữ nguyên */
+.qr-link-url-head {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.qr-link-url-tail {
+  flex-shrink: 0;
 }
 
 .qr-copy-btn {
@@ -2660,7 +2671,7 @@ td {
   padding: 0;
   border: none;
   border-radius: 0;
-  background: #090a03;
+  background: transparent;
   color: #00ff00;
   display: flex;
   align-items: center;
