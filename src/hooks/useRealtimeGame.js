@@ -7,8 +7,11 @@ import {
   collection,
   onSnapshot,
   setDoc,
+  getDoc,
   updateDoc,
-  deleteDoc
+  deleteDoc,
+  deleteField,
+  runTransaction
 } from 'firebase/firestore';
 
 const INITIAL_PLAYERS = [
@@ -151,62 +154,105 @@ function getOrCreateDeviceId() {
   }
 }
 
-export function useRealtimeGame() {
-  // Trích xuất roomId từ URL (mặc định 'default' dùng chung cho tất cả mọi người)
-  const [roomId] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const roomParam = params.get('room');
-      if (roomParam && roomParam.trim() !== '') {
-        return roomParam.trim();
-      }
+// Các file tĩnh ở gốc trang, không được hiểu là tên phòng
+const RESERVED_PATHS = new Set(['index.html', '404.html']);
 
-      // Hỗ trợ dạng hash rõ ràng: #room=abc hoặc #/room/abc
-      const hash = window.location.hash.replace(/^#\/?/, '');
-      if (hash.startsWith('room=')) {
-        const val = hash.replace('room=', '').trim();
-        if (val) return decodeURIComponent(val);
-      }
-    }
-    return 'default';
-  });
+function safeDecode(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (e) {
+    return value;
+  }
+}
+
+/**
+ * Xác định phòng chơi từ URL:
+ * - Link gốc (https://.../) -> null: phòng RIÊNG của từng máy, chỉ lưu localStorage, không đồng bộ
+ * - Đường dẫn con (/vip, /ban-2) -> phòng CHUNG: mọi máy mở cùng link cùng xem & sửa realtime
+ * - Hỗ trợ tiếp các dạng cũ: ?room=abc, #room=abc, #/room/abc
+ */
+export function resolveRoomId() {
+  if (typeof window === 'undefined') return null;
+
+  const params = new URLSearchParams(window.location.search);
+  const roomParam = (params.get('room') || '').trim();
+  if (roomParam) return roomParam;
+
+  const hash = window.location.hash.replace(/^#\/?/, '');
+  if (hash.startsWith('room=') || hash.startsWith('room/')) {
+    const val = safeDecode(hash.slice(5)).replace(/\/+$/, '').trim();
+    if (val) return val;
+  }
+
+  // GitHub Pages chạy dưới /chieuquyicheck/ nên bỏ qua tên repo đứng đầu
+  const segments = window.location.pathname.split('/').filter(Boolean);
+  if (window.location.hostname.endsWith('github.io')) segments.shift();
+  const roomPath = segments
+    .filter(s => !RESERVED_PATHS.has(s.toLowerCase()))
+    .map(s => safeDecode(s).trim().toLowerCase())
+    .filter(Boolean)
+    .join('-'); // Firestore không cho phép dấu "/" trong ID
+  return roomPath || null;
+}
+
+// Link gốc của ứng dụng (phòng riêng)
+function getBaseUrl() {
+  if (typeof window === 'undefined') return '';
+  const { origin, hostname, pathname } = window.location;
+  if (hostname.endsWith('github.io')) {
+    const repo = pathname.split('/').filter(Boolean)[0];
+    return repo ? `${origin}/${repo}/` : `${origin}/`;
+  }
+  return `${origin}/`;
+}
+
+// Tên người chơi lưu riêng ở playerNames.<id>, ghi đè lên danh sách players (id + màu)
+function mergePlayerNames(data) {
+  const names = data.playerNames || {};
+  return (data.players || INITIAL_PLAYERS).map(p => (
+    typeof names[p.id] === 'string' ? { ...p, name: names[p.id] } : p
+  ));
+}
+
+function readCache(name, storageKey, fallbackKey) {
+  try {
+    const saved = localStorage.getItem(`cq_${name}_${storageKey}`)
+      ?? (fallbackKey ? localStorage.getItem(`cq_${name}_${fallbackKey}`) : null);
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function writeCache(name, storageKey, value) {
+  try {
+    localStorage.setItem(`cq_${name}_${storageKey}`, JSON.stringify(value));
+  } catch (e) {}
+}
+
+export function useRealtimeGame() {
+  const [roomId] = useState(resolveRoomId);
+  // Chỉ đồng bộ Firestore khi đang ở phòng chung (đường dẫn con)
+  const isShared = Boolean(roomId) && isFirebaseConfigured && Boolean(db);
+  // Phòng riêng dùng khoá 'local'; lần đầu lấy lại ván đang chơi dở ở bản cũ (khoá 'default')
+  const storageKey = roomId || 'local';
+  const fallbackKey = roomId ? null : 'default';
 
   const [players, setPlayers] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`cq_players_${roomId}`);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return parsed.map((p, idx) => {
-          const legacyDefault = String.fromCharCode(65 + idx);
-          if (p.name === legacyDefault) return { ...p, name: '' };
-          return p;
-        });
-      }
-      return INITIAL_PLAYERS;
-    } catch (e) {
-      return INITIAL_PLAYERS;
-    }
+    const saved = readCache('players', storageKey, fallbackKey);
+    if (!saved) return INITIAL_PLAYERS;
+    return saved.map((p, idx) => {
+      const legacyDefault = String.fromCharCode(65 + idx);
+      if (p.name === legacyDefault) return { ...p, name: '' };
+      return p;
+    });
   });
 
-  const [history, setHistory] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`cq_history_${roomId}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
+  const [history, setHistory] = useState(() => readCache('history', storageKey, fallbackKey) || []);
+  const [dailyLedger, setDailyLedger] = useState(() => readCache('dailyLedger', storageKey, fallbackKey) || []);
 
-  const [dailyLedger, setDailyLedger] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`cq_dailyLedger_${roomId}`);
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
-  });
-
-  const [roundDeltas, setRoundDeltas] = useState({});
+  const [roundDeltas, setRoundDeltasState] = useState(() => (isShared ? {} : (readCache('roundDeltas', storageKey) || {})));
+  const roundDeltasRef = useRef(roundDeltas);
   const [isConnected, setIsConnected] = useState(false);
   const [userCount, setUserCount] = useState(1);
 
@@ -239,9 +285,80 @@ export function useRealtimeGame() {
     setSamCelebration(prev => ({ ...prev, isOpen: false }));
   }, []);
 
-  // Lắng nghe dữ liệu thời gian thực từ Firebase Firestore
+  const setRoundDeltas = useCallback((next) => {
+    roundDeltasRef.current = next;
+    setRoundDeltasState(next);
+    if (!isShared) writeCache('roundDeltas', storageKey, next);
+  }, [isShared, storageKey]);
+
+  /**
+   * Ghi an toàn khi nhiều máy cùng sửa: đọc dữ liệu mới nhất trên server rồi mới ghi (transaction),
+   * tránh việc máy này ghi đè mất thao tác của máy khác.
+   * - mutate(serverData) trả về patch cần ghi, hoặc null nếu thao tác đã bị máy khác làm trước (xung đột)
+   * - fallbackPatch: dùng khi mất mạng (transaction không chạy được offline), ghi thẳng vào hàng đợi
+   * Trả về false nếu xung đột để nơi gọi đồng bộ lại.
+   */
+  const writeQueueRef = useRef(Promise.resolve());
+  const writeShared = useCallback((mutate, fallbackPatch) => {
+    if (!isShared) return Promise.resolve(true);
+    // Xếp hàng các lần ghi của máy này để chúng không tự tranh chấp với nhau
+    const run = () => runSharedTransaction(mutate, fallbackPatch);
+    const result = writeQueueRef.current.then(run, run);
+    writeQueueRef.current = result.catch(() => {});
+    return result;
+  }, [isShared, roomId]);
+
+  const runSharedTransaction = async (mutate, fallbackPatch) => {
+    const ref = doc(db, 'rooms', roomId);
+    try {
+      return await runTransaction(db, async (tx) => {
+        const snap = await tx.get(ref);
+        const patch = mutate(snap.exists() ? snap.data() : {});
+        if (!patch) return false;
+        const payload = { ...patch, updatedAt: Date.now() };
+        if (snap.exists()) {
+          tx.update(ref, payload);
+        } else {
+          tx.set(ref, { roomId, players: INITIAL_PLAYERS, history: [], roundDeltas: {}, dailyLedger: [], createdAt: Date.now(), ...payload });
+        }
+        return true;
+      });
+    } catch (e) {
+      console.warn('[Firebase] Transaction lỗi, ghi trực tiếp:', e?.code, e);
+      if (fallbackPatch) {
+        updateDoc(ref, { ...fallbackPatch, updatedAt: Date.now() })
+          .catch(err => console.error('[Firebase] Lỗi ghi dữ liệu:', err));
+      }
+      return true;
+    }
+  };
+
+  // Lấy lại dữ liệu server khi thao tác bị xung đột (máy khác đã chốt / hoàn tác trước)
+  const resyncFromServer = useCallback(async () => {
+    if (!isShared) return;
+    try {
+      const snap = await getDoc(doc(db, 'rooms', roomId));
+      const data = snap.data();
+      if (!data) return;
+      if (data.history) {
+        prevHistoryLenRef.current = data.history.length;
+        setHistory(data.history);
+        writeCache('history', storageKey, data.history);
+      }
+      if (data.roundDeltas !== undefined) setRoundDeltas(data.roundDeltas || {});
+      if (data.dailyLedger) {
+        prevLedgerLenRef.current = data.dailyLedger.length;
+        setDailyLedger(data.dailyLedger);
+        writeCache('dailyLedger', storageKey, data.dailyLedger);
+      }
+    } catch (e) {
+      console.error('[Firebase] Lỗi đồng bộ lại:', e);
+    }
+  }, [isShared, roomId, storageKey, setRoundDeltas]);
+
+  // Lắng nghe dữ liệu thời gian thực từ Firebase Firestore (chỉ phòng chung)
   useEffect(() => {
-    if (!isFirebaseConfigured || !db) {
+    if (!isShared) {
       setIsConnected(false);
       return;
     }
@@ -274,17 +391,17 @@ export function useRealtimeGame() {
       if (!data) return;
 
       // Cập nhật dữ liệu game realtime
-      if (data.players) {
-        setPlayers(data.players);
-        localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(data.players));
+      if (data.players || data.playerNames) {
+        const nextPlayers = mergePlayerNames(data);
+        setPlayers(nextPlayers);
+        writeCache('players', roomId, nextPlayers);
       }
 
       if (data.history) {
         if (!isInitialMount && data.history.length > prevHistoryLenRef.current) {
           const newestRound = data.history[data.history.length - 1];
           if (isSamRound(newestRound)) {
-            const currentPlayers = data.players || players;
-            const winner = getSamWinnerInfo(newestRound, currentPlayers);
+            const winner = getSamWinnerInfo(newestRound, mergePlayerNames(data));
             triggerSamCelebration(winner?.name || '', winner?.points || 0);
           } else {
             fireConfetti();
@@ -292,7 +409,7 @@ export function useRealtimeGame() {
         }
         prevHistoryLenRef.current = data.history.length;
         setHistory(data.history);
-        localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(data.history));
+        writeCache('history', roomId, data.history);
       }
 
       if (data.roundDeltas !== undefined) {
@@ -305,7 +422,7 @@ export function useRealtimeGame() {
         }
         prevLedgerLenRef.current = data.dailyLedger.length;
         setDailyLedger(data.dailyLedger);
-        localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(data.dailyLedger));
+        writeCache('dailyLedger', roomId, data.dailyLedger);
       }
 
       isInitialMount = false;
@@ -370,45 +487,53 @@ export function useRealtimeGame() {
       unsubscribeRoom();
       unsubscribePresence();
     };
-  }, [roomId]);
+  }, [isShared, roomId]);
 
   // Các thao tác ghi dữ liệu (Ai cũng có toàn quyền thực hiện)
   const updatePlayerName = useCallback(async (id, newName) => {
     const nextPlayers = players.map(p => p.id === id ? { ...p, name: newName } : p);
     setPlayers(nextPlayers);
-    localStorage.setItem(`cq_players_${roomId}`, JSON.stringify(nextPlayers));
+    writeCache('players', storageKey, nextPlayers);
 
-    if (isFirebaseConfigured && db) {
+    // Chỉ ghi tên đúng người này (playerNames.<id>) để 2 máy đổi tên 2 người khác nhau không đè nhau
+    if (isShared) {
       try {
         await updateDoc(doc(db, 'rooms', roomId), {
-          players: nextPlayers,
+          [`playerNames.${id}`]: newName,
           updatedAt: Date.now()
         });
       } catch (e) {
         console.error('[Firebase] Lỗi updatePlayerName:', e);
       }
     }
-  }, [roomId, players]);
+  }, [players, isShared, roomId, storageKey]);
 
-  const updateRoundDeltas = useCallback(async (newDeltasOrUpdater) => {
-    setRoundDeltas(prev => {
-      const next = typeof newDeltasOrUpdater === 'function' ? newDeltasOrUpdater(prev) : newDeltasOrUpdater;
-      if (isFirebaseConfigured && db) {
-        updateDoc(doc(db, 'rooms', roomId), {
-          roundDeltas: next,
-          updatedAt: Date.now()
-        }).catch(e => console.error('[Firebase] Lỗi updateRoundDeltas:', e));
+  // Điểm đang nhập: chỉ ghi các ô thay đổi để 2 máy nhập 2 người khác nhau không đè nhau
+  const updateRoundDeltas = useCallback((newDeltasOrUpdater) => {
+    const prev = roundDeltasRef.current;
+    const next = typeof newDeltasOrUpdater === 'function' ? newDeltasOrUpdater(prev) : newDeltasOrUpdater;
+    if (next === prev) return;
+    setRoundDeltas(next);
+
+    if (!isShared) return;
+    const patch = {};
+    new Set([...Object.keys(prev || {}), ...Object.keys(next || {})]).forEach(playerId => {
+      if ((prev || {})[playerId] !== (next || {})[playerId]) {
+        patch[`roundDeltas.${playerId}`] = next[playerId] === undefined ? deleteField() : next[playerId];
       }
-      return next;
     });
-  }, [roomId]);
+    if (Object.keys(patch).length === 0) return;
+    updateDoc(doc(db, 'rooms', roomId), { ...patch, updatedAt: Date.now() })
+      .catch(e => console.error('[Firebase] Lỗi updateRoundDeltas:', e));
+  }, [isShared, roomId, setRoundDeltas]);
 
   const confirmRound = useCallback(async (newRound) => {
+    const expectedLength = history.length;
     const nextHistory = [...history, newRound];
     prevHistoryLenRef.current = nextHistory.length;
     setHistory(nextHistory);
     setRoundDeltas({});
-    localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(nextHistory));
+    writeCache('history', storageKey, nextHistory);
     if (isSamRound(newRound)) {
       const winner = getSamWinnerInfo(newRound, players);
       triggerSamCelebration(winner?.name || '', winner?.points || 0);
@@ -416,18 +541,14 @@ export function useRealtimeGame() {
       fireConfetti();
     }
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, 'rooms', roomId), {
-          history: nextHistory,
-          roundDeltas: {},
-          updatedAt: Date.now()
-        });
-      } catch (e) {
-        console.error('[Firebase] Lỗi confirmRound:', e);
-      }
-    }
-  }, [roomId, history]);
+    // Nếu máy khác vừa chốt ván trước (lịch sử server đã dài hơn) thì bỏ qua để không bị trùng ván
+    const ok = await writeShared(data => {
+      const serverHistory = data.history || [];
+      if (serverHistory.length !== expectedLength) return null;
+      return { history: [...serverHistory, newRound], roundDeltas: {} };
+    }, { history: nextHistory, roundDeltas: {} });
+    if (!ok) resyncFromServer();
+  }, [history, players, storageKey, setRoundDeltas, triggerSamCelebration, writeShared, resyncFromServer]);
 
   const undoRound = useCallback(async () => {
     if (history.length === 0) return;
@@ -450,30 +571,28 @@ export function useRealtimeGame() {
     }
 
     const nextHistory = history.slice(0, -1);
+    prevHistoryLenRef.current = nextHistory.length;
     setHistory(nextHistory);
     setRoundDeltas(restoredDeltas);
-    localStorage.setItem(`cq_history_${roomId}`, JSON.stringify(nextHistory));
+    writeCache('history', storageKey, nextHistory);
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, 'rooms', roomId), {
-          history: nextHistory,
-          roundDeltas: restoredDeltas,
-          updatedAt: Date.now()
-        });
-      } catch (e) {
-        console.error('[Firebase] Lỗi undoRound:', e);
-      }
-    }
-  }, [roomId, history]);
+    // Chỉ hoàn tác nếu ván cuối trên server đúng là ván máy này đang thấy
+    const ok = await writeShared(data => {
+      const serverHistory = data.history || [];
+      if (serverHistory[serverHistory.length - 1]?.id !== lastRound?.id) return null;
+      return { history: serverHistory.slice(0, -1), roundDeltas: restoredDeltas };
+    }, { history: nextHistory, roundDeltas: restoredDeltas });
+    if (!ok) resyncFromServer();
+  }, [history, storageKey, setRoundDeltas, writeShared, resyncFromServer]);
 
   const resetGame = useCallback(async () => {
     // Giữ nguyên tên người chơi, chỉ reset lịch sử điểm và điểm ván hiện tại về 0
+    prevHistoryLenRef.current = 0;
     setHistory([]);
     setRoundDeltas({});
-    localStorage.setItem(`cq_history_${roomId}`, JSON.stringify([]));
+    writeCache('history', storageKey, []);
 
-    if (isFirebaseConfigured && db) {
+    if (isShared) {
       try {
         await updateDoc(doc(db, 'rooms', roomId), {
           history: [],
@@ -484,32 +603,44 @@ export function useRealtimeGame() {
         console.error('[Firebase] Lỗi resetGame:', e);
       }
     }
-  }, [roomId]);
+  }, [isShared, roomId, storageKey, setRoundDeltas]);
+
+  const applyLocalLedger = useCallback((nextLedger) => {
+    prevLedgerLenRef.current = nextLedger.length;
+    setDailyLedger(nextLedger);
+    writeCache('dailyLedger', storageKey, nextLedger);
+  }, [storageKey]);
 
   const addLedgerEntry = useCallback(async (entry) => {
     const nextLedger = [entry, ...(dailyLedger || [])];
-    setDailyLedger(nextLedger);
-    localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(nextLedger));
+    applyLocalLedger(nextLedger);
     fireConfetti();
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, 'rooms', roomId), {
-          dailyLedger: nextLedger,
-          updatedAt: Date.now()
-        });
-      } catch (e) {
-        console.error('[Firebase] Lỗi addLedgerEntry:', e);
-      }
-    }
-  }, [roomId, dailyLedger]);
+    await writeShared(data => {
+      const serverLedger = data.dailyLedger || [];
+      if (serverLedger.some(e => e.id === entry.id)) return null;
+      return { dailyLedger: [entry, ...serverLedger] };
+    }, { dailyLedger: nextLedger });
+  }, [dailyLedger, applyLocalLedger, writeShared]);
+
+  // Thêm 1 lần chốt sổ vào cuối sổ (giữ nguyên các lần chốt sổ máy khác vừa thêm)
+  const appendLedgerEntry = useCallback(async (entry) => {
+    const nextLedger = [...(dailyLedger || []), entry];
+    applyLocalLedger(nextLedger);
+    fireConfetti();
+
+    await writeShared(data => {
+      const serverLedger = data.dailyLedger || [];
+      if (serverLedger.some(e => e.id === entry.id)) return null;
+      return { dailyLedger: [...serverLedger, entry] };
+    }, { dailyLedger: nextLedger });
+  }, [dailyLedger, applyLocalLedger, writeShared]);
 
   const setDailyLedgerData = useCallback(async (newLedger) => {
-    setDailyLedger(newLedger);
-    localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(newLedger));
+    applyLocalLedger(newLedger);
     fireConfetti();
 
-    if (isFirebaseConfigured && db) {
+    if (isShared) {
       try {
         await updateDoc(doc(db, 'rooms', roomId), {
           dailyLedger: newLedger,
@@ -519,36 +650,25 @@ export function useRealtimeGame() {
         console.error('[Firebase] Lỗi setDailyLedgerData:', e);
       }
     }
-  }, [roomId]);
+  }, [isShared, roomId, applyLocalLedger]);
 
   const deleteLedgerEntry = useCallback(async (entryId) => {
     const nextLedger = (dailyLedger || []).filter(e => e.id !== entryId);
-    setDailyLedger(nextLedger);
-    localStorage.setItem(`cq_dailyLedger_${roomId}`, JSON.stringify(nextLedger));
+    applyLocalLedger(nextLedger);
 
-    if (isFirebaseConfigured && db) {
-      try {
-        await updateDoc(doc(db, 'rooms', roomId), {
-          dailyLedger: nextLedger,
-          updatedAt: Date.now()
-        });
-      } catch (e) {
-        console.error('[Firebase] Lỗi deleteLedgerEntry:', e);
-      }
-    }
-  }, [roomId, dailyLedger]);
+    await writeShared(data => ({
+      dailyLedger: (data.dailyLedger || []).filter(e => e.id !== entryId)
+    }), { dailyLedger: nextLedger });
+  }, [dailyLedger, applyLocalLedger, writeShared]);
 
-  // Tạo liên kết chia sẻ phòng
-  const baseUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}${window.location.pathname.split('?')[0].replace(/\/+$/, '')}`
-    : '';
-
+  // Link chia sẻ: phòng chung -> chính link đang mở; phòng riêng -> link gốc
   const roomUrl = typeof window !== 'undefined'
-    ? (roomId === 'default' ? `${baseUrl}/` : `${baseUrl}?room=${encodeURIComponent(roomId)}`)
-    : `/${roomId}`;
+    ? (roomId ? window.location.href : getBaseUrl())
+    : '/';
 
   return {
     roomId,
+    isSharedRoom: isShared,
     players,
     history,
     roundDeltas,
@@ -568,6 +688,7 @@ export function useRealtimeGame() {
     undoRound,
     resetGame,
     addLedgerEntry,
+    appendLedgerEntry,
     setDailyLedgerData,
     deleteLedgerEntry,
     samCelebration,

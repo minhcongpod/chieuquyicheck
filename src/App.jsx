@@ -81,6 +81,7 @@ export default function App() {
     undoRound,
     resetGame,
     addLedgerEntry,
+    appendLedgerEntry,
     setDailyLedgerData,
     deleteLedgerEntry,
     samCelebration,
@@ -606,9 +607,8 @@ export default function App() {
       scores: sessionScores
     };
 
-    // Thêm lần chốt sổ mới vào sổ
-    const updatedLedger = [...(dailyLedger || []), newEntry];
-    setDailyLedgerData(updatedLedger);
+    // Thêm lần chốt sổ mới vào cuối sổ (không ghi đè lần chốt sổ máy khác vừa thêm)
+    appendLedgerEntry(newEntry);
   };
 
   // Kiểm tra bàn phím số có đang mở hay không (tắt nếu ở quyền View-Only)
