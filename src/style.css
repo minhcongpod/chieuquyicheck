@@ -2560,3 +2560,300 @@ td {
     opacity: 1;
   }
 }
+/* ==========================================================================
+   NHẬP MẬT KHẨU KHI XOÁ THỐNG KÊ ĐIỂM (FIGMA "PASS")
+   - Hàng đen cao 68px: icon ổ khoá 32px + 4 ô số 52x52 gạch chân trắng 10%
+   - Bàn phím số xanh (Keyboard) nằm ngay bên dưới, ghim đáy màn hình
+   ========================================================================== */
+.passcode-prompt {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.passcode-prompt .keyboard-overlay {
+  position: relative;
+  animation: none;
+}
+
+.passcode-input-row {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  padding: 7.627px 32px;
+  background: #000000;
+}
+
+.passcode-lock-icon {
+  display: block;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+
+.passcode-slots {
+  flex: 1 0 0;
+  min-width: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.passcode-slots.is-wrong {
+  animation: passcodeShake 0.4s ease;
+}
+
+.passcode-slots.is-wrong .passcode-digit {
+  color: #fd6161;
+}
+
+.passcode-slot {
+  width: 52px;
+  height: 52px;
+  padding-top: 10px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.passcode-digit {
+  height: 29px;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: normal;
+  color: var(--color-text-light);
+}
+
+.passcode-slot-line {
+  width: 100%;
+  height: 2.136px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes passcodeShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-8px); }
+  40%, 80% { transform: translateX(8px); }
+}
+
+/* Chừa chỗ cho ô mật khẩu + bàn phím để vẫn cuộn xem được các dòng bên dưới */
+.daily-stats-drawer.has-passcode .daily-stats-v-scroll {
+  padding-bottom: calc(68px + 4 * clamp(50px, 6.8vh, 70px));
+}
+
+/* =========================================================================
+   BẢNG XẾP HẠNG CHIẾU QUỶ (Thiết kế Figma "Bảng xếp hạng Chiếu Quỷ")
+   ========================================================================= */
+
+/* Nút mở Bảng xếp hạng ở ô tiêu đề góc trái Bảng thống kê */
+.stats-ranking-btn {
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: #090a03;
+  color: #00ff00;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.stats-ranking-btn:active {
+  transform: scale(0.88);
+}
+
+.stats-ranking-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.leaderboard-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 130;
+  display: flex;
+  flex-direction: column;
+  background: #000000;
+  padding-top: max(env(safe-area-inset-top), 130px);
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  padding-left: max(16px, env(safe-area-inset-left));
+  box-sizing: border-box;
+  font-family: var(--font-family);
+  transform: translateY(100%);
+  pointer-events: none;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.leaderboard-screen.is-open {
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.leaderboard-screen.is-dragging {
+  transition: none;
+}
+
+.leaderboard-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 4px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  scrollbar-width: none;
+}
+
+.leaderboard-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Podium top 3: thứ tự 2 - 1 - 3, căn đáy */
+.leaderboard-podium {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.podium-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.podium-rank-badge {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.podium-card {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 6px 10px;
+  box-sizing: border-box;
+  color: #000000;
+}
+
+.podium-col.is-top-1 .podium-card { height: 110px; padding-top: 10px; }
+.podium-col.is-top-2 .podium-card { height: 81px; }
+.podium-col.is-top-3 .podium-card { height: 68px; }
+
+.podium-card-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  max-width: 100%;
+}
+
+.podium-name {
+  max-width: 100%;
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.podium-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: #000000;
+  color: #f5ea00;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.podium-score {
+  font-size: 20px;
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.podium-col.is-top-1 .podium-score {
+  font-size: 26px;
+}
+
+/* Danh sách từ hạng #4 */
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 8px;
+}
+
+.leaderboard-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 52px;
+  padding: 0 16px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.leaderboard-row.is-pos { background: rgba(0, 255, 0, 0.1); }
+.leaderboard-row.is-neg { background: rgba(255, 80, 93, 0.1); }
+
+.leaderboard-row-rank {
+  min-width: 16px;
+  color: #4c5150;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.leaderboard-row-name {
+  flex: 1;
+  min-width: 0;
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-row-score {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.leaderboard-row.is-pos .leaderboard-row-score { color: #00ff00; }
+.leaderboard-row.is-neg .leaderboard-row-score { color: #ff505d; }

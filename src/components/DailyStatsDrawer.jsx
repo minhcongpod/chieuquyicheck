@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { PLAYER_COLORS_10 } from '../constants/sampleLedger';
-import { TrashIcon, SortScoreIcon, SortNameIcon } from './Icons';
+import { TrashIcon } from './Icons';
+import PasscodePrompt from './PasscodePrompt';
+import Leaderboard, { RankingIcon } from './Leaderboard';
 
 /**
  * Bảng Thống Kê Điểm Theo Lần Chốt Sổ (Daily Stats Ledger)
@@ -14,6 +16,9 @@ import { TrashIcon, SortScoreIcon, SortNameIcon } from './Icons';
  * - Cột thứ tự và nút Sắp xếp được ghim cố định bên trái (Sticky left)
  * - Toàn bộ chữ font-weight: 800 đồng nhất
  * - Bấm vào thứ tự (Vd: #6) để hiển thị icon thùng rác màu đỏ, nền đỏ rượu, cả dòng đỏ mờ 10% để xoá
+ * - Bấm thùng rác thì hiện ô nhập mật khẩu 4 số, nhập đúng mới xoá
+ * - Cột người chơi luôn xếp theo tổng điểm cao -> thấp
+ * - Nút RANKING ở góc trên bên trái mở Bảng xếp hạng
  */
 export default function DailyStatsDrawer({
   isOpen,
@@ -26,13 +31,22 @@ export default function DailyStatsDrawer({
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  // Chế độ sắp xếp cột: 'score' (Cao bên trái - thấp dần bên phải) | 'name' (A đến Z)
-  const [sortMode, setSortMode] = useState('score');
+  // Lần chốt sổ đang chờ nhập mật khẩu để xoá
+  const [passcodeEntryId, setPasscodeEntryId] = useState(null);
+  // Trạng thái mở Bảng xếp hạng
+  const [isRankingOpen, setIsRankingOpen] = useState(false);
 
-  const handleToggleSort = () => {
-    setSortMode(prev => (prev === 'score' ? 'name' : 'score'));
+  const cancelDelete = () => {
+    setPendingDeleteId(null);
+    setPasscodeEntryId(null);
   };
 
+  const handlePasscodeSuccess = () => {
+    if (onDeleteLedgerEntry && passcodeEntryId) {
+      onDeleteLedgerEntry(passcodeEntryId);
+    }
+    cancelDelete();
+  };
   const startYRef = useRef(0);
   const startXRef = useRef(0);
   const currentDragYRef = useRef(0);
@@ -44,8 +58,10 @@ export default function DailyStatsDrawer({
     if (!isOpen) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        if (pendingDeleteId) {
-          setPendingDeleteId(null);
+        if (isRankingOpen) {
+          setIsRankingOpen(false);
+        } else if (pendingDeleteId || passcodeEntryId) {
+          cancelDelete();
         } else {
           onClose();
         }
@@ -53,7 +69,7 @@ export default function DailyStatsDrawer({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, pendingDeleteId]);
+  }, [isOpen, onClose, pendingDeleteId, passcodeEntryId, isRankingOpen]);
 
   // Reset drag position và trạng thái xoá khi trạng thái isOpen thay đổi
   useEffect(() => {
@@ -63,12 +79,14 @@ export default function DailyStatsDrawer({
       isDraggingRef.current = false;
       currentDragYRef.current = 0;
       setPendingDeleteId(null);
+      setPasscodeEntryId(null);
+      setIsRankingOpen(false);
     }
   }, [isOpen]);
 
   // Xử lý vuốt ngón tay trượt xuống để đóng (Swipe down gesture on touch)
   const handleTouchStart = (e) => {
-    if (!isOpen) return;
+    if (!isOpen || isRankingOpen) return;
     const touch = e.touches[0];
     startYRef.current = touch.clientY;
     startXRef.current = touch.clientX;
@@ -77,7 +95,7 @@ export default function DailyStatsDrawer({
   };
 
   const handleTouchMove = (e) => {
-    if (!isOpen) return;
+    if (!isOpen || isRankingOpen) return;
     const touch = e.touches[0];
     const deltaY = touch.clientY - startYRef.current;
     const deltaX = touch.clientX - startXRef.current;
@@ -264,26 +282,22 @@ export default function DailyStatsDrawer({
     return totals;
   }, [masterPlayers, dailyLedger]);
 
-  // Sắp xếp các cột người chơi theo sortMode:
-  // - 'score': Tổng điểm cao bên trái, thấp dần sang phải
-  // - 'name': Tên người chơi từ A đến Z
+  // Sắp xếp các cột người chơi theo tổng điểm: cao bên trái, thấp dần sang phải
   const displayPlayers = useMemo(() => {
-    const list = [...masterPlayers];
-    if (sortMode === 'score') {
-      return list.sort((a, b) => {
-        const scoreA = totalScoresByPlayer[a.name] ?? 0;
-        const scoreB = totalScoresByPlayer[b.name] ?? 0;
-        if (scoreB !== scoreA) {
-          return scoreB - scoreA;
-        }
-        return a.name.localeCompare(b.name, 'vi');
-      });
-    } else {
-      return list.sort((a, b) => {
-        return a.name.localeCompare(b.name, 'vi');
-      });
-    }
-  }, [masterPlayers, sortMode, totalScoresByPlayer]);
+    return [...masterPlayers].sort((a, b) => {
+      const scoreA = totalScoresByPlayer[a.name] ?? 0;
+      const scoreB = totalScoresByPlayer[b.name] ?? 0;
+      if (scoreB !== scoreA) {
+        return scoreB - scoreA;
+      }
+      return a.name.localeCompare(b.name, 'vi');
+    });
+  }, [masterPlayers, totalScoresByPlayer]);
+
+  // Danh sách cho Bảng xếp hạng, cùng thứ tự với các cột
+  const rankedPlayers = useMemo(() => {
+    return displayPlayers.map((p) => ({ name: p.name, score: totalScoresByPlayer[p.name] ?? 0 }));
+  }, [displayPlayers, totalScoresByPlayer]);
 
   // Sắp xếp các lần chốt sổ theo thứ tự mới nhất nằm trên cùng (#6 -> #5 -> #4 -> ... -> #1)
   const sortedLedger = useMemo(() => {
@@ -300,7 +314,7 @@ export default function DailyStatsDrawer({
 
   return (
     <div
-      className={`daily-stats-drawer ${isOpen ? 'is-open' : ''} ${isDragging ? 'is-dragging' : ''}`}
+      className={`daily-stats-drawer ${isOpen ? 'is-open' : ''} ${isDragging ? 'is-dragging' : ''} ${passcodeEntryId ? 'has-passcode' : ''}`}
       style={
         isOpen && isDragging && dragY > 0
           ? { transform: `translateY(${dragY}px)`, transition: 'none' }
@@ -327,7 +341,7 @@ export default function DailyStatsDrawer({
         className="daily-stats-v-scroll" 
         ref={scrollRef}
         onClick={() => {
-          if (pendingDeleteId) setPendingDeleteId(null);
+          if (pendingDeleteId) cancelDelete();
         }}
       >
         <div className="daily-stats-panels-wrapper">
@@ -336,24 +350,21 @@ export default function DailyStatsDrawer({
               - Chiều rộng cố định 54px, không cho phép cuộn ngang (overflow-x: hidden).
               - Nền hoàn toàn trong suốt (transparent). */}
           <div className="daily-stats-fixed-panel">
-            {/* Header cell: Nút Sắp xếp (Thay thế icon Close) */}
+            {/* Header cell: Nút mở Bảng xếp hạng (Thiết kế Figma "Ranking button") */}
             <div className="stats-fixed-header-cell">
               <button
                 type="button"
-                className="stats-sort-btn"
-                onClick={handleToggleSort}
-                title={
-                  sortMode === 'score'
-                    ? 'Đang sắp xếp: Điểm cao -> thấp. Bấm để sắp xếp theo tên (A -> Z)'
-                    : 'Đang sắp xếp: Tên A -> Z. Bấm để sắp xếp theo điểm (Cao -> Thấp)'
-                }
-                aria-label="Sắp xếp cột người chơi"
+                className="stats-ranking-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  cancelDelete();
+                  setIsRankingOpen(true);
+                }}
+                disabled={rankedPlayers.length === 0}
+                title="Bảng xếp hạng"
+                aria-label="Mở Bảng xếp hạng"
               >
-                {sortMode === 'score' ? (
-                  <SortScoreIcon width={24} height={24} />
-                ) : (
-                  <SortNameIcon width={24} height={24} />
-                )}
+                <RankingIcon />
               </button>
             </div>
 
@@ -392,12 +403,9 @@ export default function DailyStatsDrawer({
                         className="stats-trash-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (onDeleteLedgerEntry) {
-                            onDeleteLedgerEntry(entry.id);
-                          }
-                          setPendingDeleteId(null);
+                          setPasscodeEntryId(entry.id);
                         }}
-                        title="Bấm để xác nhận xoá lần chốt sổ này"
+                        title="Bấm để nhập mật khẩu xoá lần chốt sổ này"
                         aria-label="Xoá lần chốt sổ"
                       >
                         <TrashIcon width={20} height={20} color="#fd6161" />
@@ -410,6 +418,7 @@ export default function DailyStatsDrawer({
                           e.stopPropagation();
                           if (!isViewOnly) {
                             setPendingDeleteId(entry.id);
+                            setPasscodeEntryId(null);
                           }
                         }}
                         style={isViewOnly ? { cursor: 'default' } : undefined}
@@ -473,7 +482,7 @@ export default function DailyStatsDrawer({
                             key={player.name} 
                             className="stats-score-cell"
                             onClick={() => {
-                              if (pendingDeleteId) setPendingDeleteId(null);
+                              if (pendingDeleteId) cancelDelete();
                             }}
                           >
                             {isScoreDefined ? (
@@ -494,6 +503,21 @@ export default function DailyStatsDrawer({
           </div>
         </div>
       </div>
+
+      {/* Bảng xếp hạng Chiếu Quỷ */}
+      <Leaderboard
+        isOpen={isOpen && isRankingOpen}
+        onClose={() => setIsRankingOpen(false)}
+        rankedPlayers={rankedPlayers}
+      />
+
+      {/* Ô nhập mật khẩu + bàn phím số khi bấm thùng rác (Thiết kế Figma "Pass") */}
+      {!isViewOnly && passcodeEntryId && (
+        <PasscodePrompt
+          onSuccess={handlePasscodeSuccess}
+          onCancel={cancelDelete}
+        />
+      )}
     </div>
   );
 }
