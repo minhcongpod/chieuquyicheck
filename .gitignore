@@ -28,3 +28,6 @@ dist-ssr
 .env.*
 !.env.example
 .firebase
+
+# Cài đặt Claude Code riêng trên máy
+.claude/settings.local.json
