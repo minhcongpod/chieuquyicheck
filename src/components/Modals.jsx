@@ -64,14 +64,14 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
             className={`modal-qr-tab-btn ${activeTab === 'room' ? 'active' : ''}`}
             onClick={() => setActiveTab('room')}
           >
-            VÀO CHIẾU
+            JOIN US
           </button>
           <button
             type="button"
             className={`modal-qr-tab-btn ${activeTab === 'momo' ? 'active' : ''}`}
             onClick={() => setActiveTab('momo')}
           >
-            QUỸ CHIẾU QUỶ
+            MOMO
           </button>
         </div>
 
