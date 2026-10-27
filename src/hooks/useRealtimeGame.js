@@ -611,18 +611,6 @@ export function useRealtimeGame() {
     writeCache('dailyLedger', storageKey, nextLedger);
   }, [storageKey]);
 
-  const addLedgerEntry = useCallback(async (entry) => {
-    const nextLedger = [entry, ...(dailyLedger || [])];
-    applyLocalLedger(nextLedger);
-    fireConfetti();
-
-    await writeShared(data => {
-      const serverLedger = data.dailyLedger || [];
-      if (serverLedger.some(e => e.id === entry.id)) return null;
-      return { dailyLedger: [entry, ...serverLedger] };
-    }, { dailyLedger: nextLedger });
-  }, [dailyLedger, applyLocalLedger, writeShared]);
-
   // Thêm 1 lần chốt sổ vào cuối sổ (giữ nguyên các lần chốt sổ máy khác vừa thêm)
   const appendLedgerEntry = useCallback(async (entry) => {
     const nextLedger = [...(dailyLedger || []), entry];
@@ -635,22 +623,6 @@ export function useRealtimeGame() {
       return { dailyLedger: [...serverLedger, entry] };
     }, { dailyLedger: nextLedger });
   }, [dailyLedger, applyLocalLedger, writeShared]);
-
-  const setDailyLedgerData = useCallback(async (newLedger) => {
-    applyLocalLedger(newLedger);
-    fireConfetti();
-
-    if (isShared) {
-      try {
-        await updateDoc(doc(db, 'rooms', roomId), {
-          dailyLedger: newLedger,
-          updatedAt: Date.now()
-        });
-      } catch (e) {
-        console.error('[Firebase] Lỗi setDailyLedgerData:', e);
-      }
-    }
-  }, [isShared, roomId, applyLocalLedger]);
 
   const deleteLedgerEntry = useCallback(async (entryId) => {
     const nextLedger = (dailyLedger || []).filter(e => e.id !== entryId);
@@ -687,9 +659,7 @@ export function useRealtimeGame() {
     confirmRound,
     undoRound,
     resetGame,
-    addLedgerEntry,
     appendLedgerEntry,
-    setDailyLedgerData,
     deleteLedgerEntry,
     samCelebration,
     triggerSamCelebration,

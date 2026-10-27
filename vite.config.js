@@ -16,6 +16,17 @@ const spaFallback404 = {
 export default defineConfig({
   base: './',
   plugins: [react(), spaFallback404],
+  build: {
+    rollupOptions: {
+      output: {
+        // Tách thư viện ra file riêng: sửa app không làm máy phải tải lại Firebase / React
+        manualChunks: {
+          firebase: ['firebase/app', 'firebase/firestore'],
+          react: ['react', 'react-dom']
+        }
+      }
+    }
+  },
   server: {
     port: 3000,
     host: true

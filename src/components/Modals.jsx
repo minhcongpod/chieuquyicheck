@@ -178,5 +178,3 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
     </div>
   );
 }
-
-export const InfoModal = QrTransferModal;

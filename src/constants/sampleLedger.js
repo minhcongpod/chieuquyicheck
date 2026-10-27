@@ -16,5 +16,3 @@ export const PLAYER_COLORS_10 = [
 // Hỗ trợ hiển thị nhiều người chơi (tối đa 10 người), trượt ngang để xem người thứ 6, 7, 8
 export const SAMPLE_DAILY_LEDGER = [];
 
-// Danh sách gợi ý tên người chơi đã từng chơi
-export const DEFAULT_KNOWN_PLAYERS = [];

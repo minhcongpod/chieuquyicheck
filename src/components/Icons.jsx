@@ -161,68 +161,6 @@ export function CopyIcon({ className = "w-[18px] h-[18px]", width = 18, height =
   );
 }
 
-// Icon Mở đường link (media_1790304978172.png)
-export function ExternalLinkIcon({ className = "w-[24px] h-[24px]", width = 24, height = 24, color = "#000000" }) {
-  return (
-    <svg
-      className={className}
-      width={width}
-      height={height}
-      viewBox="0 0 24 24"
-      fill={color}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
-    </svg>
-  );
-}
-
-// Icon Lưu / Tải QR (media_1790304908415.png)
-export function DownloadQrIcon({ className = "w-[24px] h-[24px]", width = 24, height = 24, color = "#000000" }) {
-  return (
-    <svg
-      className={className}
-      width={width}
-      height={height}
-      viewBox="0 0 24 24"
-      fill={color}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M11 3h2v10h4.5L12 17.5 6.5 13H11V3zm-7 16h16v2H4v-2z" />
-    </svg>
-  );
-}
-
-// Icon Loading quay khi đang tải QR
-export function LoadingSpinnerIcon({ className = "w-[24px] h-[24px]", width = 24, height = 24, color = "#000000" }) {
-  return (
-    <svg
-      className={`animate-spin ${className}`}
-      width={width}
-      height={height}
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke={color}
-        strokeWidth="2.75"
-        strokeOpacity="0.25"
-      />
-      <path
-        d="M12 3a9 9 0 0 1 9 9"
-        stroke={color}
-        strokeWidth="2.75"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
-}
-
-
 // Icon Checkmark xác nhận đã sao chép
 export function CheckIcon({ className = "w-[18px] h-[18px]", width = 18, height = 18, color = "#66ff33" }) {
   return (

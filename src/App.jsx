@@ -63,16 +63,11 @@ function applySamAutoFill(prevDeltas, targetPlayerId, newSignedVal, namedPlayers
 
 export default function App() {
   const {
-    roomId,
     players,
     history,
     roundDeltas,
     dailyLedger,
-    isConnected,
-    userCount,
-    role,
     isViewOnly,
-    slotIndex,
     viewOnlyUrl,
     roomUrl,
     updatePlayerName,
@@ -80,9 +75,7 @@ export default function App() {
     confirmRound,
     undoRound,
     resetGame,
-    addLedgerEntry,
     appendLedgerEntry,
-    setDailyLedgerData,
     deleteLedgerEntry,
     samCelebration,
     triggerSamCelebration,
