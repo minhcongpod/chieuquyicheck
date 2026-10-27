@@ -2,8 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { CopyIcon, CheckIcon } from './Icons';
 import qrMomoUrl from '../assets/qr-momo.jpg';
 
-// Số ký tự cuối link luôn hiển thị (dấu … nằm ở giữa)
-const LINK_TAIL_LENGTH = 12;
+// Rút gọn link để hiển thị: bỏ https:// và đuôi tên miền (.web.app), dấu … ở giữa
+// Ví dụ: https://chieuquyicheck.web.app/vip -> chieuquyicheck…/vip
+const formatDisplayUrl = (url) => {
+  try {
+    const { hostname, pathname } = new URL(url);
+    return `${hostname.split('.')[0]}…${pathname}`;
+  } catch (e) {
+    return url.replace(/^https?:\/\//, '');
+  }
+};
 
 /**
  * Popup Mã QR: Hỗ trợ 2 chế độ:
@@ -93,10 +101,7 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
               title="Bấm để sao chép link bàn chơi"
             >
               {/* Rút gọn ở giữa: giữ phần đầu + phần đuôi link (vd .../vip) */}
-              <span className="qr-link-url">
-                <span className="qr-link-url-head">{targetRoomUrl.slice(0, -LINK_TAIL_LENGTH)}</span>
-                <span className="qr-link-url-tail">{targetRoomUrl.slice(-LINK_TAIL_LENGTH)}</span>
-              </span>
+              <span className="qr-link-url">{formatDisplayUrl(targetRoomUrl)}</span>
               <button
                 type="button"
                 className="qr-copy-btn"

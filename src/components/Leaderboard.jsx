@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { fireSamFireworks } from '../hooks/useRealtimeGame';
 
 // Màu thẻ podium theo thiết kế Figma "Bảng xếp hạng Chiếu Quỷ"
 const PODIUM_COLORS = {
@@ -19,11 +20,10 @@ const CrownIcon = () => (
   </svg>
 );
 
+// Icon cúp vàng mở Bảng xếp hạng
 export const RankingIcon = () => (
-  <svg width="24" height="21" viewBox="0 0 28 24.23" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <rect y="8.97" width="7.27" height="15.26" fill="currentColor" />
-    <rect x="10.27" width="7.27" height="24.23" fill="currentColor" />
-    <rect x="20.54" y="12.86" width="7.27" height="11.37" fill="currentColor" />
+  <svg width="30" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M73.8496 9.97754C73.9729 10.2681 74.041 10.5883 74.041 10.9238V13.7344H89.0664C91.3685 13.7344 93.2344 15.6012 93.2344 17.9033V26.0459C93.2344 38.454 83.9288 48.6327 71.8115 50.0869C69.6843 54.5407 66.007 58.0827 61.4678 60.0566C57.3619 61.8421 54.75 65.9436 54.75 70.4209V72.5117H65.1865V80.6699H72.6689V91.5H27.3311V80.6699H34.8135V72.5117H45.0566V70.4629C45.0565 65.985 42.4439 61.883 38.3369 60.0986C33.7987 58.1271 30.122 54.54 27.9951 50.0869C16.0716 48.6328 6.76562 38.3571 6.76562 26.0459V17.9033C6.76562 15.6012 8.63154 13.7345 10.9336 13.7344H25.8623V10.9238C25.8623 10.6697 25.9021 10.4245 25.9746 10.1943V8.5H73.8496V9.97754ZM16.4697 22.0713C15.7144 22.0715 15.1025 22.6841 15.1025 23.4395V26.0459C15.1025 32.2508 18.7029 37.6898 23.8613 40.251C24.7802 40.7072 25.8622 40.0581 25.8623 39.0322V23.4395C25.8623 22.6839 25.2497 22.0713 24.4941 22.0713H16.4697ZM75.5059 22.0713C74.7503 22.0713 74.1377 22.6839 74.1377 23.4395V39.0068C74.1378 40.0371 75.2286 40.6867 76.1475 40.2207C81.3012 37.6068 84.8984 32.2473 84.8984 26.0459V23.4395C84.8984 22.684 84.2857 22.0714 83.5303 22.0713H75.5059Z" fill="#F5EB02" />
   </svg>
 );
 
@@ -31,6 +31,8 @@ export const RankingIcon = () => (
  * Bảng xếp hạng Chiếu Quỷ (Thiết kế Figma "Bảng xếp hạng Chiếu Quỷ")
  *
  * - Top 3 đứng trên podium theo thứ tự 2 - 1 - 3, top 1 cao nhất có vương miện và nhãn VUA SÂM
+ * - Podium không có dấu +. Người âm điểm không đứng trên podium: cột vẫn giữ nguyên, chỉ để trống tên và điểm
+ * - Mở bảng thì bắn pháo hoa 2 bên giống lúc báo Sâm
  * - Từ hạng #4 trở đi là danh sách: điểm dương nền xanh mờ, điểm âm nền đỏ mờ
  * - Bấm ra ngoài vùng podium / danh sách hoặc vuốt xuống để quay lại Bảng thống kê
  *
@@ -43,6 +45,13 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [] }) {
   const dragYRef = useRef(0);
   const isDraggingRef = useRef(false);
   const scrollRef = useRef(null);
+
+  // Bắn pháo hoa 2 bên mỗi lần mở bảng (chờ bảng trượt lên xong)
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(fireSamFireworks, 250);
+    return () => clearTimeout(timer);
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -82,9 +91,13 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [] }) {
     dragYRef.current = 0;
   };
 
-  const podium = rankedPlayers.slice(0, 3).map((p, idx) => ({ ...p, rank: idx + 1 }));
+  // Luôn đủ 3 cột podium, ô nào không có người hoặc người đó âm điểm thì để trống
+  const podium = [0, 1, 2].map((idx) => {
+    const p = rankedPlayers[idx];
+    return { rank: idx + 1, player: p && p.score >= 0 ? p : null };
+  });
   // Thứ tự hiển thị trên podium: hạng 2 - hạng 1 - hạng 3
-  const podiumOrder = [podium[1], podium[0], podium[2]].filter(Boolean);
+  const podiumOrder = [podium[1], podium[0], podium[2]];
   const rest = rankedPlayers.slice(3);
 
   // Bấm vào vùng trống (ngoài thẻ podium và các dòng xếp hạng) thì đóng
@@ -106,7 +119,7 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [] }) {
       <div className="leaderboard-scroll" ref={scrollRef}>
         <div className="leaderboard-podium">
           {podiumOrder.map((p) => (
-            <div key={p.name} className={`podium-col is-top-${p.rank}`}>
+            <div key={p.rank} className={`podium-col is-top-${p.rank}`}>
               {p.rank === 1 ? (
                 <CrownIcon />
               ) : (
@@ -115,11 +128,15 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [] }) {
                 </span>
               )}
               <div className="podium-card" style={{ background: PODIUM_COLORS[p.rank] }}>
-                <div className="podium-card-head">
-                  <span className="podium-name">{p.name}</span>
-                  {p.rank === 1 && <span className="podium-pill">VUA SÂM</span>}
-                </div>
-                <span className="podium-score">{formatScore(p.score)}</span>
+                {p.player && (
+                  <>
+                    <div className="podium-card-head">
+                      <span className="podium-name">{p.player.name}</span>
+                      {p.rank === 1 && <span className="podium-pill">VUA SÂM</span>}
+                    </div>
+                    <span className="podium-score">{p.player.score}</span>
+                  </>
+                )}
               </div>
             </div>
           ))}

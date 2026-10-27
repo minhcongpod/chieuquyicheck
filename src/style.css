@@ -1514,18 +1514,7 @@ td {
   font-family: monospace;
   flex: 1;
   min-width: 0;
-  display: flex;
-}
-
-/* Phần đầu link co lại với dấu …, phần đuôi giữ nguyên */
-.qr-link-url-head {
-  overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
-}
-
-.qr-link-url-tail {
-  flex-shrink: 0;
 }
 
 .qr-copy-btn {
@@ -2684,6 +2673,25 @@ td {
 
 .stats-ranking-btn:active {
   transform: scale(0.88);
+}
+
+/* Cúp vàng lắc nhẹ mỗi 5 giây để gây chú ý */
+.stats-ranking-btn svg {
+  transform-origin: 50% 90%;
+  animation: ranking-cup-wiggle 5s ease-in-out infinite;
+}
+
+.stats-ranking-btn:disabled svg {
+  animation: none;
+}
+
+@keyframes ranking-cup-wiggle {
+  0%, 88%, 100% { transform: rotate(0deg); }
+  90% { transform: rotate(-12deg); }
+  92% { transform: rotate(10deg); }
+  94% { transform: rotate(-8deg); }
+  96% { transform: rotate(5deg); }
+  98% { transform: rotate(-2deg); }
 }
 
 .stats-ranking-btn:disabled {
