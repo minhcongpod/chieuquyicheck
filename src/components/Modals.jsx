@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { CopyIcon, CheckIcon } from './Icons';
 import qrMomoUrl from '../assets/qr-momo.jpg';
 
-// Rút gọn link để hiển thị: bỏ https:// và đuôi tên miền (.web.app), dấu … ở giữa
-// Ví dụ: https://chieuquyicheck.web.app/vip -> chieuquyicheck…/vip
-const formatDisplayUrl = (url) => {
+// Tách link để hiển thị: phần đầu (https://tên) + tên miền (.web.app) + đuôi link (/vip)
+// Link dài thì phần tên miền bị che thành … trước, luôn giữ https:// và đuôi link
+const splitDisplayUrl = (url) => {
   try {
-    const { hostname, pathname } = new URL(url);
-    return `${hostname.split('.')[0]}…${pathname}`;
+    const { protocol, hostname, pathname, search } = new URL(url);
+    const [name, ...domain] = hostname.split('.');
+    return {
+      head: `${protocol}//${name}`,
+      domain: domain.length ? `.${domain.join('.')}` : '',
+      tail: pathname === '/' && !search ? '' : `${pathname}${search}`
+    };
   } catch (e) {
-    return url.replace(/^https?:\/\//, '');
+    return { head: url, domain: '', tail: '' };
   }
 };
 
@@ -100,8 +105,12 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
               onClick={() => handleCopyText(targetRoomUrl)}
               title="Bấm để sao chép link bàn chơi"
             >
-              {/* Rút gọn ở giữa: giữ phần đầu + phần đuôi link (vd .../vip) */}
-              <span className="qr-link-url">{formatDisplayUrl(targetRoomUrl)}</span>
+              {/* Link dài: che phần tên miền (.web.app), giữ https:// và đuôi link (vd /vip) */}
+              <span className="qr-link-url">
+                <span className="qr-link-url-head">{splitDisplayUrl(targetRoomUrl).head}</span>
+                <span className="qr-link-url-domain">{splitDisplayUrl(targetRoomUrl).domain}</span>
+                <span className="qr-link-url-tail">{splitDisplayUrl(targetRoomUrl).tail}</span>
+              </span>
               <button
                 type="button"
                 className="qr-copy-btn"

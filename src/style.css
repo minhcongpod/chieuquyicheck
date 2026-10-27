@@ -1514,7 +1514,26 @@ td {
   font-family: monospace;
   flex: 1;
   min-width: 0;
+  display: flex;
+}
+
+/* Link dài: phần tên miền (.web.app) co lại trước thành …, luôn giữ đuôi link (vd /vip) */
+.qr-link-url-head {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.qr-link-url-domain {
+  flex-shrink: 1000;
+  min-width: 1ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.qr-link-url-tail {
+  flex-shrink: 0;
 }
 
 .qr-copy-btn {
@@ -2675,23 +2694,27 @@ td {
   transform: scale(0.88);
 }
 
-/* Cúp vàng lắc nhẹ mỗi 5 giây để gây chú ý */
+/* Cúp vàng lắc mỗi 3 giây; vừa mở popup thống kê thì lắc luôn sau 1 giây */
 .stats-ranking-btn svg {
   transform-origin: 50% 90%;
-  animation: ranking-cup-wiggle 5s ease-in-out infinite;
 }
 
-.stats-ranking-btn:disabled svg {
+.daily-stats-drawer.is-open .stats-ranking-btn svg {
+  animation: ranking-cup-wiggle 3s ease-in-out 1s infinite;
+}
+
+.daily-stats-drawer.is-open .stats-ranking-btn:disabled svg {
   animation: none;
 }
 
 @keyframes ranking-cup-wiggle {
-  0%, 88%, 100% { transform: rotate(0deg); }
-  90% { transform: rotate(-12deg); }
-  92% { transform: rotate(10deg); }
-  94% { transform: rotate(-8deg); }
-  96% { transform: rotate(5deg); }
-  98% { transform: rotate(-2deg); }
+  0% { transform: rotate(0deg); }
+  4% { transform: rotate(-12deg); }
+  8% { transform: rotate(10deg); }
+  12% { transform: rotate(-8deg); }
+  16% { transform: rotate(5deg); }
+  20% { transform: rotate(-2deg); }
+  24%, 100% { transform: rotate(0deg); }
 }
 
 .stats-ranking-btn:disabled {
