@@ -1,8 +1,8 @@
 # 🏆 CHIẾU QUỶ ICHECK
 
-Ứng dụng web tính điểm Sâm Lốc / Chiếu Quỷ chuyên nghiệp, chuẩn xác 100% theo thiết kế Figma, hỗ trợ đồng bộ thời gian thực (Real-time Multi-Device Sync) trên mọi thiết bị qua nền tảng Google Firebase và GitHub Pages.
+Ứng dụng web tính điểm Sâm Lốc / Chiếu Quỷ chuyên nghiệp, chuẩn xác 100% theo thiết kế Figma, hỗ trợ đồng bộ thời gian thực (Real-time Multi-Device Sync) trên mọi thiết bị qua nền tảng Google Firebase.
 
-🔗 **Production URL (GitHub Pages)**: [https://minhcongpod.github.io/chieuquyicheck/](https://minhcongpod.github.io/chieuquyicheck/)
+🔗 **Production URL (Firebase Hosting)**: [https://chieuquyicheck.web.app](https://chieuquyicheck.web.app)
 
 ---
 
@@ -47,9 +47,6 @@
 
 ```text
 chieuquyicheck/
-├── .github/
-│   └── workflows/
-│       └── deploy.yml          # Tự động build & deploy lên GitHub Pages
 ├── dist/                       # Bản build production tối ưu
 ├── public/                     # Tài nguyên tĩnh (Ảnh nền, Mã QR MoMo)
 ├── src/
