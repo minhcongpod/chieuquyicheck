@@ -12,11 +12,11 @@ const formatScore = (score) => (score > 0 ? `+${score}` : String(score));
 
 const CrownIcon = () => (
   <svg width="24" height="20" viewBox="0 0 24 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M2 6L7 11L12 3L17 11L22 6L20 16H4L2 6Z" fill="#F5EA00" />
-    <rect x="4" y="16.5" width="16" height="2.5" rx="1" fill="#F5EA00" />
-    <circle cx="2" cy="5" r="1.8" fill="#F5EA00" />
-    <circle cx="12" cy="2" r="1.8" fill="#F5EA00" />
-    <circle cx="22" cy="5" r="1.8" fill="#F5EA00" />
+    <path d="M2 6L7 11L12 3L17 11L22 6L20 16H4L2 6Z" fill="#66FF33" />
+    <rect x="4" y="16.5" width="16" height="2.5" rx="1" fill="#66FF33" />
+    <circle cx="2" cy="5" r="1.8" fill="#66FF33" />
+    <circle cx="12" cy="2" r="1.8" fill="#66FF33" />
+    <circle cx="22" cy="5" r="1.8" fill="#66FF33" />
   </svg>
 );
 
