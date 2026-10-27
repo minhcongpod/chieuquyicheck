@@ -1514,26 +1514,7 @@ td {
   font-family: monospace;
   flex: 1;
   min-width: 0;
-  display: flex;
-}
-
-/* Link dài: phần tên miền (.web.app) co lại trước thành …, luôn giữ đuôi link (vd /vip) */
-.qr-link-url-head {
-  flex-shrink: 1;
-  min-width: 0;
-  overflow: hidden;
   text-overflow: ellipsis;
-}
-
-.qr-link-url-domain {
-  flex-shrink: 1000;
-  min-width: 1ch;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.qr-link-url-tail {
-  flex-shrink: 0;
 }
 
 .qr-copy-btn {

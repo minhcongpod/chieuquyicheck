@@ -1,20 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { CopyIcon, CheckIcon } from './Icons';
 import qrMomoUrl from '../assets/qr-momo.jpg';
 
-// Tách link để hiển thị: phần đầu (https://tên) + tên miền (.web.app) + đuôi link (/vip)
-// Link dài thì phần tên miền bị che thành … trước, luôn giữ https:// và đuôi link
-const splitDisplayUrl = (url) => {
+// Bản rút gọn của link: giữ https:// và nhánh phía sau, che cả phần đuôi tên miền (.web.app)
+// Ví dụ: https://chieuquyicheck.web.app/vip -> https://chieuquyicheck…/vip
+const formatCompactUrl = (url) => {
   try {
     const { protocol, hostname, pathname, search } = new URL(url);
-    const [name, ...domain] = hostname.split('.');
-    return {
-      head: `${protocol}//${name}`,
-      domain: domain.length ? `.${domain.join('.')}` : '',
-      tail: pathname === '/' && !search ? '' : `${pathname}${search}`
-    };
+    const name = hostname.split('.')[0];
+    if (name === hostname) return url;
+    return `${protocol}//${name}…${pathname}${search}`;
   } catch (e) {
-    return { head: url, domain: '', tail: '' };
+    return url;
   }
 };
 
@@ -26,6 +23,9 @@ const splitDisplayUrl = (url) => {
 export function QrTransferModal({ isOpen, onClose, roomUrl }) {
   const [activeTab, setActiveTab] = useState('room'); // 'room' | 'momo'
   const [copiedLink, setCopiedLink] = useState(false);
+  // Link đầy đủ không vừa ô thì chuyển sang bản rút gọn
+  const [isLinkCompact, setIsLinkCompact] = useState(false);
+  const roomLinkRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -35,6 +35,18 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
+
+  // Mỗi lần mở popup / đổi tab / đổi link: hiện link đầy đủ trước, tràn ô thì rút gọn
+  useLayoutEffect(() => {
+    setIsLinkCompact(false);
+  }, [isOpen, activeTab, roomUrl]);
+
+  useLayoutEffect(() => {
+    const el = roomLinkRef.current;
+    if (el && !isLinkCompact && el.scrollWidth > el.clientWidth) {
+      setIsLinkCompact(true);
+    }
+  });
 
   if (!isOpen) return null;
 
@@ -106,10 +118,8 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
               title="Bấm để sao chép link bàn chơi"
             >
               {/* Link dài: che phần tên miền (.web.app), giữ https:// và đuôi link (vd /vip) */}
-              <span className="qr-link-url">
-                <span className="qr-link-url-head">{splitDisplayUrl(targetRoomUrl).head}</span>
-                <span className="qr-link-url-domain">{splitDisplayUrl(targetRoomUrl).domain}</span>
-                <span className="qr-link-url-tail">{splitDisplayUrl(targetRoomUrl).tail}</span>
+              <span className="qr-link-url" ref={roomLinkRef}>
+                {isLinkCompact ? formatCompactUrl(targetRoomUrl) : targetRoomUrl}
               </span>
               <button
                 type="button"
