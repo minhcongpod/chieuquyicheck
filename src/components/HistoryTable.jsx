@@ -329,8 +329,7 @@ function HistoryTableContent({
                   className="btn-chot-so btn-history-save"
                   onClick={() => {
                     if (reversedHistory.length === 0 || isResetConfirming) return;
-                    if (onChotSo) onChotSo();
-                    if (onToggle) onToggle(); // Đóng bottom sheet lịch sử điểm lại
+                    if (onChotSo) onChotSo(); // Giữ nguyên màn lịch sử các ván sau khi lưu
                   }}
                   disabled={reversedHistory.length === 0 || isResetConfirming}
                   title={reversedHistory.length > 0 ? 'Lưu sổ các ván đấu đã chơi' : 'Chưa có dữ liệu nào để lưu'}

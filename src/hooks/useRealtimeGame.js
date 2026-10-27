@@ -417,9 +417,6 @@ export function useRealtimeGame() {
       }
 
       if (data.dailyLedger !== undefined) {
-        if (!isInitialMount && data.dailyLedger.length > prevLedgerLenRef.current) {
-          fireConfetti();
-        }
         prevLedgerLenRef.current = data.dailyLedger.length;
         setDailyLedger(data.dailyLedger);
         writeCache('dailyLedger', roomId, data.dailyLedger);
@@ -627,7 +624,7 @@ export function useRealtimeGame() {
   const appendLedgerEntry = useCallback(async (entry) => {
     const nextLedger = [...(dailyLedger || []), entry];
     applyLocalLedger(nextLedger);
-    fireConfetti();
+    // Bấm SAVE: lưu im lặng, không bắn pháo hoa
 
     await writeShared(data => {
       const serverLedger = data.dailyLedger || [];
