@@ -51,31 +51,6 @@ export function QrCodeIcon({ className = "w-[28px] h-[28px]", width = 28, height
   );
 }
 
-// Icon Lịch / Sổ thống kê điểm theo ngày (Cập nhật path mới theo yêu cầu)
-export function LedgerCalendarIcon({ className = "w-[26px] h-[26px]", width = 26, height = 26, color = "black" }) {
-  return (
-    <svg
-      id="Layer_1"
-      data-name="Layer 1"
-      className={className}
-      width={width}
-      height={height}
-      viewBox="0 0 16 16"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M0,5.32v10.68h16V5.32H0ZM7.25,14.14h-2.74v-4.41h2.74v4.41ZM11.48,14.14h-2.74v-6.96h2.74v6.96Z"
-        fill={color}
-      />
-      <polygon
-        points="13.17 1.53 13.17 0 11.86 0 11.86 1.53 4.17 1.53 4.17 0 2.87 0 2.87 .63 2.87 .63 2.87 1.53 0 1.53 0 4.05 16 4.05 16 1.53 13.17 1.53"
-        fill={color}
-      />
-    </svg>
-  );
-}
-
 // Icon Thùng Rác (Theo ảnh media_1790239596433.png) để xoá lần chốt sổ
 export function TrashIcon({ className = "w-[18px] h-[18px]", width = 18, height = 18, color = "#fd6161" }) {
   return (

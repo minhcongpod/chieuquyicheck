@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { UndoIcon, LedgerCalendarIcon, QrCodeIcon, CheckmarkIcon, CrossIcon, EyeIcon } from './Icons';
+import { RankingIcon } from './Leaderboard';
+import { UndoIcon, QrCodeIcon, CheckmarkIcon, CrossIcon, EyeIcon } from './Icons';
 
 export default function ActionToolbar({
   sumTotal = 0,
@@ -109,7 +110,7 @@ export default function ActionToolbar({
               onClick={onLedgerClick}
               title="Sổ thống kê điểm"
             >
-              <LedgerCalendarIcon width={26} height={26} color="#000000" />
+              <RankingIcon size={32} color="#000000" />
             </button>
 
             {/* Nút 2: QR Code Quỹ Chiếu Quỷ */}
@@ -195,7 +196,7 @@ export default function ActionToolbar({
             title={hasLedger ? "Sổ thống kê điểm" : "Chưa có lần chốt sổ nào"}
             tabIndex={confirmMode || !hasLedger ? -1 : 0}
           >
-            <LedgerCalendarIcon width={26} height={26} color="#000000" />
+            <RankingIcon size={32} color="#000000" />
           </button>
 
           {/* Nút 3: QR Code Quỹ Chiếu Quỷ */}

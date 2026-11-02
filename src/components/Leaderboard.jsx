@@ -20,10 +20,10 @@ const CrownIcon = () => (
   </svg>
 );
 
-// Icon cúp vàng mở Bảng xếp hạng
-export const RankingIcon = () => (
-  <svg width="30" height="30" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <path d="M73.8496 9.97754C73.9729 10.2681 74.041 10.5883 74.041 10.9238V13.7344H89.0664C91.3685 13.7344 93.2344 15.6012 93.2344 17.9033V26.0459C93.2344 38.454 83.9288 48.6327 71.8115 50.0869C69.6843 54.5407 66.007 58.0827 61.4678 60.0566C57.3619 61.8421 54.75 65.9436 54.75 70.4209V72.5117H65.1865V80.6699H72.6689V91.5H27.3311V80.6699H34.8135V72.5117H45.0566V70.4629C45.0565 65.985 42.4439 61.883 38.3369 60.0986C33.7987 58.1271 30.122 54.54 27.9951 50.0869C16.0716 48.6328 6.76562 38.3571 6.76562 26.0459V17.9033C6.76562 15.6012 8.63154 13.7345 10.9336 13.7344H25.8623V10.9238C25.8623 10.6697 25.9021 10.4245 25.9746 10.1943V8.5H73.8496V9.97754ZM16.4697 22.0713C15.7144 22.0715 15.1025 22.6841 15.1025 23.4395V26.0459C15.1025 32.2508 18.7029 37.6898 23.8613 40.251C24.7802 40.7072 25.8622 40.0581 25.8623 39.0322V23.4395C25.8623 22.6839 25.2497 22.0713 24.4941 22.0713H16.4697ZM75.5059 22.0713C74.7503 22.0713 74.1377 22.6839 74.1377 23.4395V39.0068C74.1378 40.0371 75.2286 40.6867 76.1475 40.2207C81.3012 37.6068 84.8984 32.2473 84.8984 26.0459V23.4395C84.8984 22.684 84.2857 22.0714 83.5303 22.0713H75.5059Z" fill="#F5EB02" />
+// Icon cúp mở Bảng xếp hạng (vàng trong Bảng thống kê, đen ngoài màn chính)
+export const RankingIcon = ({ size = 30, color = '#F5EB02' }) => (
+  <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <path d="M73.8496 9.97754C73.9729 10.2681 74.041 10.5883 74.041 10.9238V13.7344H89.0664C91.3685 13.7344 93.2344 15.6012 93.2344 17.9033V26.0459C93.2344 38.454 83.9288 48.6327 71.8115 50.0869C69.6843 54.5407 66.007 58.0827 61.4678 60.0566C57.3619 61.8421 54.75 65.9436 54.75 70.4209V72.5117H65.1865V80.6699H72.6689V91.5H27.3311V80.6699H34.8135V72.5117H45.0566V70.4629C45.0565 65.985 42.4439 61.883 38.3369 60.0986C33.7987 58.1271 30.122 54.54 27.9951 50.0869C16.0716 48.6328 6.76562 38.3571 6.76562 26.0459V17.9033C6.76562 15.6012 8.63154 13.7345 10.9336 13.7344H25.8623V10.9238C25.8623 10.6697 25.9021 10.4245 25.9746 10.1943V8.5H73.8496V9.97754ZM16.4697 22.0713C15.7144 22.0715 15.1025 22.6841 15.1025 23.4395V26.0459C15.1025 32.2508 18.7029 37.6898 23.8613 40.251C24.7802 40.7072 25.8622 40.0581 25.8623 39.0322V23.4395C25.8623 22.6839 25.2497 22.0713 24.4941 22.0713H16.4697ZM75.5059 22.0713C74.7503 22.0713 74.1377 22.6839 74.1377 23.4395V39.0068C74.1378 40.0371 75.2286 40.6867 76.1475 40.2207C81.3012 37.6068 84.8984 32.2473 84.8984 26.0459V23.4395C84.8984 22.684 84.2857 22.0714 83.5303 22.0713H75.5059Z" fill={color} />
   </svg>
 );
 
@@ -36,9 +36,11 @@ export const RankingIcon = () => (
  * - Từ hạng #4 trở đi là danh sách: điểm dương nền xanh mờ, điểm âm nền đỏ mờ
  * - Bấm ra ngoài vùng podium / danh sách hoặc vuốt xuống để quay lại Bảng thống kê
  *
+ * - Tiêu đề "BẢNG XẾP HẠNG / CHIẾU QUỶ THÁNG X", chỉ tính điểm các lần chốt sổ trong tháng X
+ *
  * rankedPlayers: [{ name, score }] đã sắp xếp điểm cao -> thấp
  */
-export default function Leaderboard({ isOpen, onClose, rankedPlayers = [] }) {
+export default function Leaderboard({ isOpen, onClose, rankedPlayers = [], month }) {
   const [dragY, setDragY] = useState(0);
   const startYRef = useRef(0);
   const startXRef = useRef(0);
@@ -117,6 +119,12 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [] }) {
       aria-hidden={!isOpen}
     >
       <div className="leaderboard-scroll" ref={scrollRef}>
+        <h2 className="leaderboard-title">
+          BẢNG XẾP HẠNG
+          <br />
+          CHIẾU QUỶ THÁNG {month}
+        </h2>
+
         <div className="leaderboard-podium">
           {podiumOrder.map((p) => (
             <div key={p.rank} className={`podium-col is-top-${p.rank}`}>
@@ -141,6 +149,10 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [] }) {
             </div>
           ))}
         </div>
+
+        {rankedPlayers.length === 0 && (
+          <p className="leaderboard-empty">Chưa có lần chốt sổ nào trong tháng {month}</p>
+        )}
 
         {rest.length > 0 && (
           <div className="leaderboard-list">

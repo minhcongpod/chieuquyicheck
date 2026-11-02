@@ -84,6 +84,64 @@ function calculateSamAndChay(history, players) {
   return { samCount, chayCount };
 }
 
+// 2 dòng thống kê SÂM và CHÁY của từng người chơi (dùng ở màn chính và màn lịch sử phóng to)
+function SamChayRows({ sortedPlayers, samCount, chayCount, onTriggerSamCelebration }) {
+  return (
+    <>
+      {/* 1. Dòng SÂM */}
+      <div className="history-stat-row">
+        <div
+          className="history-stat-label text-sam"
+          style={{ cursor: onTriggerSamCelebration ? 'pointer' : 'default' }}
+          onClick={() => onTriggerSamCelebration && onTriggerSamCelebration('CHIẾU QUỲ', 60)}
+          title="Bấm để xem lại hiệu ứng Sâm"
+        >
+          SÂM
+        </div>
+        <div className="history-stat-cells">
+          {sortedPlayers.map((player) => {
+            const count = samCount[player.id] || 0;
+            return (
+              <div
+                key={player.id}
+                className="history-stat-cell"
+                style={{ cursor: count > 0 && onTriggerSamCelebration ? 'pointer' : 'default' }}
+                onClick={() => count > 0 && onTriggerSamCelebration && onTriggerSamCelebration(player.name, 60)}
+                title={count > 0 ? `Bấm để xem lại hiệu ứng Sâm của ${player.name}` : undefined}
+              >
+                {count > 0 ? (
+                  <span className="stat-num text-sam">{count}</span>
+                ) : (
+                  <span className="stat-dash">-</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 2. Dòng CHÁY */}
+      <div className="history-stat-row">
+        <div className="history-stat-label text-chay">CHÁY</div>
+        <div className="history-stat-cells">
+          {sortedPlayers.map((player) => {
+            const count = chayCount[player.id] || 0;
+            return (
+              <div key={player.id} className="history-stat-cell">
+                {count > 0 ? (
+                  <span className="stat-num text-chay">{count}</span>
+                ) : (
+                  <span className="stat-dash">-</span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
 function HistoryTableContent({
   players,
   sortedPlayers,
@@ -239,59 +297,27 @@ function HistoryTableContent({
         )}
       </div>
 
+      {/* Màn chính: cụm SÂM / CHÁY ghim dưới cùng */}
+      {!isExpanded && (
+        <div className="history-main-stats">
+          <SamChayRows
+            sortedPlayers={sortedPlayers}
+            samCount={samCount}
+            chayCount={chayCount}
+            onTriggerSamCelebration={onTriggerSamCelebration}
+          />
+        </div>
+      )}
+
       {/* Footer hiển thị khi phóng to: Dòng SÂM, Dòng CHÁY và Nhóm Nút RESET + SAVE */}
       {isExpanded && (
         <div className="history-expanded-footer">
-          {/* 1. Dòng SÂM */}
-          <div className="history-stat-row">
-            <div
-              className="history-stat-label text-sam"
-              style={{ cursor: onTriggerSamCelebration ? 'pointer' : 'default' }}
-              onClick={() => onTriggerSamCelebration && onTriggerSamCelebration('CHIẾU QUỲ', 60)}
-              title="Bấm để xem lại hiệu ứng Sâm"
-            >
-              SÂM
-            </div>
-            <div className="history-stat-cells">
-              {sortedPlayers.map((player) => {
-                const count = samCount[player.id] || 0;
-                return (
-                  <div
-                    key={player.id}
-                    className="history-stat-cell"
-                    style={{ cursor: count > 0 && onTriggerSamCelebration ? 'pointer' : 'default' }}
-                    onClick={() => count > 0 && onTriggerSamCelebration && onTriggerSamCelebration(player.name, 60)}
-                    title={count > 0 ? `Bấm để xem lại hiệu ứng Sâm của ${player.name}` : undefined}
-                  >
-                    {count > 0 ? (
-                      <span className="stat-num text-sam">{count}</span>
-                    ) : (
-                      <span className="stat-dash">-</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 2. Dòng CHÁY */}
-          <div className="history-stat-row">
-            <div className="history-stat-label text-chay">CHÁY</div>
-            <div className="history-stat-cells">
-              {sortedPlayers.map((player) => {
-                const count = chayCount[player.id] || 0;
-                return (
-                  <div key={player.id} className="history-stat-cell">
-                    {count > 0 ? (
-                      <span className="stat-num text-chay">{count}</span>
-                    ) : (
-                      <span className="stat-dash">-</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <SamChayRows
+            sortedPlayers={sortedPlayers}
+            samCount={samCount}
+            chayCount={chayCount}
+            onTriggerSamCelebration={onTriggerSamCelebration}
+          />
 
           {/* 3. Nhóm nút điều khiển: RESET và SAVE (Ẩn hoàn toàn khi ở quyền View-Only) */}
           {!isViewOnly && (
@@ -590,6 +616,7 @@ export default function HistoryTable({
           sortMode={sortMode}
           onToggleSort={handleToggleSort}
           isViewOnly={isViewOnly}
+          onTriggerSamCelebration={onTriggerSamCelebration}
         />
       </div>
 

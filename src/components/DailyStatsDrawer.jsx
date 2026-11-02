@@ -18,7 +18,7 @@ import Leaderboard, { RankingIcon } from './Leaderboard';
  * - Bấm vào thứ tự (Vd: #6) để hiển thị icon thùng rác màu đỏ, nền đỏ rượu, cả dòng đỏ mờ 10% để xoá
  * - Bấm thùng rác thì hiện ô nhập mật khẩu 4 số, nhập đúng mới xoá
  * - Cột người chơi luôn xếp theo tổng điểm cao -> thấp
- * - Nút RANKING ở góc trên bên trái mở Bảng xếp hạng
+ * - Nút RANKING ở góc trên bên trái mở Bảng xếp hạng (chỉ tính điểm trong tháng hiện tại)
  */
 export default function DailyStatsDrawer({
   isOpen,
@@ -294,10 +294,33 @@ export default function DailyStatsDrawer({
     });
   }, [masterPlayers, totalScoresByPlayer]);
 
-  // Danh sách cho Bảng xếp hạng, cùng thứ tự với các cột
+  // Bảng xếp hạng chỉ cộng điểm các lần chốt sổ trong tháng hiện tại
+  const rankingMonth = new Date().getMonth() + 1;
   const rankedPlayers = useMemo(() => {
-    return displayPlayers.map((p) => ({ name: p.name, score: totalScoresByPlayer[p.name] ?? 0 }));
-  }, [displayPlayers, totalScoresByPlayer]);
+    const now = new Date();
+    const isThisMonth = (entry) => {
+      if (entry.timestamp) {
+        const d = new Date(entry.timestamp);
+        return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+      }
+      // Dữ liệu cũ không có timestamp: đọc tháng từ nhãn ngày "d/m"
+      const m = /^\d{1,2}\/(\d{1,2})$/.exec(entry.dateStr || entry.label || '');
+      return Boolean(m) && Number(m[1]) === now.getMonth() + 1;
+    };
+
+    const monthTotals = new Map();
+    dailyLedger.filter(isThisMonth).forEach((entry) => {
+      masterPlayers.forEach((p) => {
+        const score = getPlayerScore(entry, p);
+        if (score === undefined || score === null || isNaN(score)) return;
+        monthTotals.set(p.name, (monthTotals.get(p.name) || 0) + Number(score));
+      });
+    });
+
+    return [...monthTotals]
+      .map(([name, score]) => ({ name, score }))
+      .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'vi'));
+  }, [masterPlayers, dailyLedger, isOpen]);
 
   // Sắp xếp các lần chốt sổ theo thứ tự mới nhất nằm trên cùng (#6 -> #5 -> #4 -> ... -> #1)
   const sortedLedger = useMemo(() => {
@@ -360,7 +383,7 @@ export default function DailyStatsDrawer({
                   cancelDelete();
                   setIsRankingOpen(true);
                 }}
-                disabled={rankedPlayers.length === 0}
+                disabled={masterPlayers.length === 0}
                 title="Bảng xếp hạng"
                 aria-label="Mở Bảng xếp hạng"
               >
@@ -509,6 +532,7 @@ export default function DailyStatsDrawer({
         isOpen={isOpen && isRankingOpen}
         onClose={() => setIsRankingOpen(false)}
         rankedPlayers={rankedPlayers}
+        month={rankingMonth}
       />
 
       {/* Ô nhập mật khẩu + bàn phím số khi bấm thùng rác (Thiết kế Figma "Pass") */}

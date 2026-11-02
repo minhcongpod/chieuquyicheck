@@ -654,7 +654,7 @@ td {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Hiệu ứng Blur Background khi mở bàn phím (Đồng bộ phong cách với Modal và Thống kê điểm) */
@@ -1043,6 +1043,18 @@ td {
   font-size: clamp(13px, 3.5vw, 16px);
   font-weight: 800;
   line-height: 1;
+}
+
+/* Cụm SÂM / CHÁY ghim dưới cùng màn chính, nền đen tràn sát 2 mép và đáy màn hình */
+.history-main-stats {
+  flex-shrink: 0;
+  margin-top: auto;
+  margin-right: calc(-1 * max(10px, env(safe-area-inset-right)));
+  margin-bottom: calc(-1 * max(10px, env(safe-area-inset-bottom)));
+  margin-left: calc(-1 * max(10px, env(safe-area-inset-left)));
+  padding: 4px max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  background: #000000;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* Cụm 2 nút chức năng dưới Footer: RESET và SAVE (kèm trượt xác nhận) */
@@ -2431,6 +2443,25 @@ td {
 
 .leaderboard-scroll::-webkit-scrollbar {
   display: none;
+}
+
+/* Tiêu đề Bảng xếp hạng theo tháng */
+.leaderboard-title {
+  margin: 0 0 18px;
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
+  letter-spacing: 0.5px;
+}
+
+.leaderboard-empty {
+  margin: 8px 0 0;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 15px;
+  font-weight: 700;
+  text-align: center;
 }
 
 /* Podium top 3: thứ tự 2 - 1 - 3, căn đáy */
