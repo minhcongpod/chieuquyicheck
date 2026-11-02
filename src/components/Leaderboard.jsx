@@ -150,10 +150,6 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [], month
           ))}
         </div>
 
-        {rankedPlayers.length === 0 && (
-          <p className="leaderboard-empty">Chưa có lần chốt sổ nào trong tháng {month}</p>
-        )}
-
         {rest.length > 0 && (
           <div className="leaderboard-list">
             {rest.map((p, idx) => {
