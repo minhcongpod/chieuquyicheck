@@ -10,6 +10,9 @@
   --screen-min-width: 375px;
   --screen-bg: #000000;
 
+  /* Khoảng trống phía trên app: vừa đủ tránh tai thỏ / thanh trạng thái của từng máy */
+  --app-top-gap: max(calc(env(safe-area-inset-top) + 12px), 28px);
+
   /* Màu sắc 5 người chơi (Chuẩn theo Figma 100%) */
   --color-player-1: #f4e950;
   /* Vàng */
@@ -96,7 +99,7 @@ td {
    ========================================================================== */
 .app-screen {
   width: 100%;
-  min-width: 375px;
+  min-width: 320px;
   height: 100%;
   margin: 0 auto;
   background: linear-gradient(180deg, #000000 0%, #142d13 30%, #0E1F0E 70%, #000000 90%);
@@ -104,7 +107,7 @@ td {
   overflow: hidden !important;
   display: flex;
   flex-direction: column;
-  padding-top: max(env(safe-area-inset-top), 80px);
+  padding-top: var(--app-top-gap);
   padding-right: max(10px, env(safe-area-inset-right));
   padding-bottom: max(10px, env(safe-area-inset-bottom));
   padding-left: max(10px, env(safe-area-inset-left));
@@ -137,7 +140,7 @@ td {
 /* Từng hàng người chơi */
 .player-row {
   width: 100%;
-  height: clamp(52px, 7.2vh, 64px);
+  height: clamp(52px, 8.4dvh, 76px);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -394,7 +397,7 @@ td {
    ========================================================================== */
 .action-toolbar {
   width: 100%;
-  height: clamp(52px, 6.8vh, 60px);
+  height: clamp(52px, 7.2dvh, 64px);
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -1828,7 +1831,7 @@ td {
 /* Thiết bị màn hình hẹp (320px - 360px như iPhone SE 1, Galaxy A, màn hình gập đóng) */
 @media (max-width: 360px) {
   .app-screen {
-    padding-top: max(env(safe-area-inset-top), 80px);
+    padding-top: var(--app-top-gap);
     padding-right: max(10px, env(safe-area-inset-right));
     padding-bottom: max(10px, env(safe-area-inset-bottom));
     padding-left: max(10px, env(safe-area-inset-left));
@@ -1876,7 +1879,7 @@ td {
 @media (max-height: 670px) {
   .app-screen {
     gap: 10px;
-    padding-top: max(env(safe-area-inset-top), 80px);
+    padding-top: var(--app-top-gap);
     padding-right: max(10px, env(safe-area-inset-right));
     padding-bottom: max(10px, env(safe-area-inset-bottom));
     padding-left: max(10px, env(safe-area-inset-left));
