@@ -3,6 +3,24 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './style.css';
 
+// iPhone mở app từ màn hình chính (thanh trạng thái trong suốt): chiều cao 100% bị thiếu
+// đúng phần thanh trạng thái nên đáy màn hình hiện dải đen. Dùng chiều cao thật của màn hình.
+function updateAppHeight() {
+  const root = document.documentElement;
+  if (!window.navigator.standalone) {
+    root.style.removeProperty('--app-height');
+    return;
+  }
+  const isPortrait = window.innerHeight >= window.innerWidth;
+  const screenHeight = isPortrait
+    ? Math.max(window.screen.width, window.screen.height)
+    : Math.min(window.screen.width, window.screen.height);
+  root.style.setProperty('--app-height', `${Math.max(screenHeight, window.innerHeight)}px`);
+}
+updateAppHeight();
+window.addEventListener('resize', updateAppHeight);
+window.addEventListener('orientationchange', updateAppHeight);
+
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
