@@ -2456,6 +2456,13 @@ td {
   letter-spacing: 0.5px;
 }
 
+/* Dòng trên "BẢNG XẾP HẠNG" nhỏ hơn, cách dòng dưới một chút */
+.leaderboard-title-sub {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+}
+
 /* Podium top 3: thứ tự 2 - 1 - 3, căn đáy */
 .leaderboard-podium {
   display: flex;

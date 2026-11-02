@@ -120,8 +120,7 @@ export default function Leaderboard({ isOpen, onClose, rankedPlayers = [], month
     >
       <div className="leaderboard-scroll" ref={scrollRef}>
         <h2 className="leaderboard-title">
-          BẢNG XẾP HẠNG
-          <br />
+          <span className="leaderboard-title-sub">BẢNG XẾP HẠNG</span>
           CHIẾU QUỶ THÁNG {month}
         </h2>
 
