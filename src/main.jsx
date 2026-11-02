@@ -3,23 +3,20 @@ import ReactDOM from 'react-dom/client';
 import App from './App.jsx';
 import './style.css';
 
-// iPhone mở app từ màn hình chính (thanh trạng thái trong suốt): chiều cao 100% bị thiếu
-// đúng phần thanh trạng thái nên đáy màn hình hiện dải đen. Dùng chiều cao thật của màn hình.
-function updateAppHeight() {
+// iPhone mở app từ màn hình chính: có máy iOS tự chừa sẵn phần đáy màn hình (vùng thanh Home)
+// ngoài khung app. Khi đó không cần chừa thêm safe-area dưới đáy nữa, tránh dải đen 2 lần.
+function updateBottomSafeArea() {
   const root = document.documentElement;
-  if (!window.navigator.standalone) {
-    root.style.removeProperty('--app-height');
-    return;
-  }
-  const isPortrait = window.innerHeight >= window.innerWidth;
-  const screenHeight = isPortrait
+  const screenHeight = window.innerHeight >= window.innerWidth
     ? Math.max(window.screen.width, window.screen.height)
     : Math.min(window.screen.width, window.screen.height);
-  root.style.setProperty('--app-height', `${Math.max(screenHeight, window.innerHeight)}px`);
+  const isShortViewport = window.navigator.standalone && window.innerHeight < screenHeight - 20;
+  if (isShortViewport) root.style.setProperty('--app-bottom-safe', '0px');
+  else root.style.removeProperty('--app-bottom-safe');
 }
-updateAppHeight();
-window.addEventListener('resize', updateAppHeight);
-window.addEventListener('orientationchange', updateAppHeight);
+updateBottomSafeArea();
+window.addEventListener('resize', updateBottomSafeArea);
+window.addEventListener('orientationchange', updateBottomSafeArea);
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
