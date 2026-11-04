@@ -7,26 +7,26 @@ import DailyStatsDrawer from './components/DailyStatsDrawer';
 import { QrTransferModal } from './components/Modals';
 import SamEffectOverlay from './components/SamEffectOverlay';
 import { useRealtimeGame } from './hooks/useRealtimeGame';
+import { SAM_POINT, getSamWinPoints } from './constants/scoring';
 import './style.css';
 
 /**
  * 🎯 QUY TẮC TỰ ĐỘNG ĐIỀN ĐIỂM PHẠT CHO CÁC NGƯỜI CHƠI CÒN LẠI KHI CÓ 1 NGƯỜI THẮNG SÂM:
- * Dựa trên tổng số người chơi có tên trong bàn (loại bỏ các hàng trống):
- * - Bàn 3 người chơi: Khi 1 người nhận +40 -> tự động điền -20 vào 2 người còn lại (tổng cân bằng = 0)
- * - Bàn 4 người chơi: Khi 1 người nhận +60 -> tự động điền -20 vào 3 người còn lại (tổng cân bằng = 0)
- * - Bàn 5 người chơi: Khi 1 người nhận +80 -> tự động điền -20 vào 4 người còn lại (tổng cân bằng = 0)
- * Khi người thắng Sâm thay đổi điểm hoặc hủy/xóa, tự động dọn dẹp các điểm -20 đã tự điền.
+ * Dựa trên tổng số người chơi có tên trong bàn (loại bỏ các hàng trống), mỗi người còn lại trả 25 điểm:
+ * - Bàn 2 người chơi: Khi 1 người nhận +25  -> tự động điền -25 vào người còn lại
+ * - Bàn 3 người chơi: Khi 1 người nhận +50  -> tự động điền -25 vào 2 người còn lại
+ * - Bàn 4 người chơi: Khi 1 người nhận +75  -> tự động điền -25 vào 3 người còn lại
+ * - Bàn 5 người chơi: Khi 1 người nhận +100 -> tự động điền -25 vào 4 người còn lại
+ * (tổng cân bằng = 0). Khi người thắng Sâm thay đổi điểm hoặc hủy/xóa, tự động dọn dẹp các điểm -25 đã tự điền.
+ * Người chơi đang bị khoá (tạm ra ngoài) không được tính vào bàn: bàn 5 khoá 1 người dùng luật bàn 4, v.v.
  */
 function applySamAutoFill(prevDeltas, targetPlayerId, newSignedVal, namedPlayers) {
   const updated = { ...prevDeltas };
   const numNamed = (namedPlayers || []).length;
+  const samWinPoints = getSamWinPoints(numNamed);
+  const samLosePoints = -SAM_POINT;
 
-  const isSamWin = (score) => {
-    if (numNamed === 3 && score === 40) return true;
-    if (numNamed === 4 && score === 60) return true;
-    if (numNamed === 5 && score === 80) return true;
-    return false;
-  };
+  const isSamWin = (score) => numNamed >= 2 && score === samWinPoints;
 
   const wasPreviousSam = isSamWin(prevDeltas[targetPlayerId]);
 
@@ -37,10 +37,10 @@ function applySamAutoFill(prevDeltas, targetPlayerId, newSignedVal, namedPlayers
   }
 
   if (isSamWin(newSignedVal)) {
-    // Tự động điền giá trị điểm âm -20 vào ô của các người chơi còn lại có tên trong bàn
+    // Tự động điền giá trị điểm âm -25 vào ô của các người chơi còn lại có tên trong bàn
     namedPlayers.forEach(p => {
       if (p.id !== targetPlayerId) {
-        updated[p.id] = -20;
+        updated[p.id] = samLosePoints;
       }
     });
     // Loại bỏ điểm của người không có tên trong bàn (nếu có)
@@ -50,9 +50,9 @@ function applySamAutoFill(prevDeltas, targetPlayerId, newSignedVal, namedPlayers
       }
     });
   } else if (wasPreviousSam && !isSamWin(newSignedVal)) {
-    // Nếu trước đó là Thắng Sâm mà nay bị thay đổi/xóa/hủy, tự động xóa điểm âm -20 đã tự điền
+    // Nếu trước đó là Thắng Sâm mà nay bị thay đổi/xóa/hủy, tự động xóa điểm âm -25 đã tự điền
     namedPlayers.forEach(p => {
-      if (p.id !== targetPlayerId && updated[p.id] === -20) {
+      if (p.id !== targetPlayerId && updated[p.id] === samLosePoints) {
         delete updated[p.id];
       }
     });
@@ -66,6 +66,8 @@ export default function App() {
     players,
     history,
     roundDeltas,
+    lockedPlayers,
+    setPlayerLocked,
     dailyLedger,
     isViewOnly,
     viewOnlyUrl,
@@ -89,6 +91,29 @@ export default function App() {
       delete window.triggerSamCelebration;
     };
   }, [triggerSamCelebration]);
+
+  // Xem trước hiệu ứng Sâm bằng tham số URL (không ảnh hưởng điểm, không ghi lịch sử):
+  //   ?previewSam=1                 -> phát hiệu ứng 1 lần khi mở trang
+  //   ?previewSam=loop              -> phát lặp lại mỗi 4 giây để duyệt
+  //   &name=Tên&points=75           -> tùy chọn tên / điểm truyền vào overlay
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const params = new URLSearchParams(window.location.search);
+    const preview = (params.get('previewSam') || '').trim().toLowerCase();
+    if (!preview || preview === '0' || preview === 'false') return undefined;
+    const name = params.get('name') || 'CHIẾU QUỲ';
+    const pts = Number(params.get('points'));
+    const points = Number.isFinite(pts) && pts > 0 ? pts : 75;
+    const play = () => triggerSamCelebration(name, points);
+    const first = setTimeout(play, 600);
+    const loop = preview === 'loop' ? setInterval(play, 4000) : null;
+    return () => {
+      clearTimeout(first);
+      if (loop) clearInterval(loop);
+    };
+    // Chỉ chạy một lần khi mở trang
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Trạng thái bàn phím số (Keyboard) của máy này
   const [activeKeypad, setActiveKeypad] = useState(null); // { player, index, mode: '+' | '-' }
@@ -149,9 +174,15 @@ export default function App() {
 
   // 🎯 QUY TẮC TỰ ĐỘNG BẬT SÁNG NÚT TÍCH XANH & CỘNG DỒN ĐIỂM CÒN THIẾU
   // Dựa trên số lượng người chơi có tên trong bàn (loại bỏ các hàng trống không có tên)
+  // Người chơi đang bị khoá (tạm ra ngoài) coi như không có mặt nên không tính vào bàn
+  const isLocked = useCallback((id) => Boolean(lockedPlayers && lockedPlayers[id]), [lockedPlayers]);
+
   const namedPlayers = useMemo(() => {
-    return players.filter(p => (p.name || '').trim() !== '');
-  }, [players]);
+    return players.filter(p => (p.name || '').trim() !== '' && !isLocked(p.id));
+  }, [players, isLocked]);
+
+  // Danh sách người chơi có thể nhập điểm (dùng khi chuyển nhanh bằng Tab / mũi tên)
+  const playablePlayers = useMemo(() => players.filter(p => !isLocked(p.id)), [players, isLocked]);
 
   const numNamed = namedPlayers.length;
 
@@ -178,9 +209,27 @@ export default function App() {
     updatePlayerName(id, newName);
   };
 
+  // Khoá / mở khoá người chơi (bấm giữ 2 giây vào tên hoặc icon khoá)
+  const handleSetPlayerLocked = useCallback((player, locked) => {
+    if (!player) return;
+    if (locked) {
+      // Người bị khoá không có điểm trong ván đang nhập
+      updateRoundDeltas(prev => {
+        if (!prev || prev[player.id] === undefined) return prev;
+        const next = { ...prev };
+        delete next[player.id];
+        return next;
+      });
+      setActiveKeypad(prev => (prev && prev.player && prev.player.id === player.id ? null : prev));
+      setCurrentKeypadValue('');
+    }
+    setPlayerLocked(player.id, locked);
+  }, [setPlayerLocked, updateRoundDeltas]);
+
   // Mở bàn phím số khi bấm nút - hoặc + ở hàng người chơi
   const handleOpenKeyboard = (player, mode) => {
     if (isDailyStatsOpen || isHistoryExpanded || isQrModalOpen) return;
+    if (!player || isLocked(player.id)) return;
     const playerIndex = players.findIndex(p => p.id === player.id);
     setActiveKeypad({
       player,
@@ -328,8 +377,8 @@ export default function App() {
   // Kiểm tra điều kiện chốt ván:
   // 1. Thủ công: Tổng điểm đã bằng 0 và có ít nhất 1 người nhập điểm khác 0
   // 2. Tự động: Đủ điều kiện tự động cân bằng (N - 1 người âm hoặc bàn 2 người có 1 người dương)
-  const currentSumTotal = players.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
-  const hasEnteredScore = Object.values(roundDeltas).some(val => val !== undefined && val !== 0);
+  const currentSumTotal = playablePlayers.reduce((sum, p) => sum + (roundDeltas[p.id] || 0), 0);
+  const hasEnteredScore = playablePlayers.some(p => roundDeltas[p.id] !== undefined && roundDeltas[p.id] !== 0);
   const isManuallyBalanced = currentSumTotal === 0 && hasEnteredScore;
   const canConfirmRound = isManuallyBalanced || isAutoBalanceEligible;
 
@@ -360,6 +409,14 @@ export default function App() {
         }
       });
     }
+
+    // Người đang bị khoá không có điểm trong ván này
+    players.forEach(p => {
+      if (isLocked(p.id)) {
+        delete finalScores[p.id];
+        delete cleanRawDeltas[p.id];
+      }
+    });
 
     // Tạo ván mới và phát sóng đồng bộ (lưu cả finalScores và rawDeltas)
     const nextRoundNumber = history.length + 1;
@@ -475,16 +532,20 @@ export default function App() {
         // Phím Tab hoặc Mũi tên Xuống: Di chuyển nhanh sang người chơi kế tiếp
         if (e.key === 'Tab' || e.key === 'ArrowDown') {
           e.preventDefault();
-          const nextIdx = (activeKeypad.index + 1) % players.length;
-          handleOpenKeyboard(players[nextIdx], activeKeypad.mode);
+          if (playablePlayers.length === 0) return;
+          const curIdx = playablePlayers.findIndex(p => p.id === activeKeypad.player.id);
+          const nextIdx = (curIdx + 1) % playablePlayers.length;
+          handleOpenKeyboard(playablePlayers[nextIdx], activeKeypad.mode);
           return;
         }
 
         // Phím Shift + Tab hoặc Mũi tên Lên: Di chuyển về người chơi trước
         if ((e.shiftKey && e.key === 'Tab') || e.key === 'ArrowUp') {
           e.preventDefault();
-          const prevIdx = (activeKeypad.index - 1 + players.length) % players.length;
-          handleOpenKeyboard(players[prevIdx], activeKeypad.mode);
+          if (playablePlayers.length === 0) return;
+          const curIdx = playablePlayers.findIndex(p => p.id === activeKeypad.player.id);
+          const prevIdx = curIdx <= 0 ? playablePlayers.length - 1 : curIdx - 1;
+          handleOpenKeyboard(playablePlayers[prevIdx], activeKeypad.mode);
           return;
         }
       } else {
@@ -508,6 +569,7 @@ export default function App() {
     isQrModalOpen,
     canConfirmRound,
     players,
+    playablePlayers,
     namedPlayers,
     handleKeypadNumber,
     handleKeypadBackspace,
@@ -618,6 +680,8 @@ export default function App() {
         activeKeypad={!isKeyboardOpen ? null : activeKeypad}
         onUpdatePlayerName={handleUpdatePlayerName}
         onOpenKeyboard={handleOpenKeyboard}
+        lockedPlayers={lockedPlayers}
+        onSetPlayerLocked={handleSetPlayerLocked}
         isViewOnly={isViewOnly}
         autoBalanceInfo={autoBalanceInfo}
       />

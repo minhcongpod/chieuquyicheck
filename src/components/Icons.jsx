@@ -194,3 +194,15 @@ export function EyeIcon({ className = "w-[24px] h-[24px]", width = 24, height = 
   );
 }
 
+
+// Icon ổ khoá (người chơi đang bị khoá tạm ra ngoài)
+export function LockIcon({ className = "w-[30px] h-[30px]", width = 30, height = 30, color = "#000000" }) {
+  return (
+    <svg className={className} width={width} height={height} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M7 10V7.5C7 4.74 9.24 2.5 12 2.5C14.76 2.5 17 4.74 17 7.5V10" stroke={color} strokeWidth="2.4" strokeLinecap="round" />
+      <rect x="4" y="10" width="16" height="12" rx="2" fill={color} />
+      <circle cx="12" cy="15.2" r="1.7" fill="#8e8e8e" />
+      <rect x="11.15" y="15.6" width="1.7" height="3.4" rx="0.85" fill="#8e8e8e" />
+    </svg>
+  );
+}

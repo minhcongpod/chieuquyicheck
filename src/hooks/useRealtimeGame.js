@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { SAMPLE_DAILY_LEDGER } from '../constants/sampleLedger';
+import { getSamWinnerId } from '../constants/scoring';
 import { db, isFirebaseConfigured } from '../firebase';
 import {
   doc,
@@ -40,20 +41,15 @@ export function fireConfetti() {
 }
 
 /**
- * Kiểm tra xem ván đấu vừa chốt có liên quan đến điểm Sâm hoặc đền Sâm hay không:
- * Các mức điểm Sâm quy ước theo số lượng người chơi:
- * - Bàn 3 người: ±40 điểm (thắng sâm +40, đền sâm -40)
- * - Bàn 4 người: ±60 điểm (thắng sâm +60, đền sâm -60)
- * - Bàn 5 người: ±80 điểm (thắng sâm +80, đền sâm -80)
+ * Kiểm tra xem ván đấu vừa chốt có phải ván Sâm hay không (theo bàn):
+ * - Bàn 2: 1 người +25, người còn lại -25
+ * - Bàn 3: 1 người +50, 2 người còn lại -25
+ * - Bàn 4: 1 người +75, 3 người còn lại -25
+ * - Bàn 5: 1 người +100, 4 người còn lại -25
  */
 export function isSamRound(round) {
   if (!round || !round.scores) return false;
-  const SAM_POINTS = [40, 60, 80];
-  const scores = Object.values(round.scores);
-  return scores.some(score => {
-    const num = typeof score === 'number' ? score : Number(score);
-    return !isNaN(num) && SAM_POINTS.includes(Math.abs(num));
-  });
+  return getSamWinnerId(round.scores) !== null;
 }
 
 /**
@@ -61,32 +57,14 @@ export function isSamRound(round) {
  */
 export function getSamWinnerInfo(round, players = []) {
   if (!round || !round.scores) return null;
-  const SAM_POINTS = [40, 60, 80];
-  // 1. Tìm người có điểm dương (+40, +60, +80) - Người hô Sâm thành công
-  for (const [playerId, score] of Object.entries(round.scores)) {
-    const num = typeof score === 'number' ? score : Number(score);
-    if (SAM_POINTS.includes(num)) {
-      const p = players.find(item => item.id === playerId);
-      return {
-        playerId,
-        name: p?.name || '',
-        points: num
-      };
-    }
-  }
-  // 2. Trường hợp đền Sâm: Người có điểm dương cao nhất
-  for (const [playerId, score] of Object.entries(round.scores)) {
-    const num = typeof score === 'number' ? score : Number(score);
-    if (num > 0) {
-      const p = players.find(item => item.id === playerId);
-      return {
-        playerId,
-        name: p?.name || '',
-        points: num
-      };
-    }
-  }
-  return null;
+  const playerId = getSamWinnerId(round.scores);
+  if (!playerId) return null;
+  const p = players.find(item => item.id === playerId);
+  return {
+    playerId,
+    name: p?.name || '',
+    points: Number(round.scores[playerId]) || 0
+  };
 }
 
 /**
@@ -250,6 +228,9 @@ export function useRealtimeGame() {
 
   const [history, setHistory] = useState(() => readCache('history', storageKey, fallbackKey) || []);
   const [dailyLedger, setDailyLedger] = useState(() => readCache('dailyLedger', storageKey, fallbackKey) || []);
+
+  // Người chơi bị khoá tạm (ra ngoài): { [playerId]: true } — coi như không có mặt trong bàn
+  const [lockedPlayers, setLockedPlayers] = useState(() => readCache('lockedPlayers', storageKey, fallbackKey) || {});
 
   const [roundDeltas, setRoundDeltasState] = useState(() => (isShared ? {} : (readCache('roundDeltas', storageKey) || {})));
   const roundDeltasRef = useRef(roundDeltas);
@@ -416,6 +397,12 @@ export function useRealtimeGame() {
         setRoundDeltas(data.roundDeltas || {});
       }
 
+      if (data.lockedPlayers !== undefined) {
+        const nextLocked = data.lockedPlayers || {};
+        setLockedPlayers(nextLocked);
+        writeCache('lockedPlayers', roomId, nextLocked);
+      }
+
       if (data.dailyLedger !== undefined) {
         if (!isInitialMount && data.dailyLedger.length > prevLedgerLenRef.current) {
           fireConfetti();
@@ -507,6 +494,25 @@ export function useRealtimeGame() {
       }
     }
   }, [players, isShared, roomId, storageKey]);
+
+  // Khoá / mở khoá người chơi tạm ra ngoài (đồng bộ realtime ở phòng chung).
+  // Chỉ ghi đúng lockedPlayers.<id> để 2 máy khoá 2 người khác nhau không đè nhau.
+  const setPlayerLocked = useCallback((id, locked) => {
+    setLockedPlayers(prev => {
+      const next = { ...prev };
+      if (locked) next[id] = true;
+      else delete next[id];
+      writeCache('lockedPlayers', storageKey, next);
+      return next;
+    });
+
+    if (isShared) {
+      updateDoc(doc(db, 'rooms', roomId), {
+        [`lockedPlayers.${id}`]: locked ? true : deleteField(),
+        updatedAt: Date.now()
+      }).catch(e => console.error('[Firebase] Lỗi setPlayerLocked:', e));
+    }
+  }, [isShared, roomId, storageKey]);
 
   // Điểm đang nhập: chỉ ghi các ô thay đổi để 2 máy nhập 2 người khác nhau không đè nhau
   const updateRoundDeltas = useCallback((newDeltasOrUpdater) => {
@@ -644,6 +650,8 @@ export function useRealtimeGame() {
     players,
     history,
     roundDeltas,
+    lockedPlayers,
+    setPlayerLocked,
     dailyLedger,
     isConnected,
     userCount,

@@ -1,4 +1,10 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 'react';
+import { LockIcon } from './Icons';
+
+// Thời gian bấm giữ để khoá / mở khoá người chơi
+const LONG_PRESS_MS = 2000;
+// Ngón tay di chuyển quá khoảng này (px) thì huỷ bấm giữ (người dùng đang cuộn)
+const LONG_PRESS_MOVE_TOLERANCE = 10;
 
 /**
  * Lưu tên người chơi mới vào localStorage để ghi nhớ cho những lần sau
@@ -39,7 +45,9 @@ export default function ScoreInputTable({
   dailyLedger = [],
   activeKeypad = null,
   isViewOnly = false,
-  autoBalanceInfo = null
+  autoBalanceInfo = null,
+  lockedPlayers = {},
+  onSetPlayerLocked
 }) {
   const [editingPlayerId, setEditingPlayerId] = useState(null);
   const [tempName, setTempName] = useState('');
@@ -53,11 +61,63 @@ export default function ScoreInputTable({
   const frozenOrderRef = useRef(null);
   const isTabSwitchingRef = useRef(false);
 
+  const isLocked = (id) => Boolean(lockedPlayers && lockedPlayers[id]);
+
+  // Bấm giữ 2 giây: vào tên người chơi để khoá, vào icon khoá để mở khoá
+  const pressRef = useRef(null); // { timer, x, y }
+  const suppressClickRef = useRef(false);
+  const [pressing, setPressing] = useState(null); // { id, kind: 'lock' | 'unlock' }
+
+  const cancelPress = () => {
+    if (pressRef.current) clearTimeout(pressRef.current.timer);
+    pressRef.current = null;
+    setPressing(null);
+  };
+
+  const startPress = (e, player, kind) => {
+    if (isViewOnly || !onSetPlayerLocked) return;
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    // Chỉ khoá được người chơi đã có tên
+    if (kind === 'lock' && !(player.name || '').trim()) return;
+    suppressClickRef.current = false;
+    if (pressRef.current) clearTimeout(pressRef.current.timer);
+    const timer = setTimeout(() => {
+      pressRef.current = null;
+      setPressing(null);
+      // Bỏ qua cú click phát sinh khi nhấc tay để không mở ô sửa tên
+      suppressClickRef.current = true;
+      try {
+        if (navigator.vibrate) navigator.vibrate(30);
+      } catch (err) {}
+      onSetPlayerLocked(player, kind === 'lock');
+    }, LONG_PRESS_MS);
+    pressRef.current = { timer, x: e.clientX, y: e.clientY };
+    setPressing({ id: player.id, kind });
+  };
+
+  const movePress = (e) => {
+    const p = pressRef.current;
+    if (!p) return;
+    if (Math.abs(e.clientX - p.x) > LONG_PRESS_MOVE_TOLERANCE || Math.abs(e.clientY - p.y) > LONG_PRESS_MOVE_TOLERANCE) {
+      cancelPress();
+    }
+  };
+
+  const getPressHandlers = (player, kind) => ({
+    onPointerDown: (e) => startPress(e, player, kind),
+    onPointerMove: movePress,
+    onPointerUp: cancelPress,
+    onPointerLeave: cancelPress,
+    onPointerCancel: cancelPress,
+    onContextMenu: (e) => e.preventDefault()
+  });
+
   // Dọn dẹp timer khi component unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       if (blurTimerRef.current) clearTimeout(blurTimerRef.current);
+      if (pressRef.current) clearTimeout(pressRef.current.timer);
     };
   }, []);
 
@@ -202,6 +262,7 @@ export default function ScoreInputTable({
   // Sắp xếp danh sách người chơi trên bảng nhập liệu theo quy tắc ưu tiên:
   // - Khi người dùng đang gõ tên (editingPlayerId !== null): CỐ ĐỊNH 100% thứ tự, không xáo trộn
   // - Nhóm có tên (Được sắp xếp): Sắp xếp vị trí theo thứ tự tổng điểm từ cao xuống thấp
+  // - Nhóm bị khoá (tạm ra ngoài): xếp dưới tất cả người đang chơi (theo điểm), trên các hàng trống
   // - Nhóm trống (Ghim xuống cuối): Hàng thỏa mãn đồng thời 2 điều kiện: tên bị bỏ trống VÀ điểm số bằng 0
   //   sẽ bị loại khỏi luồng sắp xếp điểm, luôn được đẩy (push/append) xuống dưới cùng danh sách
   const sortedPlayers = useMemo(() => {
@@ -230,7 +291,12 @@ export default function ScoreInputTable({
         return a.id.localeCompare(b.id);
       }
 
-      // 2. Nhóm có tên: sắp xếp theo tổng điểm từ cao xuống thấp
+      // 2. Người bị khoá xuống dưới cùng của nhóm có tên
+      const lockedA = isLocked(a.id);
+      const lockedB = isLocked(b.id);
+      if (lockedA !== lockedB) return lockedA ? 1 : -1;
+
+      // 3. Nhóm có tên: sắp xếp theo tổng điểm từ cao xuống thấp
       if (scoreB !== scoreA) {
         return scoreB - scoreA;
       }
@@ -241,7 +307,7 @@ export default function ScoreInputTable({
 
     frozenOrderRef.current = sorted.map((p) => p.id);
     return sorted;
-  }, [players, cumulativeScores, editingPlayerId]);
+  }, [players, cumulativeScores, editingPlayerId, lockedPlayers]);
 
   // Hiệu ứng FLIP (First, Last, Invert, Play) chuyển đổi vị trí mượt mà khi thứ tự thay đổi
   useLayoutEffect(() => {
@@ -377,22 +443,34 @@ export default function ScoreInputTable({
             activeKeypad.mode === '+'
           );
 
+          const locked = isLocked(player.id);
+          const isPressingName = Boolean(pressing && pressing.id === player.id && pressing.kind === 'lock');
+          const isPressingLock = Boolean(pressing && pressing.id === player.id && pressing.kind === 'unlock');
+          const canHoldToLock = !isViewOnly && !locked && editingPlayerId !== player.id && Boolean((player.name || '').trim());
+
           return (
             <div
               key={player.id}
               ref={(el) => {
                 if (el) rowRefs.current[player.id] = el;
               }}
-              className={`player-row player-row-${player.id}`}
+              className={`player-row player-row-${player.id} ${locked ? 'is-locked' : ''}`}
               style={{
-                backgroundColor: player.color,
-                '--row-color': player.color
+                backgroundColor: locked ? undefined : player.color,
+                '--row-color': locked ? '#8e8e8e' : player.color
               }}
             >
               {/* Khối Trái: Tên người chơi và Điểm tích luỹ trong cùng 1 ô liền mạch */}
               <div
-                className={`player-left-group ${isViewOnly ? 'is-view-only' : ''}`}
+                className={`player-left-group ${isViewOnly ? 'is-view-only' : ''} ${isPressingName ? 'is-pressing' : ''}`}
+                {...(canHoldToLock ? getPressHandlers(player, 'lock') : {})}
+                title={canHoldToLock ? 'Bấm giữ 2 giây để khoá người chơi (tạm ra ngoài)' : undefined}
                 onClick={() => {
+                  if (suppressClickRef.current) {
+                    suppressClickRef.current = false;
+                    return;
+                  }
+                  if (locked) return;
                   if (!isViewOnly && editingPlayerId !== player.id) handleNameClick(player);
                 }}
               >
@@ -470,8 +548,25 @@ export default function ScoreInputTable({
                 </div>
               </div>
 
+              {/* Người bị khoá: thay 2 nút -/+ bằng 1 ô icon khoá, bấm giữ 2 giây để mở khoá */}
+              {!isViewOnly && locked && (
+                <button
+                  type="button"
+                  className={`player-btn-lock ${isPressingLock ? 'is-pressing' : ''}`}
+                  {...getPressHandlers(player, 'unlock')}
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    suppressClickRef.current = false;
+                  }}
+                  title="Bấm giữ 2 giây để mở khoá"
+                  aria-label={`Mở khoá ${player.name || ''}`.trim()}
+                >
+                  <LockIcon />
+                </button>
+              )}
+
               {/* Chỉ hiển thị nút Trừ (-) và Cộng (+) khi ở quyền Active (không phải View-Only) */}
-              {!isViewOnly && (
+              {!isViewOnly && !locked && (
                 <>
                   {/* Nút Trừ (-) - Bấm mở bàn phím phép trừ */}
                   <button
