@@ -209,7 +209,7 @@ export default function App() {
     updatePlayerName(id, newName);
   };
 
-  // Khoá / mở khoá người chơi (bấm giữ 2 giây vào tên hoặc icon khoá)
+  // Khoá / mở khoá người chơi (bấm giữ 1 giây vào tên hoặc icon khoá)
   const handleSetPlayerLocked = useCallback((player, locked) => {
     if (!player) return;
     if (locked) {
