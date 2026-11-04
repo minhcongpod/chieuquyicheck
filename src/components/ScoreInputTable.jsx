@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useLayoutEffect, useMemo } from 're
 import { LockIcon } from './Icons';
 
 // Thời gian bấm giữ để khoá / mở khoá người chơi
-const LONG_PRESS_MS = 2000;
+const LONG_PRESS_MS = 1000;
 // Ngón tay di chuyển quá khoảng này (px) thì huỷ bấm giữ (người dùng đang cuộn)
 const LONG_PRESS_MOVE_TOLERANCE = 10;
 
@@ -63,7 +63,7 @@ export default function ScoreInputTable({
 
   const isLocked = (id) => Boolean(lockedPlayers && lockedPlayers[id]);
 
-  // Bấm giữ 2 giây: vào tên người chơi để khoá, vào icon khoá để mở khoá
+  // Bấm giữ 1 giây: vào tên người chơi để khoá, vào icon khoá để mở khoá
   const pressRef = useRef(null); // { timer, x, y }
   const suppressClickRef = useRef(false);
   const [pressing, setPressing] = useState(null); // { id, kind: 'lock' | 'unlock' }
@@ -464,7 +464,7 @@ export default function ScoreInputTable({
               <div
                 className={`player-left-group ${isViewOnly ? 'is-view-only' : ''} ${isPressingName ? 'is-pressing' : ''}`}
                 {...(canHoldToLock ? getPressHandlers(player, 'lock') : {})}
-                title={canHoldToLock ? 'Bấm giữ 2 giây để khoá người chơi (tạm ra ngoài)' : undefined}
+                title={canHoldToLock ? 'Bấm giữ 1 giây để khoá người chơi (tạm ra ngoài)' : undefined}
                 onClick={() => {
                   if (suppressClickRef.current) {
                     suppressClickRef.current = false;
@@ -548,7 +548,7 @@ export default function ScoreInputTable({
                 </div>
               </div>
 
-              {/* Người bị khoá: thay 2 nút -/+ bằng 1 ô icon khoá, bấm giữ 2 giây để mở khoá */}
+              {/* Người bị khoá: thay 2 nút -/+ bằng 1 ô icon khoá, bấm giữ 1 giây để mở khoá */}
               {!isViewOnly && locked && (
                 <button
                   type="button"
@@ -558,7 +558,7 @@ export default function ScoreInputTable({
                     e.currentTarget.blur();
                     suppressClickRef.current = false;
                   }}
-                  title="Bấm giữ 2 giây để mở khoá"
+                  title="Bấm giữ 1 giây để mở khoá"
                   aria-label={`Mở khoá ${player.name || ''}`.trim()}
                 >
                   <LockIcon />
