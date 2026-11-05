@@ -1,13 +1,13 @@
 name: Telegram nhắc chuyển khoản
 
-# Chạy mỗi ngày 10:00 sáng giờ Việt Nam (03:00 UTC).
+# Chạy mỗi ngày 8:45 sáng giờ Việt Nam (01:45 UTC).
 # GitHub có thể chạy trễ vài phút đến ~15 phút vào giờ cao điểm.
 # Cần secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
 # Tùy chọn (Settings → Secrets and variables → Actions → Variables):
 #   POINT_VALUE (số đồng / 1 điểm), ROOM_ID (mặc định vip).
 on:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '45 1 * * *'
   workflow_dispatch:
     inputs:
       dry_run:
