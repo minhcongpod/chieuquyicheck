@@ -5,7 +5,7 @@
  * Mỗi sáng (GitHub Actions chạy lúc 10:00 giờ Việt Nam) script này:
  *   1. Đọc phòng trên Firestore (mặc định phòng "vip") qua REST API công khai của web app.
  *   2. Lấy lần CHỐT SỔ mới nhất (dailyLedger) để biết ai âm, ai dương.
- *   3. Gửi vào nhóm Telegram: 1 câu chúc (đổi theo ngày) + danh sách người âm cần chuyển khoản.
+ *   3. Gửi vào nhóm Telegram: 1 câu chúc (10 câu, đổi theo ngày) + danh sách người âm + link xem chi tiết.
  *
  * Biến môi trường:
  *   TELEGRAM_BOT_TOKEN  (bắt buộc khi gửi) token lấy từ @BotFather
@@ -39,30 +39,9 @@ export const GREETINGS = [
   'Chúc mọi người hôm nay gặp toàn chuyện vui, đánh đâu thắng đó 🏆',
   'Ngày mới an lành! Ai đen hôm qua thì hôm nay chắc chắn đỏ 🔥',
   'Chúc cả nhà sức khỏe dồi dào, công việc hanh thông, bài về đôi heo 🐷🐷',
-  'Một ngày tuyệt vời bắt đầu bằng nụ cười, và… một cái chuyển khoản đúng hạn 😄',
   'Chúc anh em sáng nay deadline nhẹ nhàng, sếp vui vẻ, lương về sớm 🎉',
-  'Hít thở sâu, uống ngụm nước, chúc cả nhà một ngày rực rỡ 🌞',
-  'Chúc mọi người hôm nay may mắn gấp đôi, xui xẻo chia đôi 🍀',
-  'Chào ngày mới! Chúc anh em làm gì cũng thuận, nói gì cũng trúng 🎯',
-  'Chúc cả nhà một ngày bình yên, chiều nay ai cũng có bộ tứ quý 🃏',
-  'Sáng rồi, dậy thôi! Chúc anh em năng lượng tràn trề như vừa báo Sâm thành công 💪',
-  'Chúc mọi người hôm nay code chạy ngay lần đầu, bài lên ngay ván đầu 🚀',
   'Ngày mới vui vẻ! Thua keo này ta bày keo khác, quan trọng là sòng phẳng 🤝',
   'Chúc cả nhà hôm nay cười nhiều hơn hôm qua, và thắng nhiều hơn hôm qua 😆',
-  'Chúc anh em một ngày làm việc trơn tru, không bị cháy việc, cũng không bị cháy bài 🔥',
-  'Buổi sáng tốt lành! Chúc ai cũng có một ngày thật đáng nhớ 🌈',
-  'Chúc cả nhà mạnh khỏe, bình an, tiền vào như nước sông Đà 🌊',
-  'Ngày mới, vận mới! Chúc anh em đỏ cả tình lẫn bạc ❤️',
-  'Chúc mọi người hôm nay gặp toàn quý nhân, bốc toàn quân xịn 👑',
-  'Một tách trà, một nụ cười, chúc cả nhà ngày mới nhẹ nhàng 🍵',
-  'Chúc anh em hôm nay làm việc hết mình, chiều về chiến hết sức 💥',
-  'Chúc cả nhà một ngày tràn ngập niềm vui, nợ nần sạch sẽ, lòng nhẹ tênh 🕊️',
-  'Chào buổi sáng! Chúc mọi người tinh thần thép, bài chặt heo ngon lành 🐖',
-  'Chúc anh em ngày mới thuận buồm xuôi gió, vạn sự như ý 🌬️',
-  'Hôm nay là một ngày tuyệt vời để thắng lớn. Chúc cả nhà may mắn 🍀',
-  'Chúc mọi người buổi sáng an yên, buổi chiều thắng to, buổi tối ngủ ngon 🌙',
-  'Ngày mới khởi sắc! Chúc anh em vừa giỏi việc, vừa giỏi bài 🧠',
-  'Chúc cả nhà hôm nay ăn ngon, làm khỏe, chơi vui, trả nợ nhanh 😎',
 ];
 
 export function vnDate(ms) {
@@ -130,7 +109,6 @@ export function buildMessage(room, nowMs = Date.now()) {
   const entries = Object.entries(latest.scores || {})
     .map(([id, score]) => ({ name: names[id] || id, score: Number(score) || 0 }));
   const losers = entries.filter(e => e.score < 0).sort((a, b) => a.score - b.score);
-  const winners = entries.filter(e => e.score > 0).sort((a, b) => b.score - a.score);
   const label = latest.label || latest.dateStr || `${vnDate(latest.timestamp).d}/${vnDate(latest.timestamp).m}`;
 
   if (losers.length === 0) {
@@ -138,13 +116,9 @@ export function buildMessage(room, nowMs = Date.now()) {
     return { text: lines.join('\n'), hasDebt: false, latest };
   }
 
-  lines.push('', `💸 <b>Nhắc chuyển khoản, chốt sổ ${escapeHtml(label)}:</b>`);
+  lines.push('');
   for (const l of losers) lines.push(`• ${escapeHtml(l.name)}: −${formatAmount(l.score)}`);
-  if (winners.length) {
-    lines.push('', '💰 <b>Nhận:</b>');
-    for (const w of winners) lines.push(`• ${escapeHtml(w.name)}: +${formatAmount(w.score)}`);
-  }
-  lines.push('', `Anh em âm nhớ chuyển khoản sớm nha 🙏`, `👉 Xem chi tiết: ${APP_URL}/${encodeURIComponent(ROOM_ID)}`);
+  lines.push(`Chuyển tiền sớm nha! 👉 <a href="${APP_URL}/${encodeURIComponent(ROOM_ID)}">Chi tiết</a>`);
   return { text: lines.join('\n'), hasDebt: true, latest };
 }
 
