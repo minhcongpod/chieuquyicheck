@@ -81,3 +81,17 @@ chieuquyicheck/
 1. Vào [Firebase Console](https://console.firebase.google.com), tạo một Web Project (hoặc dùng project đã có).
 2. Bật dịch vụ **Cloud Firestore Database** (chọn chế độ Test mode hoặc thêm Security Rules cho phép read/write).
 3. Copy đoạn mã cấu hình `firebaseConfig` và dán vào file [src/firebase.js](file:///Users/pod/Library/CloudStorage/GoogleDrive-minhcong.pod@gmail.com/My%20Drive/ICHECK/chieuquyicheck/src/firebase.js) hoặc tạo file `.env` với các biến tương ứng.
+
+---
+
+## 🤖 Bot Telegram nhắc chuyển khoản (10:00 sáng mỗi ngày)
+
+Workflow `.github/workflows/telegram-reminder.yml` chạy `scripts/telegram-reminder.mjs` lúc 10:00 giờ Việt Nam: gửi 1 câu chúc (đổi mỗi ngày) và danh sách người âm theo **lần chốt sổ mới nhất** của phòng `vip`. Nếu lần chốt sổ mới nhất cũ hơn 1 ngày thì bot chỉ gửi câu chúc, không nhắc lại nợ cũ.
+
+Cài đặt một lần:
+1. Trên Telegram, nhắn `@BotFather` → `/newbot` → đặt tên → copy **token**.
+2. Thêm bot vào nhóm, gửi 1 tin bất kỳ trong nhóm, rồi mở `https://api.telegram.org/bot<TOKEN>/getUpdates` để lấy `chat.id` của nhóm (dạng `-100…`).
+3. GitHub repo → Settings → Secrets and variables → Actions → thêm secret `TELEGRAM_BOT_TOKEN` và `TELEGRAM_CHAT_ID`. Thêm variable `POINT_VALUE` (số đồng / 1 điểm) nếu muốn ghi ra tiền.
+4. Tab Actions → "Telegram nhắc chuyển khoản" → Run workflow để thử ngay.
+
+Chạy thử trên máy: `node scripts/telegram-reminder.mjs --dry-run`
