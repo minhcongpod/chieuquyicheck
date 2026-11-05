@@ -1,0 +1,33 @@
+name: Telegram nhắc chuyển khoản
+
+# Chạy mỗi ngày 10:00 sáng giờ Việt Nam (03:00 UTC).
+# GitHub có thể chạy trễ vài phút đến ~15 phút vào giờ cao điểm.
+# Cần secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
+# Tùy chọn (Settings → Secrets and variables → Actions → Variables):
+#   POINT_VALUE (số đồng / 1 điểm), ROOM_ID (mặc định vip).
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Chỉ in tin nhắn, không gửi Telegram'
+        type: boolean
+        default: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/telegram-reminder.mjs
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          POINT_VALUE: ${{ vars.POINT_VALUE }}
+          ROOM_ID: ${{ vars.ROOM_ID }}
+          DRY_RUN: ${{ inputs.dry_run && '1' || '' }}
