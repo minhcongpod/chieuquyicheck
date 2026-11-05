@@ -84,9 +84,9 @@ chieuquyicheck/
 
 ---
 
-## 🤖 Bot Telegram nhắc chuyển khoản (10:00 sáng mỗi ngày)
+## 🤖 Bot Telegram nhắc chuyển khoản (8:45 sáng mỗi ngày)
 
-Workflow `.github/workflows/telegram-reminder.yml` chạy `scripts/telegram-reminder.mjs` lúc 10:00 giờ Việt Nam: gửi 1 câu chúc (đổi mỗi ngày) và danh sách người âm theo **lần chốt sổ mới nhất** của phòng `vip`. Nếu lần chốt sổ mới nhất cũ hơn 1 ngày thì bot chỉ gửi câu chúc, không nhắc lại nợ cũ.
+Workflow `.github/workflows/telegram-reminder.yml` chạy `scripts/telegram-reminder.mjs` lúc 8:45 giờ Việt Nam: gửi 1 câu chúc (đổi mỗi ngày) và danh sách người âm theo **lần chốt sổ mới nhất** của phòng `vip`. Nếu lần chốt sổ mới nhất cũ hơn 1 ngày thì bot chỉ gửi câu chúc, không nhắc lại nợ cũ.
 
 Cài đặt một lần:
 1. Trên Telegram, nhắn `@BotFather` → `/newbot` → đặt tên → copy **token**.

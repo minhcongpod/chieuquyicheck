@@ -2,7 +2,7 @@
 /**
  * 🤖 Bot Telegram nhắc chuyển khoản Chiếu Quỷ
  *
- * Mỗi sáng (GitHub Actions chạy lúc 10:00 giờ Việt Nam) script này:
+ * Mỗi sáng (GitHub Actions chạy lúc 8:45 giờ Việt Nam) script này:
  *   1. Đọc phòng trên Firestore (mặc định phòng "vip") qua REST API công khai của web app.
  *   2. Lấy lần CHỐT SỔ mới nhất (dailyLedger) để biết ai âm, ai dương.
  *   3. Gửi vào nhóm Telegram: 1 lời chúc (100 câu trong loi-chuc.json, đổi theo ngày) + danh sách người âm + link xem chi tiết.
