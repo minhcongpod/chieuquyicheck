@@ -5,7 +5,7 @@
  * Mỗi sáng (GitHub Actions chạy lúc 10:00 giờ Việt Nam) script này:
  *   1. Đọc phòng trên Firestore (mặc định phòng "vip") qua REST API công khai của web app.
  *   2. Lấy lần CHỐT SỔ mới nhất (dailyLedger) để biết ai âm, ai dương.
- *   3. Gửi vào nhóm Telegram: 1 câu chúc (10 câu, đổi theo ngày) + danh sách người âm + link xem chi tiết.
+ *   3. Gửi vào nhóm Telegram: 1 lời chúc (100 câu trong loi-chuc.json, đổi theo ngày) + danh sách người âm + link xem chi tiết.
  *
  * Biến môi trường:
  *   TELEGRAM_BOT_TOKEN  (bắt buộc khi gửi) token lấy từ @BotFather
@@ -16,6 +16,8 @@
  *                       Cũ hơn thì chỉ gửi câu chúc, tránh nhắc lại nợ cũ mỗi ngày.
  *   DRY_RUN=1           chỉ in tin nhắn ra màn hình, không gửi (cũng có thể dùng cờ --dry-run)
  */
+
+import { readFileSync } from 'node:fs';
 
 const FIREBASE_API_KEY = 'AIzaSyAJw-5twD9rve15m_BUrvrLjVG0wrBMWfE'; // khóa web công khai, giống src/firebase.js
 const PROJECT_ID = 'chieuquyicheck';
@@ -30,19 +32,8 @@ const MAX_LEDGER_AGE_DAYS = env.MAX_LEDGER_AGE_DAYS === undefined || env.MAX_LED
   : Number(env.MAX_LEDGER_AGE_DAYS);
 const DRY_RUN = process.argv.includes('--dry-run') || env.DRY_RUN === '1';
 
-// Câu chúc đổi theo ngày trong năm, xoay vòng qua cả danh sách.
-export const GREETINGS = [
-  'Chào buổi sáng cả nhà! Chúc một ngày làm việc năng suất, tối về bài toàn Sâm 🍀',
-  'Sáng nay trời đẹp, chúc anh em tinh thần phơi phới, tay to như bàn tay vàng ✨',
-  'Chúc cả nhà ngày mới nhiều năng lượng, ít bug, nhiều tiền 💰',
-  'Cà phê chưa? Chúc anh em một ngày thật suôn sẻ, chiều về chiến tiếp ☕',
-  'Chúc mọi người hôm nay gặp toàn chuyện vui, đánh đâu thắng đó 🏆',
-  'Ngày mới an lành! Ai đen hôm qua thì hôm nay chắc chắn đỏ 🔥',
-  'Chúc cả nhà sức khỏe dồi dào, công việc hanh thông, bài về đôi heo 🐷🐷',
-  'Chúc anh em sáng nay deadline nhẹ nhàng, sếp vui vẻ, lương về sớm 🎉',
-  'Ngày mới vui vẻ! Thua keo này ta bày keo khác, quan trọng là sòng phẳng 🤝',
-  'Chúc cả nhà hôm nay cười nhiều hơn hôm qua, và thắng nhiều hơn hôm qua 😆',
-];
+// 100 lời chúc thu nợ (scripts/loi-chuc.json), xoay vòng mỗi ngày một câu.
+export const GREETINGS = JSON.parse(readFileSync(new URL('./loi-chuc.json', import.meta.url), 'utf8'));
 
 export function vnDate(ms) {
   const d = new Date(ms + VN_OFFSET_MS);
