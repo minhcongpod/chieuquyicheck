@@ -2,9 +2,10 @@
 /**
  * 🤖 Bot Telegram nhắc chuyển khoản Chiếu Quỷ
  *
- * Mỗi sáng (GitHub Actions chạy lúc 8:45 giờ Việt Nam) script này:
+ * Sáng thứ 2 đến thứ 6 (GitHub Actions chạy lúc 7:00 giờ Việt Nam; thứ 7 và chủ nhật không nhắc) script này:
  *   1. Đọc phòng trên Firestore (mặc định phòng "vip") qua REST API công khai của web app.
- *   2. Lấy lần CHỐT SỔ mới nhất (dailyLedger) để biết ai âm, ai dương.
+ *   2. Gộp các lần CHỐT SỔ (dailyLedger) của hôm qua để biết ai âm, ai dương.
+      Riêng thứ 2: gộp luôn thứ 6, thứ 7, chủ nhật (3 ngày trước đó).
  *   3. Gửi vào nhóm Telegram: 1 lời chúc (100 câu trong loi-chuc.json, đổi theo ngày) + danh sách người âm + link xem chi tiết.
  *
  * Biến môi trường:
@@ -12,8 +13,9 @@
  *   TELEGRAM_CHAT_ID    (bắt buộc khi gửi) id nhóm, dạng -100xxxxxxxxxx
  *   ROOM_ID             phòng cần đọc, mặc định "vip"
  *   POINT_VALUE         số đồng cho 1 điểm (vd 1000). Bỏ trống thì chỉ ghi điểm.
- *   MAX_LEDGER_AGE_DAYS chỉ nhắc nợ khi lần chốt sổ mới nhất không cũ hơn số ngày này (mặc định 1).
- *                       Cũ hơn thì chỉ gửi câu chúc, tránh nhắc lại nợ cũ mỗi ngày.
+ *   MAX_LEDGER_AGE_DAYS chỉ gộp các lần chốt sổ không cũ hơn số ngày này (mặc định 1; thứ 2 tự nâng lên 3).
+ *                       Cũ hơn thì bỏ qua, tránh nhắc lại nợ cũ mỗi ngày.
+ *   WEEKDAYS_ONLY=1     thứ 7 và chủ nhật (giờ VN) thì không gửi gì (workflow đặt khi chạy theo lịch)
  *   DRY_RUN=1           chỉ in tin nhắn ra màn hình, không gửi (cũng có thể dùng cờ --dry-run)
  */
 
@@ -30,6 +32,7 @@ const POINT_VALUE = Number(env.POINT_VALUE) || 0;
 const MAX_LEDGER_AGE_DAYS = env.MAX_LEDGER_AGE_DAYS === undefined || env.MAX_LEDGER_AGE_DAYS === ''
   ? 1
   : Number(env.MAX_LEDGER_AGE_DAYS);
+const WEEKDAYS_ONLY = env.WEEKDAYS_ONLY === '1';
 const DRY_RUN = process.argv.includes('--dry-run') || env.DRY_RUN === '1';
 
 // 100 lời chúc thu nợ (scripts/loi-chuc.json), xoay vòng mỗi ngày một câu.
@@ -37,7 +40,18 @@ export const GREETINGS = JSON.parse(readFileSync(new URL('./loi-chuc.json', impo
 
 export function vnDate(ms) {
   const d = new Date(ms + VN_OFFSET_MS);
-  return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), dayNumber: Math.floor((ms + VN_OFFSET_MS) / 86400000) };
+  return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1, d: d.getUTCDate(), weekday: d.getUTCDay(), dayNumber: Math.floor((ms + VN_OFFSET_MS) / 86400000) };
+}
+
+/** Thứ 7 / chủ nhật theo giờ Việt Nam: không nhắc nợ. */
+export function isWeekend(nowMs) {
+  const w = vnDate(nowMs).weekday;
+  return w === 0 || w === 6;
+}
+
+/** Số ngày lùi lại để gộp chốt sổ: thứ 2 lấy cả thứ 6, 7, CN (3 ngày), ngày khác 1 ngày. */
+export function lookbackDays(nowMs) {
+  return vnDate(nowMs).weekday === 1 ? Math.max(MAX_LEDGER_AGE_DAYS, 3) : MAX_LEDGER_AGE_DAYS;
 }
 
 export function pickGreeting(nowMs) {
@@ -89,18 +103,29 @@ export function buildMessage(room, nowMs = Date.now()) {
   const lines = [`🌅 <b>${escapeHtml(pickGreeting(nowMs))}</b>`];
 
   const ledger = Array.isArray(room.dailyLedger) ? room.dailyLedger : [];
-  const latest = ledger.reduce((a, b) => (!a || (b.timestamp || 0) > (a.timestamp || 0) ? b : a), null);
-
-  const ageDays = latest ? vnDate(nowMs).dayNumber - vnDate(latest.timestamp || 0).dayNumber : Infinity;
-  if (!latest || ageDays > MAX_LEDGER_AGE_DAYS) {
+  const today = vnDate(nowMs).dayNumber;
+  const maxAge = lookbackDays(nowMs);
+  const recent = ledger.filter(e => {
+    const age = today - vnDate(e.timestamp || 0).dayNumber;
+    return age >= 1 && age <= maxAge;
+  });
+  if (recent.length === 0) {
     return { text: lines.join('\n'), hasDebt: false, latest: null };
   }
 
-  const names = Object.fromEntries((latest.playersInfo || []).map(p => [p.id, p.name || p.id]));
-  const entries = Object.entries(latest.scores || {})
-    .map(([id, score]) => ({ name: names[id] || id, score: Number(score) || 0 }));
+  // Gộp điểm của tất cả các lần chốt sổ trong khoảng (thứ 2 = thứ 6 + thứ 7 + CN)
+  const names = {};
+  const totals = {};
+  for (const e of recent) {
+    for (const p of e.playersInfo || []) names[p.id] = p.name || p.id;
+    for (const [id, score] of Object.entries(e.scores || {})) totals[id] = (totals[id] || 0) + (Number(score) || 0);
+  }
+  const latest = recent.reduce((a, b) => ((b.timestamp || 0) > (a.timestamp || 0) ? b : a));
+  const entries = Object.entries(totals).map(([id, score]) => ({ name: names[id] || id, score }));
   const losers = entries.filter(e => e.score < 0).sort((a, b) => a.score - b.score);
-  const label = latest.label || latest.dateStr || `${vnDate(latest.timestamp).d}/${vnDate(latest.timestamp).m}`;
+  const label = recent.length === 1
+    ? (latest.label || latest.dateStr || `${vnDate(latest.timestamp).d}/${vnDate(latest.timestamp).m}`)
+    : `${vnDate(Math.min(...recent.map(e => e.timestamp || 0))).d}/${vnDate(Math.min(...recent.map(e => e.timestamp || 0))).m} đến ${vnDate(latest.timestamp).d}/${vnDate(latest.timestamp).m}`;
 
   if (losers.length === 0) {
     lines.push('', `Chốt sổ ${escapeHtml(label)}: không ai âm, cả nhà hòa cả làng 🤝`);
@@ -127,6 +152,10 @@ async function sendTelegram(text) {
 }
 
 async function main() {
+  if (WEEKDAYS_ONLY && isWeekend(Date.now())) {
+    console.log('Thứ 7 / chủ nhật: không nhắc nợ.');
+    return;
+  }
   const room = await fetchRoom(ROOM_ID);
   const { text } = buildMessage(room);
   console.log(text);
