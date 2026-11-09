@@ -6,7 +6,7 @@
  *   1. Đọc phòng trên Firestore (mặc định phòng "vip") qua REST API công khai của web app.
  *   2. Gộp các lần CHỐT SỔ (dailyLedger) của hôm qua để biết ai âm, ai dương.
       Riêng thứ 2: gộp luôn thứ 6, thứ 7, chủ nhật (3 ngày trước đó).
- *   3. Gửi vào nhóm Telegram: 1 lời chúc (100 câu trong loi-chuc.json, đổi theo ngày) + danh sách người âm + link xem chi tiết.
+ *   3. Không có nợ thì không gửi gì. Có nợ thì gửi vào nhóm Telegram: 1 lời chúc (100 câu trong loi-chuc.json, đổi theo ngày) + danh sách người âm + link xem chi tiết.
  *
  * Biến môi trường:
  *   TELEGRAM_BOT_TOKEN  (bắt buộc khi gửi) token lấy từ @BotFather
@@ -157,8 +157,12 @@ async function main() {
     return;
   }
   const room = await fetchRoom(ROOM_ID);
-  const { text } = buildMessage(room);
+  const { text, hasDebt } = buildMessage(room);
   console.log(text);
+  if (!hasDebt) {
+    console.log('\nKhông có nợ: không gửi Telegram.');
+    return;
+  }
   if (DRY_RUN) {
     console.log('\n(DRY_RUN: không gửi Telegram)');
     return;
