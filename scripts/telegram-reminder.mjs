@@ -23,7 +23,6 @@ import { readFileSync } from 'node:fs';
 
 const FIREBASE_API_KEY = 'AIzaSyAJw-5twD9rve15m_BUrvrLjVG0wrBMWfE'; // khóa web công khai, giống src/firebase.js
 const PROJECT_ID = 'chieuquyicheck';
-const APP_URL = 'https://minhcongpod.github.io/chieuquyicheck';
 const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
 
 const env = process.env;
@@ -100,7 +99,7 @@ function escapeHtml(s) {
 
 /** Dựng nội dung tin nhắn (HTML của Telegram) từ dữ liệu phòng. */
 export function buildMessage(room, nowMs = Date.now()) {
-  const lines = [`🌅 <b>${escapeHtml(pickGreeting(nowMs))}</b>`];
+  const lines = [`<b>${escapeHtml(pickGreeting(nowMs))}</b>`];
 
   const ledger = Array.isArray(room.dailyLedger) ? room.dailyLedger : [];
   const today = vnDate(nowMs).dayNumber;
@@ -128,13 +127,13 @@ export function buildMessage(room, nowMs = Date.now()) {
     : `${vnDate(Math.min(...recent.map(e => e.timestamp || 0))).d}/${vnDate(Math.min(...recent.map(e => e.timestamp || 0))).m} đến ${vnDate(latest.timestamp).d}/${vnDate(latest.timestamp).m}`;
 
   if (losers.length === 0) {
-    lines.push('', `Chốt sổ ${escapeHtml(label)}: không ai âm, cả nhà hòa cả làng 🤝`);
+    lines.push('', `Chốt sổ ${escapeHtml(label)}: không ai âm, cả nhà hòa cả làng`);
     return { text: lines.join('\n'), hasDebt: false, latest };
   }
 
   lines.push('');
   for (const l of losers) lines.push(`• ${escapeHtml(l.name)}: −${formatAmount(l.score)}`);
-  lines.push(`Chuyển tiền sớm nha! 👉 <a href="${APP_URL}/${encodeURIComponent(ROOM_ID)}">Chi tiết</a>`);
+  lines.push(`Chuyển tiền sớm nha!`);
   return { text: lines.join('\n'), hasDebt: true, latest };
 }
 
