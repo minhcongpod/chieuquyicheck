@@ -3,14 +3,14 @@ import { CHAY_POINTS, getSamWinnerId } from '../constants/scoring';
 import { ExpandIcon, SortScoreIcon, SortNameIcon, ResetIcon, CheckmarkIcon, CrossIcon } from './Icons';
 
 /**
- * Quy tắc bôi màu nền tự động tại Bảng lịch sử điểm (định mức Sâm +25 / Cháy -15):
+ * Quy tắc bôi màu nền tự động tại Bảng lịch sử điểm (định mức Sâm +25 / Cháy -20):
  *
  * 1. Ván Sâm (theo bàn, người còn lại đều -25):
  * - Bàn 2: người +25 | Bàn 3: người +50 | Bàn 4: người +75 | Bàn 5: người +100
  *   -> Người thắng Sâm nền xanh (+1 Sâm), những người còn lại nền đỏ.
  *
  * 2. Cháy:
- * - Ô điểm -15 hoặc -25: Bôi nền đỏ (Hệ thống tự động cộng 1 Cháy).
+ * - Ô điểm -20 hoặc -25: Bôi nền đỏ (Hệ thống tự động cộng 1 Cháy).
  */
 function getScoreCellClass(score, playerId, samWinnerId) {
   // Ván Sâm (theo bàn): người thắng Sâm nền xanh, những người còn lại nền đỏ
@@ -19,7 +19,7 @@ function getScoreCellClass(score, playerId, samWinnerId) {
     if (score !== 0) return 'history-score-lose';
   }
 
-  // Cháy (-15 hoặc -25): Bôi nền đỏ
+  // Cháy (-20 hoặc -25): Bôi nền đỏ
   if (CHAY_POINTS.includes(score)) {
     return 'history-score-lose';
   }
@@ -51,7 +51,7 @@ function calculateSamAndChay(history, players) {
     players.forEach((p) => {
       const score = scores[p.id] || 0;
 
-      // 1. TÍNH CHÁY: Bất kỳ người chơi nào có điểm kết thúc ván là -15 hoặc -25
+      // 1. TÍNH CHÁY: Bất kỳ người chơi nào có điểm kết thúc ván là -20 hoặc -25
       if (CHAY_POINTS.includes(score)) {
         chayCount[p.id] = (chayCount[p.id] || 0) + 1;
       }
