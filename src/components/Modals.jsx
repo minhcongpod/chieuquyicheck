@@ -207,17 +207,17 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
         <div className="modal-qr-tabs">
           <button
             type="button"
-            className={`modal-qr-tab-btn ${activeTab === 'setting' ? 'active' : ''}`}
-            onClick={() => setActiveTab('setting')}
-          >
-            SETTING
-          </button>
-          <button
-            type="button"
             className={`modal-qr-tab-btn ${activeTab === 'momo' ? 'active' : ''}`}
             onClick={() => setActiveTab('momo')}
           >
             MOMO
+          </button>
+          <button
+            type="button"
+            className={`modal-qr-tab-btn ${activeTab === 'setting' ? 'active' : ''}`}
+            onClick={() => setActiveTab('setting')}
+          >
+            SETTING
           </button>
         </div>
 
