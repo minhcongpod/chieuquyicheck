@@ -36,7 +36,7 @@ const formatCompactUrl = (url) => {
  * 2. MoMo: Mã QR MoMo nộp Quỹ Chiếu Quỷ
  */
 export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULES, onSaveRules }) {
-  const [activeTab, setActiveTab] = useState('setting'); // 'setting' | 'momo'
+  const [activeTab, setActiveTab] = useState('momo'); // 'momo' | 'setting' (mở popup là vào MOMO trước)
   // Mỗi lần sửa (SÂM hoặc CHÁY) đều phải nhập lại mật khẩu: askingRule = ô đang hỏi mật khẩu,
   // editingRule = ô đã mở khoá và đang sửa ('sam' | 'chay' | null). Lưu hoặc huỷ là khoá lại.
   const [askingRule, setAskingRule] = useState(null);
