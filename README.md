@@ -35,9 +35,9 @@
 4. **Cơ chế bảo vệ & Tính điểm an toàn**:
    - **Kiểm tra SUM = 0**: Nút chốt ván màu xanh lá chỉ kích hoạt khi tổng điểm người thắng và người thua cân bằng chính xác bằng 0.
    - **Trượt xác nhận inline an toàn**: Thao tác Hoàn tác (Undo) và Reset toàn bộ điểm được tích hợp xác nhận inline chống bấm nhầm.
-   - **Định mức điểm Sâm & Cháy**: Sâm +25 điểm cho người hô Sâm thành công (mỗi người còn lại trả 25), Cháy -15 điểm cho mỗi người bị cháy.
+   - **Định mức điểm Sâm & Cháy**: Sâm +25 điểm cho người hô Sâm thành công (mỗi người còn lại trả 25), Cháy -20 điểm cho mỗi người bị cháy.
    - **Tự động điền điểm Sâm**: Nhập điểm thắng Sâm cho 1 người, các người còn lại tự điền -25 — Bàn 2: +25, Bàn 3: +50, Bàn 4: +75, Bàn 5: +100.
-   - **Bôi màu tự động ở bảng lịch sử**: Nổi bật các ván bước ngoặt (Cháy: -15, Thắng Sâm: +25/+50/+75/+100, Thua / Đền Sâm: -25/-50/-75/-100).
+   - **Bôi màu tự động ở bảng lịch sử**: Nổi bật các ván bước ngoặt (Cháy: -20, Thắng Sâm: +25/+50/+75/+100, Thua / Đền Sâm: -25/-50/-75/-100).
 
 5. **Tích hợp Quỹ Chiếu Quỷ (MoMo QR)**:
    - Popup quét mã QR MoMo thanh toán quỹ.

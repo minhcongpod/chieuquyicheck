@@ -7,12 +7,12 @@
  *     Bàn 3: +50 / -25 / -25
  *     Bàn 4: +75 / -25 × 3
  *     Bàn 5: +100 / -25 × 4
- * - Cháy: -15 điểm cho mỗi người bị cháy.
+ * - Cháy: -20 điểm cho mỗi người bị cháy.
  */
 export const SAM_POINT = 25;
-export const CHAY_POINT = -15;
+export const CHAY_POINT = -20;
 
-// Các mức điểm tính là Cháy (+1 Cháy & tô đỏ): -15 và -25
+// Các mức điểm tính là Cháy (+1 Cháy & tô đỏ): -20 và -25
 export const CHAY_POINTS = [CHAY_POINT, -SAM_POINT];
 
 // Điểm người thắng Sâm nhận theo số người chơi trong bàn (2 → 25, 3 → 50, 4 → 75, 5 → 100)
