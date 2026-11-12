@@ -1485,7 +1485,7 @@ td {
 .rule-line {
   display: flex;
   width: 100%;
-  gap: 1px;
+  gap: 4px;
 }
 
 .rule-box {
@@ -1497,7 +1497,7 @@ td {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: #161616;
+  background: #000000;
   color: #ffffff;
   font-size: 18px;
   font-weight: 800;
@@ -1508,9 +1508,9 @@ td {
   cursor: pointer;
 }
 
-.rule-box.is-tappable:hover,
-.rule-box.is-tappable:active {
-  background: #202020;
+/* Dòng đang sửa sáng lên: nền đen phủ trắng 20% (Figma 174:200) */
+.rule-box.is-editing {
+  background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)), #000000;
 }
 
 .rule-input-wrap {
@@ -1527,7 +1527,6 @@ td {
   padding: 0;
   background: transparent;
   border: none;
-  border-bottom: 2px solid currentColor;
   outline: none;
   color: inherit;
   font: inherit;
@@ -1536,7 +1535,7 @@ td {
 
 /* Nút ✓ xanh (lưu) và ✕ đỏ (huỷ) hiện ngay trên dòng đang sửa */
 .rule-icon-btn {
-  flex: 0 0 68px;
+  flex: 0 0 75px;
   height: 49px;
   display: flex;
   align-items: center;
