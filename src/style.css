@@ -1497,7 +1497,7 @@ td {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  background: #161616;
+  background: #000000;
   color: #ffffff;
   font-size: 18px;
   font-weight: 800;
@@ -1508,10 +1508,7 @@ td {
   cursor: pointer;
 }
 
-.rule-box.is-tappable:hover,
-.rule-box.is-tappable:active {
-  background: #202020;
-}
+/* Nền #000000 giữ nguyên khi bấm, không đổi màu */
 
 .rule-input-wrap {
   display: flex;
@@ -1527,7 +1524,6 @@ td {
   padding: 0;
   background: transparent;
   border: none;
-  border-bottom: 2px solid currentColor;
   outline: none;
   color: inherit;
   font: inherit;
