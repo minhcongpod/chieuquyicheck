@@ -134,7 +134,7 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
                 inputMode="numeric"
                 autoFocus
                 aria-label={rule === 'sam' ? 'Điểm Sâm mỗi người trả' : 'Ngưỡng điểm Cháy'}
-                style={{ width: `${Math.max(1, draftValue.length) * 0.62}em` }}
+                style={{ width: `${Math.max(2, draftValue.length) + 0.6}ch` }}
                 value={draftValue}
                 onChange={(e) => setDraftValue(sanitizeDigits(e.target.value))}
                 onKeyDown={(e) => {
