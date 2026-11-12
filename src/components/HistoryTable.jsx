@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { CHAY_POINTS, getSamWinnerId } from '../constants/scoring';
+import { DEFAULT_RULES, getChayPoints, getSamWinnerId, getSamWinPoints } from '../constants/scoring';
 import { ExpandIcon, SortScoreIcon, SortNameIcon, ResetIcon, CheckmarkIcon, CrossIcon } from './Icons';
 
 /**
@@ -12,15 +12,15 @@ import { ExpandIcon, SortScoreIcon, SortNameIcon, ResetIcon, CheckmarkIcon, Cros
  * 2. Cháy:
  * - Ô điểm -15 hoặc -25: Bôi nền đỏ (Hệ thống tự động cộng 1 Cháy).
  */
-function getScoreCellClass(score, playerId, samWinnerId) {
+function getScoreCellClass(score, playerId, samWinnerId, rules) {
   // Ván Sâm (theo bàn): người thắng Sâm nền xanh, những người còn lại nền đỏ
   if (samWinnerId) {
     if (playerId === samWinnerId) return 'history-score-win';
     if (score !== 0) return 'history-score-lose';
   }
 
-  // Cháy (-15 hoặc -25): Bôi nền đỏ
-  if (CHAY_POINTS.includes(score)) {
+  // Cháy (ngưỡng Cháy hoặc điểm thua Sâm): Bôi nền đỏ
+  if (getChayPoints(rules).includes(score)) {
     return 'history-score-lose';
   }
 
@@ -31,7 +31,7 @@ function getScoreCellClass(score, playerId, samWinnerId) {
 /**
  * Tính số lần SÂM và CHÁY của từng người chơi dựa trên lịch sử ván đấu:
  */
-function calculateSamAndChay(history, players) {
+function calculateSamAndChay(history, players, rules) {
   const samCount = {};
   const chayCount = {};
 
@@ -46,17 +46,18 @@ function calculateSamAndChay(history, players) {
 
   history.forEach((round) => {
     const scores = round.scores || {};
-    const samWinnerId = getSamWinnerId(scores);
+    const samWinnerId = getSamWinnerId(scores, rules);
+    const chayPoints = getChayPoints(rules);
 
     players.forEach((p) => {
       const score = scores[p.id] || 0;
 
-      // 1. TÍNH CHÁY: Bất kỳ người chơi nào có điểm kết thúc ván là -15 hoặc -25
-      if (CHAY_POINTS.includes(score)) {
+      // 1. TÍNH CHÁY: Bất kỳ người chơi nào có điểm kết thúc ván bằng ngưỡng Cháy hoặc -samPoint
+      if (chayPoints.includes(score)) {
         chayCount[p.id] = (chayCount[p.id] || 0) + 1;
       }
 
-      // 2. TÍNH SÂM (theo bàn): Bàn 2 +25, Bàn 3 +50, Bàn 4 +75, Bàn 5 +100, người còn lại -25
+      // 2. TÍNH SÂM (theo bàn): người thắng nhận samPoint × (số người − 1), người còn lại -samPoint
       if (p.id === samWinnerId) {
         samCount[p.id] = (samCount[p.id] || 0) + 1;
       }
@@ -67,7 +68,9 @@ function calculateSamAndChay(history, players) {
 }
 
 // 2 dòng thống kê SÂM và CHÁY của từng người chơi (dùng ở màn chính và màn lịch sử phóng to)
-function SamChayRows({ sortedPlayers, samCount, chayCount, onTriggerSamCelebration }) {
+function SamChayRows({ sortedPlayers, samCount, chayCount, onTriggerSamCelebration, rules }) {
+  // Điểm hiển thị khi xem lại hiệu ứng Sâm: bàn 4 người theo luật hiện tại
+  const replayPoints = getSamWinPoints(4, rules);
   return (
     <>
       {/* 1. Dòng SÂM */}
@@ -75,7 +78,7 @@ function SamChayRows({ sortedPlayers, samCount, chayCount, onTriggerSamCelebrati
         <div
           className="history-stat-label text-sam"
           style={{ cursor: onTriggerSamCelebration ? 'pointer' : 'default' }}
-          onClick={() => onTriggerSamCelebration && onTriggerSamCelebration('CHIẾU QUỲ', 75)}
+          onClick={() => onTriggerSamCelebration && onTriggerSamCelebration('CHIẾU QUỲ', replayPoints)}
           title="Bấm để xem lại hiệu ứng Sâm"
         >
           SÂM
@@ -88,7 +91,7 @@ function SamChayRows({ sortedPlayers, samCount, chayCount, onTriggerSamCelebrati
                 key={player.id}
                 className="history-stat-cell"
                 style={{ cursor: count > 0 && onTriggerSamCelebration ? 'pointer' : 'default' }}
-                onClick={() => count > 0 && onTriggerSamCelebration && onTriggerSamCelebration(player.name, 75)}
+                onClick={() => count > 0 && onTriggerSamCelebration && onTriggerSamCelebration(player.name, replayPoints)}
                 title={count > 0 ? `Bấm để xem lại hiệu ứng Sâm của ${player.name}` : undefined}
               >
                 {count > 0 ? (
@@ -140,7 +143,8 @@ function HistoryTableContent({
   sortMode = 'score',
   onToggleSort,
   isViewOnly = false,
-  onTriggerSamCelebration
+  onTriggerSamCelebration,
+  rules = DEFAULT_RULES
 }) {
   // Trạng thái trượt xác nhận Reset inline trong footer
   const [isResetConfirming, setIsResetConfirming] = useState(false);
@@ -256,7 +260,7 @@ function HistoryTableContent({
           reversedHistory.map((round) => {
             const roundNum = round.roundNumber;
             const scores = round.scores || {};
-            const samWinnerId = getSamWinnerId(scores);
+            const samWinnerId = getSamWinnerId(scores, rules);
 
             return (
               <div key={round.id || roundNum} className="history-row">
@@ -266,7 +270,7 @@ function HistoryTableContent({
                 {/* 5 Cột Điểm của từng người chơi theo thứ tự sortedPlayers */}
                 {sortedPlayers.map((player) => {
                   const score = scores[player.id] || 0;
-                  const highlightClass = getScoreCellClass(score, player.id, samWinnerId);
+                  const highlightClass = getScoreCellClass(score, player.id, samWinnerId, rules);
 
                   return (
                     <div key={player.id} className={`history-score-cell ${highlightClass}`}>
@@ -287,6 +291,7 @@ function HistoryTableContent({
             sortedPlayers={sortedPlayers}
             samCount={samCount}
             chayCount={chayCount}
+            rules={rules}
             onTriggerSamCelebration={onTriggerSamCelebration}
           />
         </div>
@@ -299,6 +304,7 @@ function HistoryTableContent({
             sortedPlayers={sortedPlayers}
             samCount={samCount}
             chayCount={chayCount}
+            rules={rules}
             onTriggerSamCelebration={onTriggerSamCelebration}
           />
 
@@ -391,7 +397,8 @@ export default function HistoryTable({
   onExpandChange,
   isHidden = false,
   isViewOnly = false,
-  onTriggerSamCelebration
+  onTriggerSamCelebration,
+  rules = DEFAULT_RULES
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [dragY, setDragY] = useState(0);
@@ -417,7 +424,7 @@ export default function HistoryTable({
   const listRef = useRef(null);
 
   // Tính số lần Sâm và Cháy từ danh sách ván đấu
-  const { samCount, chayCount } = calculateSamAndChay(history, players);
+  const { samCount, chayCount } = calculateSamAndChay(history, players, rules);
 
   // Tính tổng điểm tích lũy của từng người chơi
   const finalCumulativeScores = useMemo(() => {
@@ -596,6 +603,7 @@ export default function HistoryTable({
           cumulativeScores={finalCumulativeScores}
           samCount={samCount}
           chayCount={chayCount}
+          rules={rules}
           sortMode={sortMode}
           onToggleSort={handleToggleSort}
           isViewOnly={isViewOnly}
@@ -637,6 +645,7 @@ export default function HistoryTable({
           cumulativeScores={finalCumulativeScores}
           samCount={samCount}
           chayCount={chayCount}
+          rules={rules}
           onChotSo={onChotSo}
           canReset={canReset}
           onResetConfirm={onResetConfirm}

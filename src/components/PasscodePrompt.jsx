@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Keyboard from './Keyboard';
 import lockQuestionIcon from '../assets/lock-question.svg';
 
-// Mật khẩu xác nhận xoá kết quả trong Thống kê điểm
+// Mật khẩu xác nhận xoá kết quả trong Thống kê điểm và mở khoá chỉnh luật Sâm/Cháy ở tab Cài đặt
 const DELETE_PASSCODE = '1996';
 const PASSCODE_LENGTH = DELETE_PASSCODE.length;
 
@@ -14,7 +14,7 @@ const PASSCODE_LENGTH = DELETE_PASSCODE.length;
  * - Không giới hạn số lần nhập. Nhập sai đủ 4 số thì rung nhẹ, xoá trắng và nhập lại từ đầu
  * - Nhập đúng thì gọi onSuccess, bấm [✕] thì gọi onCancel
  */
-export default function PasscodePrompt({ onSuccess, onCancel }) {
+export default function PasscodePrompt({ onSuccess, onCancel, ariaLabel = 'Nhập mật khẩu để xoá' }) {
   const [digits, setDigits] = useState('');
   const [isWrong, setIsWrong] = useState(false);
   const wrongTimerRef = useRef(null);
@@ -63,7 +63,7 @@ export default function PasscodePrompt({ onSuccess, onCancel }) {
       onClick={(e) => e.stopPropagation()}
       onTouchStart={(e) => e.stopPropagation()}
     >
-      <div className="passcode-input-row" aria-label="Nhập mật khẩu để xoá">
+      <div className="passcode-input-row" aria-label={ariaLabel}>
         <img className="passcode-lock-icon" src={lockQuestionIcon} width={32} height={32} alt="" />
         <div className={`passcode-slots ${isWrong ? 'is-wrong' : ''}`}>
           {Array.from({ length: PASSCODE_LENGTH }).map((_, i) => (
