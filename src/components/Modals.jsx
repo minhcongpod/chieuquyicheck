@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { CopyIcon, CheckIcon } from './Icons';
 import qrMomoUrl from '../assets/qr-momo.jpg';
+import PasscodePrompt from './PasscodePrompt';
+import { DEFAULT_RULES, MAX_RULE_POINT, normalizeRules } from '../constants/scoring';
+import { CheckmarkIcon, CrossIcon } from './Icons';
 
 // Bản rút gọn của link: giữ https:// và nhánh phía sau, che cả phần đuôi tên miền (.web.app)
 // Ví dụ: https://chieuquyicheck.web.app/vip -> https://chieuquyicheck…/vip
@@ -16,25 +19,43 @@ const formatCompactUrl = (url) => {
 };
 
 /**
- * Popup Mã QR: Hỗ trợ 2 chế độ:
- * 1. Vào Chiếu: Quét mã QR hoặc sao chép link bàn chơi để cùng xem điểm trên Firebase
- * 2. Quỹ Chiếu Quỷ: Mã QR MoMo nộp quỹ
+ * Popup Cài đặt & Mã QR: Hỗ trợ 2 tab:
+ * 1. Cài đặt: luật Sâm / Cháy của phòng (mỗi lần chỉnh phải nhập mật khẩu 1996, giống lúc xoá ở
+ *    Thống kê điểm; bấm ✓ xanh để lưu, ✕ đỏ để huỷ), kèm mã QR + link bàn chơi để mọi người vào cùng xem điểm trên Firebase
+ * 2. MoMo: Mã QR MoMo nộp Quỹ Chiếu Quỷ
  */
-export function QrTransferModal({ isOpen, onClose, roomUrl }) {
-  const [activeTab, setActiveTab] = useState('room'); // 'room' | 'momo'
+export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULES, onSaveRules }) {
+  const [activeTab, setActiveTab] = useState('setting'); // 'setting' | 'momo'
+  // Mỗi lần sửa (SÂM hoặc CHÁY) đều phải nhập lại mật khẩu: askingRule = ô đang hỏi mật khẩu,
+  // editingRule = ô đã mở khoá và đang sửa ('sam' | 'chay' | null). Lưu hoặc huỷ là khoá lại.
+  const [askingRule, setAskingRule] = useState(null);
+  const [editingRule, setEditingRule] = useState(null);
+  const [draftValue, setDraftValue] = useState('');
   const [copiedLink, setCopiedLink] = useState(false);
   // Link đầy đủ không vừa ô thì chuyển sang bản rút gọn
   const [isLinkCompact, setIsLinkCompact] = useState(false);
   const roomLinkRef = useRef(null);
 
   useEffect(() => {
+    if (!isOpen) {
+      setAskingRule(null);
+      setEditingRule(null);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        // Esc đóng ô mật khẩu trước, bấm tiếp mới đóng popup
+        if (askingRule) setAskingRule(null);
+        else if (editingRule) setEditingRule(null);
+        else onClose();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, askingRule, editingRule]);
 
   // Mỗi lần mở popup / đổi tab / đổi link: hiện link đầy đủ trước, tràn ô thì rút gọn
   useLayoutEffect(() => {
@@ -49,6 +70,94 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
   });
 
   if (!isOpen) return null;
+
+  const currentRules = normalizeRules(rules);
+  const canEditRules = typeof onSaveRules === 'function';
+
+  // Bấm SÂM hoặc CHÁY: luôn hỏi mật khẩu 1996 trước khi cho sửa ô đó
+  const startEditRule = (rule) => {
+    if (!canEditRules || editingRule === rule) return;
+    setEditingRule(null);
+    setAskingRule(rule);
+  };
+
+  const handlePasscodeSuccess = () => {
+    setDraftValue(String(askingRule === 'sam' ? currentRules.samPoint : -currentRules.chayPoint));
+    setEditingRule(askingRule);
+    setAskingRule(null);
+  };
+
+  const sanitizeDigits = (value) => value.replace(/\D/g, '').slice(0, 3);
+  const draftNumber = parseInt(draftValue, 10);
+  const isDraftValid = draftNumber >= 1 && draftNumber <= MAX_RULE_POINT;
+
+  // Nút ✓ xanh: lưu luật; nút ✕ đỏ: huỷ. Cả hai đều khoá lại, lần sau phải nhập lại mật khẩu.
+  const handleSaveRule = () => {
+    if (!isDraftValid) return;
+    onSaveRules(normalizeRules({
+      ...currentRules,
+      ...(editingRule === 'sam' ? { samPoint: draftNumber } : { chayPoint: -draftNumber })
+    }));
+    setEditingRule(null);
+  };
+
+  const handleCancelRule = () => setEditingRule(null);
+
+  const renderRuleRow = (rule, label, sign, shownValue, colorClass) => {
+    const isEditing = editingRule === rule;
+    const isTappable = canEditRules && !isEditing;
+    return (
+      <div className="rule-line" key={rule}>
+        <div
+          className={`rule-box ${isTappable ? 'is-tappable' : ''} ${isEditing ? 'is-editing' : ''}`}
+          onClick={isTappable ? () => startEditRule(rule) : undefined}
+          role={isTappable ? 'button' : undefined}
+          title={isTappable ? `Bấm để chỉnh luật ${label} (cần mật khẩu)` : undefined}
+        >
+          <span className="rule-label">{label}</span>
+          {isEditing ? (
+            <label className={`rule-input-wrap ${colorClass}`}>
+              <span>{sign}</span>
+              <input
+                className="rule-input"
+                inputMode="numeric"
+                autoFocus
+                aria-label={rule === 'sam' ? 'Điểm Sâm mỗi người trả' : 'Ngưỡng điểm Cháy'}
+                value={draftValue}
+                onChange={(e) => setDraftValue(sanitizeDigits(e.target.value))}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveRule();
+                }}
+              />
+            </label>
+          ) : (
+            <span className={`rule-value ${colorClass}`}>{shownValue}</span>
+          )}
+        </div>
+        {isEditing && (
+          <>
+            <button
+              type="button"
+              className="rule-icon-btn rule-icon-save"
+              aria-label="Lưu"
+              onClick={handleSaveRule}
+              disabled={!isDraftValid}
+            >
+              <CheckmarkIcon width={22} height={22} color="#000000" />
+            </button>
+            <button
+              type="button"
+              className="rule-icon-btn rule-icon-cancel"
+              aria-label="Huỷ"
+              onClick={handleCancelRule}
+            >
+              <CrossIcon width={22} height={22} color="#000000" />
+            </button>
+          </>
+        )}
+      </div>
+    );
+  };
 
   // Đường link bàn chơi chuẩn chính thức
   const targetRoomUrl = roomUrl || (typeof window !== 'undefined'
@@ -86,10 +195,10 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
         <div className="modal-qr-tabs">
           <button
             type="button"
-            className={`modal-qr-tab-btn ${activeTab === 'room' ? 'active' : ''}`}
-            onClick={() => setActiveTab('room')}
+            className={`modal-qr-tab-btn ${activeTab === 'setting' ? 'active' : ''}`}
+            onClick={() => setActiveTab('setting')}
           >
-            JOIN US
+            SETTING
           </button>
           <button
             type="button"
@@ -100,8 +209,14 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
           </button>
         </div>
 
-        {activeTab === 'room' ? (
+        {activeTab === 'setting' ? (
           <>
+            {/* Luật Sâm / Cháy: bấm vào ô để chỉnh (cần mật khẩu 1996 mỗi lần sửa) */}
+            <div className="rule-row">
+              {renderRuleRow('sam', 'SÂM', '+', `+${currentRules.samPoint}`, 'text-sam')}
+              {renderRuleRow('chay', 'CHÁY', '-', `${currentRules.chayPoint}`, 'text-chay')}
+            </div>
+
             {/* Khung mã QR link bàn chơi */}
             <div className="qr-image-container">
               <img
@@ -175,6 +290,14 @@ export function QrTransferModal({ isOpen, onClose, roomUrl }) {
           </>
         )}
       </div>
+
+      {askingRule && (
+        <PasscodePrompt
+          ariaLabel="Nhập mật khẩu để chỉnh luật Sâm và Cháy"
+          onSuccess={handlePasscodeSuccess}
+          onCancel={() => setAskingRule(null)}
+        />
+      )}
     </div>
   );
 }

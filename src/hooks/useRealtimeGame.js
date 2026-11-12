@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import confetti from 'canvas-confetti';
 import { SAMPLE_DAILY_LEDGER } from '../constants/sampleLedger';
-import { getSamWinnerId } from '../constants/scoring';
+import { getSamWinnerId, normalizeRules, DEFAULT_RULES } from '../constants/scoring';
 import { db, isFirebaseConfigured } from '../firebase';
 import {
   doc,
@@ -47,17 +47,17 @@ export function fireConfetti() {
  * - Bàn 4: 1 người +75, 3 người còn lại -25
  * - Bàn 5: 1 người +100, 4 người còn lại -25
  */
-export function isSamRound(round) {
+export function isSamRound(round, rules) {
   if (!round || !round.scores) return false;
-  return getSamWinnerId(round.scores) !== null;
+  return getSamWinnerId(round.scores, rules) !== null;
 }
 
 /**
  * Xác định thông tin người hô Sâm thành công trong ván đấu
  */
-export function getSamWinnerInfo(round, players = []) {
+export function getSamWinnerInfo(round, players = [], rules) {
   if (!round || !round.scores) return null;
-  const playerId = getSamWinnerId(round.scores);
+  const playerId = getSamWinnerId(round.scores, rules);
   if (!playerId) return null;
   const p = players.find(item => item.id === playerId);
   return {
@@ -71,8 +71,18 @@ export function getSamWinnerInfo(round, players = []) {
  * Hiệu ứng pháo hoa (Fireworks Animation) khi chốt thành công ván Sâm:
  * Bắn đồng thời từ 2 bên sườn màn hình hướng vào trung tâm, hiển thị bên trên logo Sâm.
  */
-export function fireSamFireworks() {
+// Cường độ hiệu ứng Sâm theo điểm thắng (0.6 → 2); 75 điểm = 1
+export function getSamIntensity(points) {
+  const p = Number(points);
+  if (!Number.isFinite(p) || p <= 0) return 1;
+  return Math.min(2, Math.max(0.6, p / 75));
+}
+
+export function fireSamFireworks(points = 0) {
   try {
+    // Luật Sâm càng cao điểm thì pháo hoa càng nhiều (mốc 75 điểm = bàn 4 người theo luật mặc định)
+    const intensity = getSamIntensity(points);
+    const particleCount = Math.round(110 * intensity);
     // Bộ màu lễ hội rực rỡ, lấp lánh và có độ tương phản cao
     const samColors = [
       '#ffd700', // Vàng hoàng kim
@@ -87,7 +97,7 @@ export function fireSamFireworks() {
 
     // 1. Bên trái: pháo hoa bắn vút lên chéo sang phải (hiển thị đè lên trên logo Sâm)
     confetti({
-      particleCount: 110,
+      particleCount,
       angle: 55,
       spread: 75,
       startVelocity: 58,
@@ -101,7 +111,7 @@ export function fireSamFireworks() {
 
     // 2. Bên phải: pháo hoa bắn vút lên chéo sang trái (hiển thị đè lên trên logo Sâm)
     confetti({
-      particleCount: 110,
+      particleCount,
       angle: 125,
       spread: 75,
       startVelocity: 58,
@@ -230,6 +240,8 @@ export function useRealtimeGame() {
   const [dailyLedger, setDailyLedger] = useState(() => readCache('dailyLedger', storageKey, fallbackKey) || []);
 
   // Người chơi bị khoá tạm (ra ngoài): { [playerId]: true } — coi như không có mặt trong bàn
+  // Luật Sâm/Cháy của phòng (mặc định Sâm 25, Cháy -20), đồng bộ realtime ở phòng chung
+  const [rules, setRulesState] = useState(() => normalizeRules(readCache('rules', storageKey, fallbackKey) || DEFAULT_RULES));
   const [lockedPlayers, setLockedPlayers] = useState(() => readCache('lockedPlayers', storageKey, fallbackKey) || {});
 
   const [roundDeltas, setRoundDeltasState] = useState(() => (isShared ? {} : (readCache('roundDeltas', storageKey) || {})));
@@ -403,6 +415,13 @@ export function useRealtimeGame() {
         writeCache('lockedPlayers', roomId, nextLocked);
       }
 
+      // Phòng chưa có luật riêng (phòng cũ) thì dùng luật mặc định
+      {
+        const nextRules = normalizeRules(data.rules);
+        setRulesState(prev => (prev.samPoint === nextRules.samPoint && prev.chayPoint === nextRules.chayPoint ? prev : nextRules));
+        writeCache('rules', roomId, nextRules);
+      }
+
       if (data.dailyLedger !== undefined) {
         if (!isInitialMount && data.dailyLedger.length > prevLedgerLenRef.current) {
           fireConfetti();
@@ -514,6 +533,17 @@ export function useRealtimeGame() {
     }
   }, [isShared, roomId, storageKey]);
 
+  // Đổi luật Sâm/Cháy: lưu cache và ghi vào phòng để mọi máy cùng phòng nhận luật mới
+  const updateRules = useCallback((nextRules) => {
+    const next = normalizeRules(nextRules);
+    setRulesState(next);
+    writeCache('rules', storageKey, next);
+    if (isShared) {
+      updateDoc(doc(db, 'rooms', roomId), { rules: next, updatedAt: Date.now() })
+        .catch(e => console.error('[Firebase] Lỗi updateRules:', e));
+    }
+  }, [isShared, roomId, storageKey]);
+
   // Điểm đang nhập: chỉ ghi các ô thay đổi để 2 máy nhập 2 người khác nhau không đè nhau
   const updateRoundDeltas = useCallback((newDeltasOrUpdater) => {
     const prev = roundDeltasRef.current;
@@ -540,8 +570,8 @@ export function useRealtimeGame() {
     setHistory(nextHistory);
     setRoundDeltas({});
     writeCache('history', storageKey, nextHistory);
-    if (isSamRound(newRound)) {
-      const winner = getSamWinnerInfo(newRound, players);
+    if (isSamRound(newRound, rules)) {
+      const winner = getSamWinnerInfo(newRound, players, rules);
       triggerSamCelebration(winner?.name || '', winner?.points || 0);
     } else {
       fireConfetti();
@@ -554,7 +584,7 @@ export function useRealtimeGame() {
       return { history: [...serverHistory, newRound], roundDeltas: {} };
     }, { history: nextHistory, roundDeltas: {} });
     if (!ok) resyncFromServer();
-  }, [history, players, storageKey, setRoundDeltas, triggerSamCelebration, writeShared, resyncFromServer]);
+  }, [history, players, rules, storageKey, setRoundDeltas, triggerSamCelebration, writeShared, resyncFromServer]);
 
   const undoRound = useCallback(async () => {
     if (history.length === 0) return;
@@ -652,6 +682,8 @@ export function useRealtimeGame() {
     roundDeltas,
     lockedPlayers,
     setPlayerLocked,
+    rules,
+    updateRules,
     dailyLedger,
     isConnected,
     userCount,

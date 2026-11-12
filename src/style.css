@@ -1474,6 +1474,92 @@ td {
   background-color: rgba(255, 255, 255, 0.15);
 }
 
+/* Tab Cài đặt: 2 dòng luật SÂM / CHÁY xếp dọc (Figma 168:47); bấm vào dòng để sửa */
+.rule-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1px;
+}
+
+.rule-line {
+  display: flex;
+  width: 100%;
+  gap: 1px;
+}
+
+.rule-box {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 49px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: #161616;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 800;
+  box-sizing: border-box;
+}
+
+.rule-box.is-tappable {
+  cursor: pointer;
+}
+
+.rule-box.is-tappable:hover,
+.rule-box.is-tappable:active {
+  background: #202020;
+}
+
+.rule-input-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 1px;
+  min-width: 0;
+}
+
+.rule-input {
+  width: 2.4ch;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid currentColor;
+  outline: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+/* Nút ✓ xanh (lưu) và ✕ đỏ (huỷ) hiện ngay trên dòng đang sửa */
+.rule-icon-btn {
+  flex: 0 0 68px;
+  height: 49px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.rule-icon-save {
+  background: #66ff33;
+}
+
+.rule-icon-cancel {
+  background: #fd5656;
+}
+
+.rule-icon-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .qr-link-url {
   font-size: 12px;
   font-weight: 800;
@@ -2646,3 +2732,40 @@ td {
 
 .leaderboard-row.is-pos .leaderboard-row-score { color: #00ff00; }
 .leaderboard-row.is-neg .leaderboard-row-score { color: #ff505d; }
+
+/* Huy hiệu điểm Sâm dưới logo hiệu ứng: theo luật Sâm của phòng */
+.sam-points-badge {
+  position: absolute;
+  left: 50%;
+  bottom: 14%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-shadow: 0 0 14px rgba(255, 215, 0, 0.9), 0 2px 6px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  animation: samBackdropIn 0.3s ease 0.45s both;
+}
+
+.sam-points-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.sam-points-value {
+  font-size: 34px;
+  font-weight: 900;
+  color: #ffd700;
+}
+
+.rule-value.text-sam,
+.rule-input-wrap.text-sam {
+  color: #5bff2d;
+}
+
+.rule-value.text-chay,
+.rule-input-wrap.text-chay {
+  color: #fd5656;
+}

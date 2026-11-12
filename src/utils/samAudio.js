@@ -23,7 +23,12 @@ function getAudioContext() {
   }
 }
 
-export function playSamCelebrationSound() {
+/**
+ * intensity (0.6 → 2, 1 = 75 điểm): luật Sâm càng cao điểm thì tiếng va đập càng nặng và chuông càng cao.
+ */
+export function playSamCelebrationSound(intensity = 1) {
+  const power = Math.min(2, Math.max(0.6, intensity));
+  const pitch = 0.85 + 0.15 * power;
   const ctx = getAudioContext();
   if (!ctx) return;
 
@@ -69,7 +74,7 @@ export function playSamCelebrationSound() {
     subOsc.frequency.setValueAtTime(140, impactTime);
     subOsc.frequency.exponentialRampToValueAtTime(36, impactTime + 0.35);
 
-    subGain.gain.setValueAtTime(0.8, impactTime);
+    subGain.gain.setValueAtTime(Math.min(1, 0.8 * (0.7 + 0.3 * power)), impactTime);
     subGain.gain.exponentialRampToValueAtTime(0.001, impactTime + 0.55);
 
     subOsc.connect(subGain);
@@ -99,7 +104,7 @@ export function playSamCelebrationSound() {
       const bellOsc = ctx.createOscillator();
       const bellGain = ctx.createGain();
       bellOsc.type = 'sine';
-      bellOsc.frequency.setValueAtTime(freq, impactTime);
+      bellOsc.frequency.setValueAtTime(freq * pitch, impactTime);
 
       const delay = idx * 0.02; // slight arpeggio shimmer
       const startTime = impactTime + delay;

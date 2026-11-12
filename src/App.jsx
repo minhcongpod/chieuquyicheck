@@ -7,7 +7,7 @@ import DailyStatsDrawer from './components/DailyStatsDrawer';
 import { QrTransferModal } from './components/Modals';
 import SamEffectOverlay from './components/SamEffectOverlay';
 import { useRealtimeGame } from './hooks/useRealtimeGame';
-import { SAM_POINT, getSamWinPoints } from './constants/scoring';
+import { getSamWinPoints } from './constants/scoring';
 import './style.css';
 
 /**
@@ -20,11 +20,11 @@ import './style.css';
  * (tổng cân bằng = 0). Khi người thắng Sâm thay đổi điểm hoặc hủy/xóa, tự động dọn dẹp các điểm -25 đã tự điền.
  * Người chơi đang bị khoá (tạm ra ngoài) không được tính vào bàn: bàn 5 khoá 1 người dùng luật bàn 4, v.v.
  */
-function applySamAutoFill(prevDeltas, targetPlayerId, newSignedVal, namedPlayers) {
+function applySamAutoFill(prevDeltas, targetPlayerId, newSignedVal, namedPlayers, rules) {
   const updated = { ...prevDeltas };
   const numNamed = (namedPlayers || []).length;
-  const samWinPoints = getSamWinPoints(numNamed);
-  const samLosePoints = -SAM_POINT;
+  const samWinPoints = getSamWinPoints(numNamed, rules);
+  const samLosePoints = -rules.samPoint;
 
   const isSamWin = (score) => numNamed >= 2 && score === samWinPoints;
 
@@ -68,6 +68,8 @@ export default function App() {
     roundDeltas,
     lockedPlayers,
     setPlayerLocked,
+    rules,
+    updateRules,
     dailyLedger,
     isViewOnly,
     viewOnlyUrl,
@@ -242,7 +244,7 @@ export default function App() {
       const num = Math.abs(existingDelta);
       const updatedDelta = mode === '+' ? num : -num;
       if (updatedDelta !== existingDelta) {
-        updateRoundDeltas(prev => applySamAutoFill(prev, player.id, updatedDelta, namedPlayers));
+        updateRoundDeltas(prev => applySamAutoFill(prev, player.id, updatedDelta, namedPlayers, rules));
       }
       setCurrentKeypadValue(String(num));
     } else {
@@ -265,36 +267,36 @@ export default function App() {
 
       const num = parseInt(nextVal, 10);
       const signedVal = activeKeypad.mode === '+' ? num : -num;
-      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, signedVal, namedPlayers));
+      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, signedVal, namedPlayers, rules));
 
       return nextVal;
     });
-  }, [activeKeypad, namedPlayers, updateRoundDeltas]);
+  }, [activeKeypad, namedPlayers, rules, updateRoundDeltas]);
 
   // Xử lý bấm phím Xóa (Backspace): Cập nhật trực tiếp điểm và phát sóng realtime
   const handleKeypadBackspace = useCallback(() => {
     if (!activeKeypad) return;
     setCurrentKeypadValue(prev => {
       if (prev.length <= 1) {
-        updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, null, namedPlayers));
+        updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, null, namedPlayers, rules));
         return '';
       }
       const nextVal = prev.slice(0, -1);
       const num = parseInt(nextVal, 10);
       const signedVal = activeKeypad.mode === '+' ? num : -num;
-      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, signedVal, namedPlayers));
+      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, signedVal, namedPlayers, rules));
       return nextVal;
     });
-  }, [activeKeypad, namedPlayers, updateRoundDeltas]);
+  }, [activeKeypad, namedPlayers, rules, updateRoundDeltas]);
 
   // Hủy thao tác nhập [✕ màu đỏ]: Xóa dữ liệu tạm, hoàn nguyên ô về + hoặc -, thoát focus và đóng bàn phím
   const handleKeypadCancel = useCallback(() => {
     if (activeKeypad && activeKeypad.player) {
-      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, null, namedPlayers));
+      updateRoundDeltas(prevDeltas => applySamAutoFill(prevDeltas, activeKeypad.player.id, null, namedPlayers, rules));
     }
     setActiveKeypad(null);
     setCurrentKeypadValue('');
-  }, [activeKeypad, namedPlayers, updateRoundDeltas]);
+  }, [activeKeypad, namedPlayers, rules, updateRoundDeltas]);
 
   // Danh sách người chơi có tên được nhập điểm âm (< 0)
   const negativeNamedPlayers = useMemo(() => {
@@ -487,7 +489,7 @@ export default function App() {
             setActiveKeypad(prev => ({ ...prev, mode: '-' }));
             const num = parseInt(currentKeypadValue, 10);
             if (!isNaN(num) && num !== 0) {
-              updateRoundDeltas(prev => applySamAutoFill(prev, activeKeypad.player.id, -num, namedPlayers));
+              updateRoundDeltas(prev => applySamAutoFill(prev, activeKeypad.player.id, -num, namedPlayers, rules));
             }
           }
           return;
@@ -500,7 +502,7 @@ export default function App() {
             setActiveKeypad(prev => ({ ...prev, mode: '+' }));
             const num = parseInt(currentKeypadValue, 10);
             if (!isNaN(num) && num !== 0) {
-              updateRoundDeltas(prev => applySamAutoFill(prev, activeKeypad.player.id, num, namedPlayers));
+              updateRoundDeltas(prev => applySamAutoFill(prev, activeKeypad.player.id, num, namedPlayers, rules));
             }
           }
           return;
@@ -571,6 +573,7 @@ export default function App() {
     players,
     playablePlayers,
     namedPlayers,
+    rules,
     handleKeypadNumber,
     handleKeypadBackspace,
     handleKeypadCancel,
@@ -713,6 +716,7 @@ export default function App() {
         onExpandChange={handleHistoryExpandChange}
         isViewOnly={isViewOnly}
         onTriggerSamCelebration={triggerSamCelebration}
+        rules={rules}
       />
 
       {/* Vùng mờ nền khi mở bàn phím (Blur Background) - Chạm vào để đóng bàn phím */}
@@ -750,6 +754,8 @@ export default function App() {
         isOpen={isQrModalOpen}
         onClose={() => setIsQrModalOpen(false)}
         roomUrl={roomUrl}
+        rules={rules}
+        onSaveRules={updateRules}
       />
 
       {/* 7. Hiệu ứng hoạt ảnh bùng nổ khi hô Sâm thành công */}

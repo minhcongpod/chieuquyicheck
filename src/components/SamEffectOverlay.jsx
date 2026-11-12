@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { fireSamFireworks } from '../hooks/useRealtimeGame';
+import { fireSamFireworks, getSamIntensity } from '../hooks/useRealtimeGame';
 import { playSamCelebrationSound } from '../utils/samAudio';
 
 /**
@@ -35,11 +35,11 @@ export default function SamEffectOverlay({
     setPhase('animating');
 
     // 1. Âm thanh bứt tốc & va đập siêu thực
-    playSamCelebrationSound();
+    playSamCelebrationSound(getSamIntensity(points));
 
     // 2. Ngay khoảnh khắc logo va đập vào giữa (0.45s), bắn pháo hoa từ 2 bên
     const fireworksTimer = setTimeout(() => {
-      fireSamFireworks();
+      fireSamFireworks(points);
     }, 450);
     timerRef.current.push(fireworksTimer);
 
@@ -59,7 +59,7 @@ export default function SamEffectOverlay({
     return () => {
       clearAllTimers();
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose]); // points chỉ cần lúc mở hiệu ứng
 
   if (!isOpen && phase === 'idle') return null;
 
@@ -104,6 +104,14 @@ export default function SamEffectOverlay({
             draggable={false}
           />
         </div>
+
+        {/* Điểm Sâm thực tế theo luật phòng (người chơi tự cài ở tab Cài đặt) */}
+        {points > 0 && (
+          <div className="sam-points-badge">
+            {winnerName ? <span className="sam-points-name">{winnerName}</span> : null}
+            <span className="sam-points-value">SÂM +{points}</span>
+          </div>
+        )}
       </div>
     </div>
   );
