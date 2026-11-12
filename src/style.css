@@ -1474,8 +1474,15 @@ td {
   background-color: rgba(255, 255, 255, 0.15);
 }
 
-/* Tab Cài đặt: 2 ô luật SÂM / CHÁY (Figma 168:48) */
+/* Tab Cài đặt: 2 dòng luật SÂM / CHÁY xếp dọc (Figma 168:47); bấm vào dòng để sửa */
 .rule-row {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  gap: 1px;
+}
+
+.rule-line {
   display: flex;
   width: 100%;
   gap: 1px;
@@ -1489,6 +1496,7 @@ td {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   background: #161616;
   color: #ffffff;
   font-size: 18px;
@@ -1503,10 +1511,6 @@ td {
 .rule-box.is-tappable:hover,
 .rule-box.is-tappable:active {
   background: #202020;
-}
-
-.rule-box.is-editing {
-  box-shadow: inset 0 0 0 1px rgba(102, 255, 51, 0.5);
 }
 
 .rule-input-wrap {
@@ -1530,40 +1534,28 @@ td {
   text-align: left;
 }
 
-.rule-hint {
-  width: 100%;
-  margin: 0;
-  font-size: 11px;
-  line-height: 1.4;
-  color: #999999;
-  text-align: left;
-}
-
-.rule-actions {
+/* Nút ✓ xanh (lưu) và ✕ đỏ (huỷ) hiện ngay trên dòng đang sửa */
+.rule-icon-btn {
+  flex: 0 0 68px;
+  height: 49px;
   display: flex;
-  width: 100%;
-  gap: 6px;
-}
-
-.rule-btn {
-  flex: 1;
-  padding: 10px 4px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.5px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: none;
   border-radius: 0;
   cursor: pointer;
 }
 
-.rule-btn-primary {
+.rule-icon-save {
   background: #66ff33;
-  color: #000000;
 }
 
-.rule-btn:disabled {
+.rule-icon-cancel {
+  background: #fd5656;
+}
+
+.rule-icon-btn:disabled {
   opacity: 0.35;
   cursor: default;
 }
