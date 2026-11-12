@@ -1485,7 +1485,7 @@ td {
 .rule-line {
   display: flex;
   width: 100%;
-  gap: 1px;
+  gap: 4px;
 }
 
 .rule-box {
@@ -1508,7 +1508,10 @@ td {
   cursor: pointer;
 }
 
-/* Nền #000000 giữ nguyên khi bấm, không đổi màu */
+/* Dòng đang sửa sáng lên: nền đen phủ trắng 20% (Figma 174:200) */
+.rule-box.is-editing {
+  background: linear-gradient(rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)), #000000;
+}
 
 .rule-input-wrap {
   display: flex;
@@ -1532,7 +1535,7 @@ td {
 
 /* Nút ✓ xanh (lưu) và ✕ đỏ (huỷ) hiện ngay trên dòng đang sửa */
 .rule-icon-btn {
-  flex: 0 0 68px;
+  flex: 0 0 75px;
   height: 49px;
   display: flex;
   align-items: center;

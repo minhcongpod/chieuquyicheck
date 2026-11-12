@@ -3,7 +3,18 @@ import { CopyIcon, CheckIcon } from './Icons';
 import qrMomoUrl from '../assets/qr-momo.jpg';
 import PasscodePrompt from './PasscodePrompt';
 import { DEFAULT_RULES, MAX_RULE_POINT, normalizeRules } from '../constants/scoring';
-import { CheckmarkIcon, CrossIcon } from './Icons';
+
+// Icon ✓ và ✕ của 2 nút lưu / huỷ (Figma 174:200): nét đen dày 4px, cùng cỡ 19px
+const SaveIcon = () => (
+  <svg width="24" height="19" viewBox="0 0 24 19" fill="none" aria-hidden="true">
+    <path d="M1.4 9.6 L8.6 16.8 L22.6 2.2" stroke="#000000" strokeWidth="4" />
+  </svg>
+);
+const CancelIcon = () => (
+  <svg width="19" height="19" viewBox="0 0 19 19" fill="none" aria-hidden="true">
+    <path d="M1.5 1.5 L17.5 17.5 M17.5 1.5 L1.5 17.5" stroke="#000000" strokeWidth="4" />
+  </svg>
+);
 
 // Bản rút gọn của link: giữ https:// và nhánh phía sau, che cả phần đuôi tên miền (.web.app)
 // Ví dụ: https://chieuquyicheck.web.app/vip -> https://chieuquyicheck…/vip
@@ -123,6 +134,7 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
                 inputMode="numeric"
                 autoFocus
                 aria-label={rule === 'sam' ? 'Điểm Sâm mỗi người trả' : 'Ngưỡng điểm Cháy'}
+                style={{ width: `${Math.max(1, draftValue.length) * 0.62}em` }}
                 value={draftValue}
                 onChange={(e) => setDraftValue(sanitizeDigits(e.target.value))}
                 onKeyDown={(e) => {
@@ -143,7 +155,7 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
               onClick={handleSaveRule}
               disabled={!isDraftValid}
             >
-              <CheckmarkIcon width={22} height={22} color="#000000" />
+              <SaveIcon />
             </button>
             <button
               type="button"
@@ -151,7 +163,7 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
               aria-label="Huỷ"
               onClick={handleCancelRule}
             >
-              <CrossIcon width={22} height={22} color="#000000" />
+              <CancelIcon />
             </button>
           </>
         )}
