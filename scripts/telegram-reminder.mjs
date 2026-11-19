@@ -2,7 +2,7 @@
 /**
  * 🤖 Bot Telegram nhắc chuyển khoản Chiếu Quỷ
  *
- * Sáng thứ 2 đến thứ 6 (GitHub Actions chạy lúc 7:00 giờ Việt Nam; thứ 7 và chủ nhật không nhắc) script này:
+ * Sáng thứ 2 đến thứ 6 (GitHub Actions chạy lúc 6:00 giờ Việt Nam; thứ 7 và chủ nhật không nhắc) script này:
  *   1. Đọc phòng trên Firestore (mặc định phòng "vip") qua REST API công khai của web app.
  *   2. Gộp các lần CHỐT SỔ (dailyLedger) của hôm qua để biết ai âm, ai dương.
       Riêng thứ 2: gộp luôn thứ 6, thứ 7, chủ nhật (3 ngày trước đó).
@@ -36,6 +36,15 @@ const DRY_RUN = process.argv.includes('--dry-run') || env.DRY_RUN === '1';
 
 // 100 lời chúc thu nợ (scripts/loi-chuc.json), xoay vòng mỗi ngày một câu.
 export const GREETINGS = JSON.parse(readFileSync(new URL('./loi-chuc.json', import.meta.url), 'utf8'));
+
+// Thông báo riêng cho một ngày cụ thể (giờ VN): ngày đó gửi đúng nội dung này thay cho tin tự động.
+export const ONE_OFFS = JSON.parse(readFileSync(new URL('./thong-bao-rieng.json', import.meta.url), 'utf8'));
+
+export function oneOffFor(nowMs) {
+  const { y, m, d } = vnDate(nowMs);
+  const key = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  return ONE_OFFS.find(o => o.date === key) || null;
+}
 
 export function vnDate(ms) {
   const d = new Date(ms + VN_OFFSET_MS);
@@ -153,6 +162,18 @@ async function sendTelegram(text) {
 async function main() {
   if (WEEKDAYS_ONLY && isWeekend(Date.now())) {
     console.log('Thứ 7 / chủ nhật: không nhắc nợ.');
+    return;
+  }
+  const oneOff = oneOffFor(Date.now());
+  if (oneOff) {
+    const text = escapeHtml(oneOff.text);
+    console.log(text);
+    if (DRY_RUN) {
+      console.log('\n(DRY_RUN: không gửi Telegram)');
+      return;
+    }
+    await sendTelegram(text);
+    console.log('\n✅ Đã gửi thông báo riêng vào nhóm Telegram.');
     return;
   }
   const room = await fetchRoom(ROOM_ID);
