@@ -1,14 +1,14 @@
 name: Telegram nhắc chuyển khoản
 
-# Chạy 7:00 sáng giờ Việt Nam (00:00 UTC) từ thứ 2 đến thứ 6. Thứ 7, chủ nhật không nhắc;
-# nợ thứ 6 + cuối tuần được gộp gửi vào sáng thứ 2. (GitHub cron dùng giờ UTC: 7h VN = 0h UTC cùng ngày.)
+# Chạy 6:00 sáng giờ Việt Nam (23:00 UTC hôm trước) từ thứ 2 đến thứ 6. Thứ 7, chủ nhật không nhắc;
+# nợ thứ 6 + cuối tuần được gộp gửi vào sáng thứ 2. (GitHub cron dùng giờ UTC: 6h VN = 23h UTC ngày hôm trước, nên cron là chủ nhật đến thứ 5.)
 # GitHub có thể chạy trễ vài phút đến ~15 phút vào giờ cao điểm.
 # Cần secrets: TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID.
 # Tùy chọn (Settings → Secrets and variables → Actions → Variables):
 #   POINT_VALUE (số đồng / 1 điểm), ROOM_ID (mặc định vip).
 on:
   schedule:
-    - cron: '0 0 * * 1-5'
+    - cron: '0 23 * * 0-4'
   workflow_dispatch:
     inputs:
       dry_run:
