@@ -74,7 +74,7 @@ export default function ScoreInputTable({
     setPressing(null);
   };
 
-  const startPress = (e, player, kind) => {
+  const startPress = (e, player, kind, source) => {
     if (isViewOnly || !onSetPlayerLocked) return;
     if (e.pointerType === 'mouse' && e.button !== 0) return;
     // Chỉ khoá được người chơi đã có tên
@@ -92,7 +92,7 @@ export default function ScoreInputTable({
       onSetPlayerLocked(player, kind === 'lock');
     }, LONG_PRESS_MS);
     pressRef.current = { timer, x: e.clientX, y: e.clientY };
-    setPressing({ id: player.id, kind });
+    setPressing({ id: player.id, kind, source });
   };
 
   const movePress = (e) => {
@@ -103,8 +103,8 @@ export default function ScoreInputTable({
     }
   };
 
-  const getPressHandlers = (player, kind) => ({
-    onPointerDown: (e) => startPress(e, player, kind),
+  const getPressHandlers = (player, kind, source) => ({
+    onPointerDown: (e) => startPress(e, player, kind, source),
     onPointerMove: movePress,
     onPointerUp: cancelPress,
     onPointerLeave: cancelPress,
@@ -445,8 +445,10 @@ export default function ScoreInputTable({
 
           const locked = isLocked(player.id);
           const isPressingName = Boolean(pressing && pressing.id === player.id && pressing.kind === 'lock');
+          const isPressingLeftUnlock = Boolean(pressing && pressing.id === player.id && pressing.kind === 'unlock' && pressing.source === 'left');
           const isPressingLock = Boolean(pressing && pressing.id === player.id && pressing.kind === 'unlock');
           const canHoldToLock = !isViewOnly && !locked && editingPlayerId !== player.id && Boolean((player.name || '').trim());
+          const canHoldToUnlock = !isViewOnly && locked;
 
           return (
             <div
@@ -462,9 +464,9 @@ export default function ScoreInputTable({
             >
               {/* Khối Trái: Tên người chơi và Điểm tích luỹ trong cùng 1 ô liền mạch */}
               <div
-                className={`player-left-group ${isViewOnly ? 'is-view-only' : ''} ${isPressingName ? 'is-pressing' : ''}`}
-                {...(canHoldToLock ? getPressHandlers(player, 'lock') : {})}
-                title={canHoldToLock ? 'Bấm giữ 1 giây để khoá người chơi (tạm ra ngoài)' : undefined}
+                className={`player-left-group ${isViewOnly ? 'is-view-only' : ''} ${isPressingName || isPressingLeftUnlock ? 'is-pressing' : ''}`}
+                {...(canHoldToLock ? getPressHandlers(player, 'lock') : canHoldToUnlock ? getPressHandlers(player, 'unlock', 'left') : {})}
+                title={canHoldToLock ? 'Bấm giữ 1 giây để khoá người chơi (tạm ra ngoài)' : canHoldToUnlock ? 'Bấm giữ 1 giây để mở khoá' : undefined}
                 onClick={() => {
                   if (suppressClickRef.current) {
                     suppressClickRef.current = false;
