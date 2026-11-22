@@ -196,8 +196,9 @@ td {
   -webkit-tap-highlight-color: transparent;
 }
 
-.player-left-group.is-pressing {
-  background-color: rgba(0, 0, 0, 0.2);
+/* Đang giữ tên / điểm / khoá: cả dòng đậm lên cùng lúc, cùng một màu */
+.player-row.is-row-pressing {
+  filter: brightness(0.78);
 }
 
 /* Ô icon khoá chiếm chỗ 2 nút - và + */
@@ -217,9 +218,6 @@ td {
   touch-action: manipulation;
 }
 
-.player-btn-lock.is-pressing {
-  background-color: #727272;
-}
 
 /* Khối Trái: Tên người chơi và Tổng điểm tích luỹ */
 .player-left-group {

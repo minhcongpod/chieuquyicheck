@@ -456,7 +456,7 @@ export default function ScoreInputTable({
               ref={(el) => {
                 if (el) rowRefs.current[player.id] = el;
               }}
-              className={`player-row player-row-${player.id} ${locked ? 'is-locked' : ''}`}
+              className={`player-row player-row-${player.id} ${locked ? 'is-locked' : ''} ${(pressing && pressing.id === player.id) ? 'is-row-pressing' : ''}`}
               style={{
                 backgroundColor: locked ? undefined : player.color,
                 '--row-color': locked ? '#8e8e8e' : player.color
