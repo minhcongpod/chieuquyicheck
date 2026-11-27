@@ -35,7 +35,7 @@ const formatCompactUrl = (url) => {
  *    Thống kê điểm; bấm ✓ xanh để lưu, ✕ đỏ để huỷ), kèm mã QR + link bàn chơi để mọi người vào cùng xem điểm trên Firebase
  * 2. MoMo: Mã QR MoMo nộp Quỹ Chiếu Quỷ
  */
-export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULES, onSaveRules }) {
+export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULES, onSaveRules, onResetAll, onLoadBackups, onRestoreBackup }) {
   const [activeTab, setActiveTab] = useState('momo'); // 'momo' | 'setting' (mở popup là vào MOMO trước)
   // Mỗi lần sửa (SÂM hoặc CHÁY) đều phải nhập lại mật khẩu: askingRule = ô đang hỏi mật khẩu,
   // editingRule = ô đã mở khoá và đang sửa ('sam' | 'chay' | null). Lưu hoặc huỷ là khoá lại.
@@ -47,10 +47,25 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
   const [isLinkCompact, setIsLinkCompact] = useState(false);
   const roomLinkRef = useRef(null);
 
+  // Sao lưu / Reset dữ liệu: mọi thao tác đều hỏi mật khẩu 1996 rồi mới mở
+  // dataAction = thao tác đang chờ mật khẩu ('reset' | 'backups'); dataPanel = màn hình đang mở
+  // ('confirm-reset' | 'backups' | 'confirm-restore' | null)
+  const [dataAction, setDataAction] = useState(null);
+  const [dataPanel, setDataPanel] = useState(null);
+  const [backups, setBackups] = useState([]);
+  const [backupsLoading, setBackupsLoading] = useState(false);
+  const [backupsError, setBackupsError] = useState('');
+  const [selectedBackup, setSelectedBackup] = useState(null);
+  const [isBusy, setIsBusy] = useState(false);
+  const [dataMessage, setDataMessage] = useState('');
+
   useEffect(() => {
     if (!isOpen) {
       setAskingRule(null);
       setEditingRule(null);
+      setDataAction(null);
+      setDataPanel(null);
+      setDataMessage('');
     }
   }, [isOpen]);
 
@@ -59,14 +74,16 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         // Esc đóng ô mật khẩu trước, bấm tiếp mới đóng popup
-        if (askingRule) setAskingRule(null);
+        if (dataAction) setDataAction(null);
+        else if (dataPanel) setDataPanel(null);
+        else if (askingRule) setAskingRule(null);
         else if (editingRule) setEditingRule(null);
         else onClose();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, askingRule, editingRule]);
+  }, [isOpen, onClose, askingRule, editingRule, dataAction, dataPanel]);
 
   // Mỗi lần mở popup / đổi tab / đổi link: hiện link đầy đủ trước, tràn ô thì rút gọn
   useLayoutEffect(() => {
@@ -96,6 +113,55 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
     setDraftValue(String(askingRule === 'sam' ? currentRules.samPoint : -currentRules.chayPoint));
     setEditingRule(askingRule);
     setAskingRule(null);
+  };
+
+  const canManageData = typeof onResetAll === 'function' && typeof onLoadBackups === 'function';
+
+  const handleDataPasscodeSuccess = async () => {
+    const action = dataAction;
+    setDataAction(null);
+    setDataMessage('');
+    if (action === 'reset') {
+      setDataPanel('confirm-reset');
+      return;
+    }
+    setDataPanel('backups');
+    setBackupsLoading(true);
+    setBackupsError('');
+    try {
+      setBackups(await onLoadBackups());
+    } catch (e) {
+      console.error('Lỗi tải bản sao lưu:', e);
+      setBackups([]);
+      setBackupsError('Không tải được bản sao lưu. Kiểm tra mạng rồi thử lại.');
+    }
+    setBackupsLoading(false);
+  };
+
+  const handleConfirmReset = async () => {
+    setIsBusy(true);
+    const ok = await onResetAll();
+    setIsBusy(false);
+    setDataPanel(null);
+    setDataMessage(ok ? 'Đã sao lưu và reset dữ liệu.' : 'Lỗi: chưa sao lưu được nên KHÔNG reset.');
+  };
+
+  const handleConfirmRestore = async () => {
+    if (!selectedBackup || typeof onRestoreBackup !== 'function') return;
+    setIsBusy(true);
+    const ok = await onRestoreBackup(selectedBackup);
+    setIsBusy(false);
+    setDataPanel(null);
+    setSelectedBackup(null);
+    setDataMessage(ok ? 'Đã khôi phục dữ liệu.' : 'Lỗi: khôi phục không thành công.');
+  };
+
+  const formatBackupTitle = (b) => {
+    const [y, m, d] = String(b.date).split('-');
+    const day = y && m && d ? `${d}/${m}/${y}` : b.date;
+    const time = b.createdAt ? new Date(b.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
+    const kind = b.kind === 'pre-reset' ? 'Trước reset' : b.kind === 'pre-restore' ? 'Trước khôi phục' : 'Tự động';
+    return { line1: `${day} ${time}`.trim(), line2: `${kind} · ${b.roundCount} ván · ${b.ledgerCount} lần chốt sổ` };
   };
 
   const sanitizeDigits = (value) => value.replace(/\D/g, '').slice(0, 3);
@@ -221,7 +287,67 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
           </button>
         </div>
 
-        {activeTab === 'setting' ? (
+        {activeTab === 'setting' && dataPanel ? (
+          <div className="data-panel">
+            {dataPanel === 'confirm-reset' && (
+              <>
+                <div className="data-panel-title text-chay">RESET DỮ LIỆU</div>
+                <p className="data-panel-text">
+                  Xoá toàn bộ điểm các ván và sổ chốt. Giữ nguyên tên người chơi và luật Sâm / Cháy.
+                  Hệ thống tự sao lưu trước nên có thể khôi phục lại.
+                </p>
+                <div className="data-btn-row">
+                  <button type="button" className="data-btn data-btn-danger" disabled={isBusy} onClick={handleConfirmReset}>
+                    {isBusy ? 'ĐANG XỬ LÝ…' : 'RESET'}
+                  </button>
+                  <button type="button" className="data-btn" disabled={isBusy} onClick={() => setDataPanel(null)}>HUỶ</button>
+                </div>
+              </>
+            )}
+            {dataPanel === 'backups' && (
+              <>
+                <div className="data-panel-title">KHÔI PHỤC TỪ SAO LƯU</div>
+                <div className="backup-list">
+                  {backupsLoading && <p className="data-panel-text">Đang tải…</p>}
+                  {!backupsLoading && backupsError && <p className="data-panel-text text-chay">{backupsError}</p>}
+                  {!backupsLoading && !backupsError && backups.length === 0 && (
+                    <p className="data-panel-text">Chưa có bản sao lưu nào. Bản đầu tiên sẽ tự tạo khi phòng có dữ liệu.</p>
+                  )}
+                  {backups.map((b) => {
+                    const t = formatBackupTitle(b);
+                    return (
+                      <button
+                        type="button"
+                        key={b.id}
+                        className="backup-item"
+                        onClick={() => { setSelectedBackup(b); setDataPanel('confirm-restore'); }}
+                      >
+                        <span className="backup-item-main">{t.line1}</span>
+                        <span className="backup-item-sub">{t.line2}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button type="button" className="data-btn" onClick={() => setDataPanel(null)}>ĐÓNG</button>
+              </>
+            )}
+            {dataPanel === 'confirm-restore' && selectedBackup && (
+              <>
+                <div className="data-panel-title">KHÔI PHỤC BẢN NÀY?</div>
+                <p className="data-panel-text">
+                  {formatBackupTitle(selectedBackup).line1}<br />{formatBackupTitle(selectedBackup).line2}<br />
+                  Dữ liệu hiện tại sẽ được sao lưu lại trước khi bị thay thế.
+                </p>
+                <div className="data-btn-row">
+                  <button type="button" className="data-btn data-btn-ok" disabled={isBusy} onClick={handleConfirmRestore}>
+                    {isBusy ? 'ĐANG XỬ LÝ…' : 'KHÔI PHỤC'}
+                  </button>
+                  <button type="button" className="data-btn" disabled={isBusy} onClick={() => setDataPanel('backups')}>QUAY LẠI</button>
+                </div>
+              </>
+            )}
+          </div>
+        ) : activeTab === 'setting' ? (
           <>
             {/* Luật Sâm / Cháy: bấm vào ô để chỉnh (cần mật khẩu 1996 mỗi lần sửa) */}
             <div className="rule-row">
@@ -264,6 +390,17 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
                 )}
               </button>
             </div>
+
+            {/* Sao lưu hàng ngày tự động + khôi phục + reset dữ liệu (cần mật khẩu 1996) */}
+            {canManageData && (
+              <>
+                <div className="data-btn-row">
+                  <button type="button" className="data-btn" onClick={() => setDataAction('backups')}>SAO LƯU</button>
+                  <button type="button" className="data-btn data-btn-danger" onClick={() => setDataAction('reset')}>RESET</button>
+                </div>
+                {dataMessage && <div className="data-message">{dataMessage}</div>}
+              </>
+            )}
           </>
         ) : (
           <>
@@ -302,6 +439,14 @@ export function QrTransferModal({ isOpen, onClose, roomUrl, rules = DEFAULT_RULE
           </>
         )}
       </div>
+
+      {dataAction && (
+        <PasscodePrompt
+          ariaLabel={dataAction === 'reset' ? 'Nhập mật khẩu để reset dữ liệu' : 'Nhập mật khẩu để khôi phục sao lưu'}
+          onSuccess={handleDataPasscodeSuccess}
+          onCancel={() => setDataAction(null)}
+        />
+      )}
 
       {askingRule && (
         <PasscodePrompt

@@ -12,7 +12,10 @@ import {
   updateDoc,
   deleteDoc,
   deleteField,
-  runTransaction
+  runTransaction,
+  getDocs,
+  query,
+  orderBy
 } from 'firebase/firestore';
 
 const INITIAL_PLAYERS = [
@@ -218,6 +221,70 @@ function writeCache(name, storageKey, value) {
   } catch (e) {}
 }
 
+// ===== SAO LƯU DỮ LIỆU PHÒNG =====
+// Mỗi phòng có bản sao lưu tự động 1 lần/ngày tại rooms/{phòng}/backups/{YYYY-MM-DD}.
+// Trước khi reset hoặc khôi phục, hệ thống tự sao lưu thêm 1 bản (loại 'pre-reset' / 'pre-restore')
+// nên không bao giờ mất dữ liệu vì bấm nhầm.
+const AUTO_BACKUP_KEEP_DAYS = 14;   // giữ bản tự động của 14 ngày gần nhất
+const MANUAL_BACKUP_KEEP = 10;      // giữ 10 bản trước-reset / trước-khôi-phục gần nhất
+const BACKUP_FIELDS = ['players', 'playerNames', 'history', 'dailyLedger', 'roundDeltas', 'rules', 'lockedPlayers'];
+
+function localDateKey(d = new Date()) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// Chỉ lấy các trường dữ liệu chơi; bỏ undefined (Firestore không nhận) bằng JSON round-trip
+function pickBackupData(source) {
+  const out = {};
+  BACKUP_FIELDS.forEach((f) => {
+    if (source && source[f] !== undefined) out[f] = source[f];
+  });
+  return JSON.parse(JSON.stringify(out));
+}
+
+function hasGameData(data) {
+  return Boolean(data && ((data.history || []).length > 0 || (data.dailyLedger || []).length > 0));
+}
+
+function describeBackup(id, raw) {
+  const data = raw.data || {};
+  return {
+    id,
+    kind: raw.kind || 'auto',
+    createdAt: raw.createdAt || 0,
+    date: raw.date || id,
+    roundCount: (data.history || []).length,
+    ledgerCount: (data.dailyLedger || []).length,
+    data
+  };
+}
+
+function readLocalBackups(storageKey) {
+  try {
+    return JSON.parse(localStorage.getItem(`cq_backups_${storageKey}`) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function writeLocalBackups(storageKey, list) {
+  try {
+    localStorage.setItem(`cq_backups_${storageKey}`, JSON.stringify(list));
+  } catch (e) {}
+}
+
+// Chọn các bản sao lưu cần xoá để giữ gọn dung lượng
+function pickBackupsToPrune(list) {
+  const cutoff = localDateKey(new Date(Date.now() - AUTO_BACKUP_KEEP_DAYS * 86400000));
+  const autos = list.filter(b => b.kind === 'auto' && b.id < cutoff);
+  const manuals = list
+    .filter(b => b.kind !== 'auto')
+    .sort((a, b) => b.createdAt - a.createdAt)
+    .slice(MANUAL_BACKUP_KEEP);
+  return [...autos, ...manuals];
+}
+
 export function useRealtimeGame() {
   const [roomId] = useState(resolveRoomId);
   // Chỉ đồng bộ Firestore khi đang ở phòng chung (đường dẫn con)
@@ -256,6 +323,7 @@ export function useRealtimeGame() {
   const slotIndex = 1;
   const activeSlots = ['all_players'];
 
+  const ensureDailyBackupRef = useRef(() => {});
   const prevHistoryLenRef = useRef(history.length);
   const prevLedgerLenRef = useRef(dailyLedger.length);
 
@@ -429,6 +497,11 @@ export function useRealtimeGame() {
         prevLedgerLenRef.current = data.dailyLedger.length;
         setDailyLedger(data.dailyLedger);
         writeCache('dailyLedger', roomId, data.dailyLedger);
+      }
+
+      // Sao lưu tự động 1 lần mỗi ngày (máy nào mở trang đầu tiên trong ngày sẽ tạo)
+      if (isInitialMount) {
+        ensureDailyBackupRef.current(data);
       }
 
       isInitialMount = false;
@@ -669,6 +742,140 @@ export function useRealtimeGame() {
     }), { dailyLedger: nextLedger });
   }, [dailyLedger, applyLocalLedger, writeShared]);
 
+  // ===== SAO LƯU / KHÔI PHỤC / RESET DỮ LIỆU =====
+  const loadBackups = useCallback(async () => {
+    if (!isShared) {
+      return readLocalBackups(storageKey)
+        .map(b => describeBackup(b.id, b))
+        .sort((a, b) => b.createdAt - a.createdAt);
+    }
+    const snap = await getDocs(query(collection(db, 'rooms', roomId, 'backups'), orderBy('createdAt', 'desc')));
+    return snap.docs.map(d => describeBackup(d.id, d.data()));
+  }, [isShared, roomId, storageKey]);
+
+  const pruneBackups = useCallback(async () => {
+    try {
+      const list = await loadBackups();
+      const doomed = pickBackupsToPrune(list);
+      if (doomed.length === 0) return;
+      if (isShared) {
+        await Promise.all(doomed.map(b => deleteDoc(doc(db, 'rooms', roomId, 'backups', b.id))));
+      } else {
+        const ids = new Set(doomed.map(b => b.id));
+        writeLocalBackups(storageKey, readLocalBackups(storageKey).filter(b => !ids.has(b.id)));
+      }
+    } catch (e) {
+      console.warn('[Backup] Lỗi dọn bản sao lưu cũ:', e);
+    }
+  }, [isShared, roomId, storageKey, loadBackups]);
+
+  // Lấy dữ liệu mới nhất trên server (hoặc trong máy với phòng riêng) để sao lưu
+  const readCurrentData = useCallback(async () => {
+    if (isShared) {
+      const snap = await getDoc(doc(db, 'rooms', roomId));
+      return snap.exists() ? snap.data() : {};
+    }
+    return { players, history, dailyLedger, roundDeltas, rules, lockedPlayers };
+  }, [isShared, roomId, players, history, dailyLedger, roundDeltas, rules, lockedPlayers]);
+
+  const writeBackup = useCallback(async (id, kind, data) => {
+    const entry = { date: localDateKey(), kind, createdAt: Date.now(), data: pickBackupData(data) };
+    if (isShared) {
+      await setDoc(doc(db, 'rooms', roomId, 'backups', id), entry);
+    } else {
+      const list = readLocalBackups(storageKey).filter(b => b.id !== id);
+      writeLocalBackups(storageKey, [{ id, ...entry }, ...list]);
+    }
+    pruneBackups();
+  }, [isShared, roomId, storageKey, pruneBackups]);
+
+  // Tạo bản sao lưu của ngày hôm nay nếu chưa có (bỏ qua khi phòng đang trống để không đè bản tốt)
+  ensureDailyBackupRef.current = async (data) => {
+    try {
+      if (!hasGameData(data)) return;
+      const id = localDateKey();
+      if (isShared) {
+        const existing = await getDoc(doc(db, 'rooms', roomId, 'backups', id));
+        if (existing.exists()) return;
+      } else if (readLocalBackups(storageKey).some(b => b.id === id)) {
+        return;
+      }
+      await writeBackup(id, 'auto', data);
+    } catch (e) {
+      console.warn('[Backup] Lỗi sao lưu hàng ngày:', e);
+    }
+  };
+
+  // Chạy sao lưu hàng ngày cả cho phòng riêng (không có snapshot Firestore)
+  useEffect(() => {
+    if (!isShared) ensureDailyBackupRef.current({ players, history, dailyLedger, roundDeltas, rules, lockedPlayers });
+    // chỉ chạy 1 lần khi mở trang
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const applyDataToRoom = useCallback(async (data) => {
+    const history2 = data.history || [];
+    const ledger2 = data.dailyLedger || [];
+    const deltas2 = data.roundDeltas || {};
+    prevHistoryLenRef.current = history2.length;
+    prevLedgerLenRef.current = ledger2.length;
+    setHistory(history2);
+    setDailyLedger(ledger2);
+    setRoundDeltas(deltas2);
+    writeCache('history', storageKey, history2);
+    writeCache('dailyLedger', storageKey, ledger2);
+    if (data.players || data.playerNames) {
+      const nextPlayers = mergePlayerNames(data);
+      setPlayers(nextPlayers);
+      writeCache('players', storageKey, nextPlayers);
+    }
+    if (data.rules) {
+      const nextRules = normalizeRules(data.rules);
+      setRulesState(nextRules);
+      writeCache('rules', storageKey, nextRules);
+    }
+    if (data.lockedPlayers !== undefined) {
+      setLockedPlayers(data.lockedPlayers || {});
+      writeCache('lockedPlayers', storageKey, data.lockedPlayers || {});
+    }
+    if (isShared) {
+      const patch = { history: history2, dailyLedger: ledger2, roundDeltas: deltas2, updatedAt: Date.now() };
+      ['players', 'playerNames', 'rules', 'lockedPlayers'].forEach(f => {
+        if (data[f] !== undefined) patch[f] = data[f];
+      });
+      await updateDoc(doc(db, 'rooms', roomId), patch);
+    }
+  }, [isShared, roomId, storageKey, setRoundDeltas]);
+
+  // RESET DỮ LIỆU: sao lưu trước, rồi xoá toàn bộ điểm + sổ chốt. Giữ tên người chơi và luật Sâm/Cháy.
+  // Nếu sao lưu lỗi thì KHÔNG xoá, trả về false.
+  const resetAllData = useCallback(async () => {
+    try {
+      const current = await readCurrentData();
+      await writeBackup(`reset-${Date.now()}`, 'pre-reset', current);
+      await applyDataToRoom({ history: [], dailyLedger: [], roundDeltas: {} });
+      return true;
+    } catch (e) {
+      console.error('[Backup] Reset thất bại:', e);
+      return false;
+    }
+  }, [readCurrentData, writeBackup, applyDataToRoom]);
+
+  // KHÔI PHỤC từ 1 bản sao lưu (tự sao lưu trạng thái hiện tại trước khi ghi đè)
+  const restoreBackup = useCallback(async (backup) => {
+    try {
+      const current = await readCurrentData();
+      if (hasGameData(current)) {
+        await writeBackup(`restore-${Date.now()}`, 'pre-restore', current);
+      }
+      await applyDataToRoom(backup.data || {});
+      return true;
+    } catch (e) {
+      console.error('[Backup] Khôi phục thất bại:', e);
+      return false;
+    }
+  }, [readCurrentData, writeBackup, applyDataToRoom]);
+
   // Link chia sẻ: phòng chung -> chính link đang mở; phòng riêng -> link gốc
   const roomUrl = typeof window !== 'undefined'
     ? (roomId ? window.location.href : getBaseUrl())
@@ -699,6 +906,9 @@ export function useRealtimeGame() {
     confirmRound,
     undoRound,
     resetGame,
+    resetAllData,
+    loadBackups,
+    restoreBackup,
     appendLedgerEntry,
     deleteLedgerEntry,
     samCelebration,

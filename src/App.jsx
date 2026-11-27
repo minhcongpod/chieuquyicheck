@@ -79,6 +79,9 @@ export default function App() {
     confirmRound,
     undoRound,
     resetGame,
+    resetAllData,
+    loadBackups,
+    restoreBackup,
     appendLedgerEntry,
     deleteLedgerEntry,
     samCelebration,
@@ -756,6 +759,9 @@ export default function App() {
         roomUrl={roomUrl}
         rules={rules}
         onSaveRules={updateRules}
+        onResetAll={resetAllData}
+        onLoadBackups={loadBackups}
+        onRestoreBackup={restoreBackup}
       />
 
       {/* 7. Hiệu ứng hoạt ảnh bùng nổ khi hô Sâm thành công */}

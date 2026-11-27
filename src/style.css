@@ -2766,3 +2766,101 @@ td {
 .rule-input-wrap.text-chay {
   color: #fd5656;
 }
+
+/* ===== Sao lưu / Reset dữ liệu (tab Cài đặt) ===== */
+.data-btn-row {
+  display: flex;
+  width: 100%;
+  gap: 4px;
+}
+
+.data-btn {
+  flex: 1 1 0;
+  height: 44px;
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.data-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.data-btn-danger {
+  background: #fd6161;
+  color: #000000;
+  border-color: #fd6161;
+}
+
+.data-btn-ok {
+  background: #66ff33;
+  color: #000000;
+  border-color: #66ff33;
+}
+
+.data-message {
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  color: #ffffff;
+  opacity: 0.85;
+}
+
+.data-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 16px 12px;
+  background: #000000;
+  color: #ffffff;
+  box-sizing: border-box;
+}
+
+.data-panel-title {
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.data-panel-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.backup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.backup-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.backup-item-main {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.backup-item-sub {
+  font-size: 12px;
+  opacity: 0.75;
+}
